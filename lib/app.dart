@@ -8,6 +8,7 @@ import 'screens/mode_selection_screen.dart';
 import 'screens/game_screen.dart';
 import 'screens/lobby_screen.dart';
 import 'screens/result_screen.dart';
+import 'screens/settings_screen.dart';
 
 CustomTransitionPage _fadeTransition(Widget child, GoRouterState state) {
   return CustomTransitionPage(
@@ -52,6 +53,11 @@ final _router = GoRouter(
           state,
         );
       },
+    ),
+    GoRoute(
+      path: '/settings',
+      pageBuilder: (context, state) =>
+          _fadeTransition(const SettingsScreen(), state),
     ),
     GoRoute(
       path: '/result',

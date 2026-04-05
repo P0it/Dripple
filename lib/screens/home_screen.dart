@@ -1,15 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../character/character_widget.dart';
+import '../core/game_feedback.dart';
 import '../core/theme/app_theme.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(gameFeedbackProvider).playMenuMusic();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final feedback = ref.read(gameFeedbackProvider);
 
     return Scaffold(
       body: Container(
@@ -46,7 +62,10 @@ class HomeScreen extends StatelessWidget {
                   width: 220,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: () => context.push('/mode-select'),
+                    onPressed: () {
+                      feedback.onButtonTap();
+                      context.push('/mode-select');
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: AppColors.primary,
@@ -62,11 +81,14 @@ class HomeScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _navButton(Icons.person, l10n.character),
+                    _navButton(Icons.person, l10n.character, null),
                     const SizedBox(width: 24),
-                    _navButton(Icons.leaderboard, l10n.ranking),
+                    _navButton(Icons.leaderboard, l10n.ranking, null),
                     const SizedBox(width: 24),
-                    _navButton(Icons.settings, l10n.settings),
+                    _navButton(Icons.settings, l10n.settings, () {
+                      feedback.onButtonTap();
+                      context.push('/settings');
+                    }),
                   ],
                 ),
                 const Spacer(flex: 1),
@@ -78,11 +100,11 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _navButton(IconData icon, String label) {
+  Widget _navButton(IconData icon, String label, VoidCallback? onPressed) {
     return Column(
       children: [
         IconButton(
-          onPressed: () {},
+          onPressed: onPressed ?? () {},
           icon: Icon(icon, color: Colors.white, size: 28),
         ),
         Text(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/game_feedback.dart';
 import 'emote_system.dart';
 
 /// Emote bar with 5 character expression buttons.
@@ -26,6 +27,7 @@ class EmoteBar extends ConsumerWidget {
               isOnCooldown: emoteState.isOnCooldown,
               onPressed: () {
                 ref.read(emoteProvider.notifier).sendEmote(playerId, emote);
+                ref.read(gameFeedbackProvider).onEmoteSent();
               },
             ),
           );

@@ -4,6 +4,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../character/emote_bar.dart';
+import '../core/game_feedback.dart';
 import '../core/theme/app_theme.dart';
 import '../game/dripple_game.dart';
 import '../models/game_state.dart';
@@ -39,20 +40,35 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         ref.read(gameProvider.notifier).startGame(
               GameConfig(playerCount: widget.playerCount),
             );
+        ref.read(gameFeedbackProvider).playGameMusic();
       });
     }
   }
 
   void _onCardPlaced(int cardIndex) {
     ref.read(gameProvider.notifier).placeCard(cardIndex);
+    ref.read(gameFeedbackProvider).onCardPlace();
   }
 
   void _onSubmit() async {
+    final feedback = ref.read(gameFeedbackProvider);
+    await feedback.onSubmit();
+
     final notifier = ref.read(gameProvider.notifier);
     final result = notifier.submitSentence();
 
     if (!mounted) return;
 
+    // Trigger feedback based on result
+    if (result.isCorrect) {
+      await feedback.onCorrectAnswer(
+        comboCount: ref.read(gameProvider).players[0].comboCount,
+      );
+    } else {
+      await feedback.onIncorrectAnswer();
+    }
+
+    if (!mounted) return;
     await showDialog(
       context: context,
       barrierDismissible: false,
@@ -86,17 +102,25 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     }
 
     if (gameState.phase == GamePhase.gameEnd && mounted) {
-      context.go('/result');
+      final isWinner = gameState.ranking.first.id == 'human_0';
+      if (isWinner) {
+        await ref.read(gameFeedbackProvider).onGameWin();
+      } else {
+        await ref.read(gameFeedbackProvider).onGameLose();
+      }
+      if (mounted) context.go('/result');
     }
   }
 
   void _onDraw() {
     ref.read(gameProvider.notifier).drawCard();
+    ref.read(gameFeedbackProvider).onCardDraw();
     _processAITurns();
   }
 
   void _onUndo() {
     ref.read(gameProvider.notifier).undoPlacement();
+    ref.read(gameFeedbackProvider).onButtonTap();
   }
 
   @override
