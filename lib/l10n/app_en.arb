@@ -1,0 +1,92 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Dripple",
+  "wordCardBattle": "Word Card Battle",
+  "play": "PLAY",
+  "character": "Character",
+  "ranking": "Ranking",
+  "settings": "Settings",
+
+  "selectMode": "Select Mode",
+  "aiBattle": "AI Battle",
+  "aiBattleDesc": "Play against AI opponents",
+  "onlineBattle": "Online Battle",
+  "onlineBattleDesc": "Random matchmaking",
+  "friendBattle": "Friend Battle",
+  "friendBattleDesc": "Invite via code/link",
+  "comingSoon": "COMING SOON",
+  "playerCount": "Player Count",
+  "nPlayers": "{count} Players",
+  "@nPlayers": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "roundIndicator": "Round {current}/{total}",
+  "@roundIndicator": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "nCards": "{count} cards",
+  "@nCards": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "sentenceZone": "Sentence Zone",
+  "draw": "Draw",
+  "undo": "Undo",
+  "submit": "Submit",
+
+  "correct": "Correct!",
+  "incorrect": "Incorrect!",
+  "pointsEarned": "+{points} points",
+  "@pointsEarned": {
+    "placeholders": {
+      "points": { "type": "int" }
+    }
+  },
+
+  "gameOver": "Game Over!",
+  "home": "Home",
+  "playAgain": "Play Again",
+  "combo": "Combo: {count}x",
+  "@combo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "pts": "pts",
+
+  "errorArticleAVowel": "Use \"an\" before words starting with a vowel sound: \"{word}\"",
+  "@errorArticleAVowel": {
+    "placeholders": { "word": { "type": "String" } }
+  },
+  "errorArticleAnConsonant": "Use \"a\" before words starting with a consonant sound: \"{word}\"",
+  "@errorArticleAnConsonant": {
+    "placeholders": { "word": { "type": "String" } }
+  },
+  "errorArticlePlural": "\"{article}\" cannot be used with plural noun \"{noun}\"",
+  "@errorArticlePlural": {
+    "placeholders": {
+      "article": { "type": "String" },
+      "noun": { "type": "String" }
+    }
+  },
+  "errorArticleUncountable": "\"{article}\" cannot be used with uncountable noun \"{noun}\"",
+  "@errorArticleUncountable": {
+    "placeholders": {
+      "article": { "type": "String" },
+      "noun": { "type": "String" }
+    }
+  },
+  "errorSvAgreement": "Subject-verb agreement error",
+  "errorAdjOrder": "Incorrect adjective order",
+  "errorInvalidStructure": "Invalid sentence structure",
+  "errorEmptySentence": "Sentence cannot be empty",
+  "errorTooShort": "Sentence must have at least 2 words"
+}

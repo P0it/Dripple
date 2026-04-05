@@ -1,7 +1,9 @@
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../character/emote_bar.dart';
 import '../core/theme/app_theme.dart';
 import '../game/dripple_game.dart';
 import '../models/game_state.dart';
@@ -120,7 +122,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             Container(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Text(
-                'Sentence Zone',
+                AppLocalizations.of(context)!.sentenceZone,
                 style: TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 12,
@@ -131,6 +133,12 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             // Flame game area
             Expanded(
               child: GameWidget(game: _game),
+            ),
+            // Emote bar
+            EmoteBar(
+              playerId: gameState.players.isNotEmpty
+                  ? gameState.players[0].id
+                  : 'human_0',
             ),
             // Action bar
             _ActionBar(
@@ -178,7 +186,7 @@ class _ScoreboardBar extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              'Round ${gameState.currentRound}/${gameState.totalRounds}',
+              AppLocalizations.of(context)!.roundIndicator(gameState.currentRound, gameState.totalRounds),
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -260,7 +268,7 @@ class _OpponentsBar extends StatelessWidget {
                 ),
               ),
               Text(
-                '${opp.hand.length} cards',
+                AppLocalizations.of(context)!.nCards(opp.hand.length),
                 style: TextStyle(
                   fontSize: 10,
                   color: AppColors.textSecondary,
@@ -309,14 +317,14 @@ class _ActionBar extends StatelessWidget {
           // Draw pile
           _ActionButton(
             icon: Icons.add_card,
-            label: 'Draw ($deckCount)',
+            label: '${AppLocalizations.of(context)!.draw} ($deckCount)',
             onPressed: deckCount > 0 ? onDraw : null,
             color: AppColors.cardUndo,
           ),
           // Undo
           _ActionButton(
             icon: Icons.undo,
-            label: 'Undo',
+            label: AppLocalizations.of(context)!.undo,
             onPressed: onUndo,
             color: Colors.grey,
           ),
@@ -327,7 +335,7 @@ class _ActionBar extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: canSubmit ? onSubmit : null,
               icon: const Icon(Icons.check_circle, size: 20),
-              label: const Text('Submit'),
+              label: Text(AppLocalizations.of(context)!.submit),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.correctGreen,
                 foregroundColor: Colors.white,

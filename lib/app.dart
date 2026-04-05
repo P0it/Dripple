@@ -1,33 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'core/theme/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/mode_selection_screen.dart';
 import 'screens/game_screen.dart';
+import 'screens/lobby_screen.dart';
 import 'screens/result_screen.dart';
+
+CustomTransitionPage _fadeTransition(Widget child, GoRouterState state) {
+  return CustomTransitionPage(
+    key: state.pageKey,
+    child: child,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(opacity: animation, child: child);
+    },
+    transitionDuration: const Duration(milliseconds: 300),
+  );
+}
 
 final _router = GoRouter(
   initialLocation: '/',
   routes: [
     GoRoute(
       path: '/',
-      builder: (context, state) => const HomeScreen(),
+      pageBuilder: (context, state) =>
+          _fadeTransition(const HomeScreen(), state),
     ),
     GoRoute(
       path: '/mode-select',
-      builder: (context, state) => const ModeSelectionScreen(),
+      pageBuilder: (context, state) =>
+          _fadeTransition(const ModeSelectionScreen(), state),
     ),
     GoRoute(
       path: '/game',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final playerCount =
             int.tryParse(state.uri.queryParameters['players'] ?? '2') ?? 2;
-        return GameScreen(playerCount: playerCount);
+        return _fadeTransition(GameScreen(playerCount: playerCount), state);
+      },
+    ),
+    GoRoute(
+      path: '/lobby',
+      pageBuilder: (context, state) {
+        final mode = state.uri.queryParameters['mode'] ?? 'online';
+        final playerCount =
+            int.tryParse(state.uri.queryParameters['players'] ?? '2') ?? 2;
+        return _fadeTransition(
+          LobbyScreen(mode: mode, playerCount: playerCount),
+          state,
+        );
       },
     ),
     GoRoute(
       path: '/result',
-      builder: (context, state) => const ResultScreen(),
+      pageBuilder: (context, state) =>
+          _fadeTransition(const ResultScreen(), state),
     ),
   ],
 );
@@ -42,6 +71,13 @@ class DrippleApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
     );
   }
 }

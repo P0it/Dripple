@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../core/theme/app_theme.dart';
 
@@ -7,9 +8,11 @@ class ModeSelectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Select Mode'),
+        title: Text(l10n.selectMode),
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.textOnPrimary,
       ),
@@ -24,26 +27,26 @@ class ModeSelectionScreen extends StatelessWidget {
                 const SizedBox(height: 32),
                 _ModeCard(
                   icon: Icons.smart_toy,
-                  title: 'AI Battle',
-                  subtitle: 'Play against AI opponents',
+                  title: l10n.aiBattle,
+                  subtitle: l10n.aiBattleDesc,
                   enabled: true,
-                  onTap: () => _showPlayerCountDialog(context),
+                  onTap: () => _showPlayerCountDialog(context, l10n),
                 ),
                 const SizedBox(height: 16),
                 _ModeCard(
                   icon: Icons.public,
-                  title: 'Online Battle',
-                  subtitle: 'Random matchmaking',
+                  title: l10n.onlineBattle,
+                  subtitle: l10n.onlineBattleDesc,
                   enabled: false,
-                  badge: 'COMING SOON',
+                  badge: l10n.comingSoon,
                 ),
                 const SizedBox(height: 16),
                 _ModeCard(
                   icon: Icons.group,
-                  title: 'Friend Battle',
-                  subtitle: 'Invite via code/link',
+                  title: l10n.friendBattle,
+                  subtitle: l10n.friendBattleDesc,
                   enabled: false,
-                  badge: 'COMING SOON',
+                  badge: l10n.comingSoon,
                 ),
               ],
             ),
@@ -53,18 +56,18 @@ class ModeSelectionScreen extends StatelessWidget {
     );
   }
 
-  void _showPlayerCountDialog(BuildContext context) {
+  void _showPlayerCountDialog(BuildContext context, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Player Count'),
+        title: Text(l10n.playerCount),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             for (final count in [2, 3, 4])
               ListTile(
                 leading: Icon(Icons.people, color: AppColors.primary),
-                title: Text('$count Players'),
+                title: Text(l10n.nPlayers(count)),
                 onTap: () {
                   Navigator.of(ctx).pop();
                   context.push('/game?players=$count');

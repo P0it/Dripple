@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
+import '../character/character_widget.dart';
 import '../core/theme/app_theme.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -7,6 +9,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(gradient: AppTheme.greenGradient),
@@ -16,23 +20,14 @@ class HomeScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Spacer(flex: 2),
-                // Character placeholder
-                Container(
-                  width: 160,
-                  height: 160,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(77),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.face,
-                    size: 80,
-                    color: Colors.white,
-                  ),
+                // Character (placeholder — will use Rive when assets are ready)
+                const CharacterWidget(
+                  characterId: 'default',
+                  size: 160,
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'DRIPPLE',
+                  l10n.appTitle.toUpperCase(),
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
                         color: AppColors.textOnPrimary,
                         fontWeight: FontWeight.w900,
@@ -41,7 +36,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Word Card Battle',
+                  l10n.wordCardBattle,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: Colors.white70,
                       ),
@@ -56,10 +51,10 @@ class HomeScreen extends StatelessWidget {
                       backgroundColor: Colors.white,
                       foregroundColor: AppColors.primary,
                     ),
-                    child: const Text(
-                      'PLAY',
-                      style:
-                          TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+                    child: Text(
+                      l10n.play,
+                      style: const TextStyle(
+                          fontSize: 22, fontWeight: FontWeight.w900),
                     ),
                   ),
                 ),
@@ -67,11 +62,11 @@ class HomeScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _navButton(Icons.person, 'Character'),
+                    _navButton(Icons.person, l10n.character),
                     const SizedBox(width: 24),
-                    _navButton(Icons.leaderboard, 'Ranking'),
+                    _navButton(Icons.leaderboard, l10n.ranking),
                     const SizedBox(width: 24),
-                    _navButton(Icons.settings, 'Settings'),
+                    _navButton(Icons.settings, l10n.settings),
                   ],
                 ),
                 const Spacer(flex: 1),

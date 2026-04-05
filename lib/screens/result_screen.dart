@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../core/theme/app_theme.dart';
@@ -19,9 +20,9 @@ class ResultScreen extends ConsumerWidget {
           child: Column(
             children: [
               const SizedBox(height: 32),
-              const Text(
-                'Game Over!',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context)!.gameOver,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -45,7 +46,7 @@ class ResultScreen extends ConsumerWidget {
                           side: const BorderSide(color: Colors.white),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
-                        child: const Text('Home'),
+                        child: Text(AppLocalizations.of(context)!.home),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -57,7 +58,7 @@ class ResultScreen extends ConsumerWidget {
                           foregroundColor: AppColors.primary,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
-                        child: const Text('Play Again'),
+                        child: Text(AppLocalizations.of(context)!.playAgain),
                       ),
                     ),
                   ],
@@ -144,7 +145,7 @@ class _Podium extends StatelessWidget {
                       ],
                     ),
                     Text(
-                      'Combo: ${player.comboCount}x',
+                      AppLocalizations.of(context)!.combo(player.comboCount),
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12,
@@ -164,7 +165,7 @@ class _Podium extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                'pts',
+                AppLocalizations.of(context)!.pts,
                 style: TextStyle(
                   fontSize: 12,
                   color: AppColors.textSecondary,

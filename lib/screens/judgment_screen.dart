@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../core/theme/app_theme.dart';
 import '../providers/game_provider.dart';
 
@@ -9,6 +10,7 @@ class JudgmentDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isCorrect = result.isCorrect;
     final bgColor = isCorrect ? AppColors.correctGreen : AppColors.incorrectRed;
 
@@ -25,7 +27,7 @@ class JudgmentDialog extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            isCorrect ? 'Correct!' : 'Incorrect!',
+            isCorrect ? l10n.correct : l10n.incorrect,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 24,
@@ -64,7 +66,7 @@ class JudgmentDialog extends StatelessWidget {
           const SizedBox(height: 8),
           if (isCorrect)
             Text(
-              '+${result.scoreEarned} points',
+              l10n.pointsEarned(result.scoreEarned),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 20,
