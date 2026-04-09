@@ -1,5 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// All sound effects used in the game.
 /// Place corresponding .mp3 files in assets/sounds/ with matching names.
@@ -14,7 +16,7 @@ enum SoundEffect {
   specialSkip, // SKIP card played
   specialSteal, // STEAL card played
   specialUndo, // UNDO card played
-  specialWild, // WILD card played
+  specialJoker, // JOKER card played
   emote, // Emote sent
   roundStart, // New round begins
   roundEnd, // Round ends
@@ -56,15 +58,48 @@ class SoundManager {
   double _sfxVolume = 0.8;
   double _musicVolume = 0.5;
 
+  // SharedPreferences keys
+  static const _keySfxEnabled = 'sound_sfx_enabled';
+  static const _keyMusicEnabled = 'sound_music_enabled';
+  static const _keySfxVolume = 'sound_sfx_volume';
+  static const _keyMusicVolume = 'sound_music_volume';
+
   bool get sfxEnabled => _sfxEnabled;
   bool get musicEnabled => _musicEnabled;
   double get sfxVolume => _sfxVolume;
   double get musicVolume => _musicVolume;
 
+  /// Load persisted settings from SharedPreferences.
+  /// Call this once at app startup before runApp.
+  Future<void> init() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _sfxEnabled = prefs.getBool(_keySfxEnabled) ?? true;
+      _musicEnabled = prefs.getBool(_keyMusicEnabled) ?? true;
+      _sfxVolume = prefs.getDouble(_keySfxVolume) ?? 0.8;
+      _musicVolume = prefs.getDouble(_keyMusicVolume) ?? 0.5;
+    } catch (e) {
+      debugPrint('SoundManager.init: failed to load prefs: $e');
+    }
+  }
+
+  Future<void> _savePrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_keySfxEnabled, _sfxEnabled);
+      await prefs.setBool(_keyMusicEnabled, _musicEnabled);
+      await prefs.setDouble(_keySfxVolume, _sfxVolume);
+      await prefs.setDouble(_keyMusicVolume, _musicVolume);
+    } catch (e) {
+      debugPrint('SoundManager._savePrefs: $e');
+    }
+  }
+
   /// Toggle sound effects on/off
   set sfxEnabled(bool value) {
     _sfxEnabled = value;
     if (!value) stopAllSfx();
+    _savePrefs();
   }
 
   /// Toggle background music on/off
@@ -75,17 +110,20 @@ class SoundManager {
     } else if (_currentTrack != null) {
       playMusic(_currentTrack!);
     }
+    _savePrefs();
   }
 
   /// Set sound effects volume (0.0 - 1.0)
   set sfxVolume(double value) {
     _sfxVolume = value.clamp(0.0, 1.0);
+    _savePrefs();
   }
 
   /// Set music volume (0.0 - 1.0)
   set musicVolume(double value) {
     _musicVolume = value.clamp(0.0, 1.0);
     _bgmPlayer?.setVolume(_musicVolume);
+    _savePrefs();
   }
 
   // ========== SOUND EFFECTS ==========
@@ -101,8 +139,9 @@ class SoundManager {
 
       await player.setVolume(_sfxVolume);
       await player.play(AssetSource('sounds/${effect.name}.mp3'));
-    } catch (_) {
-      // Silently ignore if asset doesn't exist yet
+    } catch (e) {
+      // Log asset errors during development
+      debugPrint('SoundManager.play($effect): $e');
     }
   }
 
@@ -118,7 +157,9 @@ class SoundManager {
 
       await player.setVolume((_sfxVolume * volume).clamp(0.0, 1.0));
       await player.play(AssetSource('sounds/${effect.name}.mp3'));
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('SoundManager.playAt($effect): $e');
+    }
   }
 
   /// Stop all currently playing sound effects
@@ -132,8 +173,10 @@ class SoundManager {
 
   /// Play background music (loops automatically)
   Future<void> playMusic(MusicTrack track) async {
-    _currentTrack = track;
-    if (!_musicEnabled) return;
+    if (!_musicEnabled) {
+      _currentTrack = track;
+      return;
+    }
 
     try {
       // If same track is already playing, skip
@@ -141,14 +184,15 @@ class SoundManager {
         final state = _bgmPlayer!.state;
         if (state == PlayerState.playing) return;
       }
+      _currentTrack = track;
 
       await _bgmPlayer?.stop();
       _bgmPlayer ??= AudioPlayer();
       await _bgmPlayer!.setReleaseMode(ReleaseMode.loop);
       await _bgmPlayer!.setVolume(_musicVolume);
       await _bgmPlayer!.play(AssetSource('music/${track.name}.mp3'));
-    } catch (_) {
-      // Silently ignore if asset doesn't exist yet
+    } catch (e) {
+      debugPrint('SoundManager.playMusic($track): $e');
     }
   }
 
@@ -185,8 +229,8 @@ class SoundManager {
 
         await Future.delayed(stepDuration);
         final progress = i / steps;
-        _bgmPlayer?.setVolume(_musicVolume * (1 - progress));
-        _bgmCrossfadePlayer?.setVolume(_musicVolume * progress);
+        await _bgmPlayer?.setVolume(_musicVolume * (1 - progress));
+        await _bgmCrossfadePlayer?.setVolume(_musicVolume * progress);
       }
 
       // Swap players
@@ -232,12 +276,7 @@ class SoundManager {
   }
 
   /// Called when sentence is judged correct
-  Future<void> onCorrectAnswer({int comboCount = 0}) async {
-    if (comboCount >= 2) {
-      await play(SoundEffect.comboHit);
-      // Slight delay then play correct sound
-      await Future.delayed(const Duration(milliseconds: 200));
-    }
+  Future<void> onCorrectAnswer() async {
     await play(SoundEffect.correct);
   }
 
@@ -255,8 +294,8 @@ class SoundManager {
         await play(SoundEffect.specialSteal);
       case 'undo':
         await play(SoundEffect.specialUndo);
-      case 'wild':
-        await play(SoundEffect.specialWild);
+      case 'joker':
+        await play(SoundEffect.specialJoker);
     }
   }
 

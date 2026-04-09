@@ -53,10 +53,11 @@ class SentenceTemplates {
     return false;
   }
 
+  /// Match pattern against template. '*' in pattern matches any token.
   static bool _matches(List<String> pattern, List<String> template) {
     if (pattern.length != template.length) return false;
     for (int i = 0; i < pattern.length; i++) {
-      if (pattern[i] != template[i]) return false;
+      if (pattern[i] != '*' && pattern[i] != template[i]) return false;
     }
     return true;
   }

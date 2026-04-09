@@ -37,8 +37,8 @@ class JudgmentDialog extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             result.playerName,
-            style: const TextStyle(
-              color: Colors.white70,
+            style: TextStyle(
+              color: Colors.white.withAlpha(220),
               fontSize: 14,
             ),
           ),
@@ -78,8 +78,8 @@ class JudgmentDialog extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     e.message,
-                    style: const TextStyle(
-                      color: Colors.white70,
+                    style: TextStyle(
+                      color: Colors.white.withAlpha(220),
                       fontSize: 12,
                     ),
                     textAlign: TextAlign.center,
@@ -90,9 +90,9 @@ class JudgmentDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text(
-            'OK',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          child: Text(
+            l10n.ok,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
       ],

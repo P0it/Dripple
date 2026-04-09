@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vibration/vibration.dart';
 
 /// Haptic feedback intensity levels
@@ -15,8 +17,36 @@ enum HapticIntensity {
 /// Manages haptic (vibration) feedback for game events.
 /// Provides different vibration patterns for different game situations.
 class HapticManager {
-  bool enabled = true;
+  bool _enabled = true;
   bool? _hasVibrator;
+
+  static const _keyHapticEnabled = 'haptic_enabled';
+
+  bool get enabled => _enabled;
+  set enabled(bool value) {
+    _enabled = value;
+    _savePrefs();
+  }
+
+  /// Load persisted settings from SharedPreferences.
+  /// Call this once at app startup before runApp.
+  Future<void> init() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _enabled = prefs.getBool(_keyHapticEnabled) ?? true;
+    } catch (e) {
+      debugPrint('HapticManager.init: failed to load prefs: $e');
+    }
+  }
+
+  Future<void> _savePrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_keyHapticEnabled, _enabled);
+    } catch (e) {
+      debugPrint('HapticManager._savePrefs: $e');
+    }
+  }
 
   /// Check if device supports vibration
   Future<bool> get hasVibrator async {

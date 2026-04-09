@@ -1,22 +1,26 @@
 import 'package:equatable/equatable.dart';
 import 'player.dart';
 import 'word_card.dart';
+import '../engine/ai/ai_player.dart';
 
 enum GamePhase { setup, playing, roundEnd, gameEnd }
-
-enum TurnAction { placeCard, drawCard, playSpecial, submit }
 
 class GameConfig {
   final int playerCount;
   final int totalRounds;
   final int initialHandSize;
   final int turnTimerSeconds;
+  final AIDifficulty difficulty;
+  /// Minimum number of cards in the sentence zone to allow submission.
+  final int minSentenceLength;
 
   const GameConfig({
     this.playerCount = 2,
     this.totalRounds = 5,
     this.initialHandSize = 7,
     this.turnTimerSeconds = 30,
+    this.difficulty = AIDifficulty.medium,
+    this.minSentenceLength = 5,
   });
 }
 
@@ -28,6 +32,9 @@ class GameState extends Equatable {
   final int currentRound;
   final int totalRounds;
   final GameConfig config;
+  /// Seconds remaining on the current human turn. -1 means timer is inactive
+  /// (e.g. AI turn or game not started).
+  final int turnTimeRemaining;
 
   const GameState({
     this.phase = GamePhase.setup,
@@ -37,9 +44,15 @@ class GameState extends Equatable {
     this.currentRound = 1,
     this.totalRounds = 5,
     this.config = const GameConfig(),
+    this.turnTimeRemaining = -1,
   });
 
-  Player get currentPlayer => players[currentPlayerIndex];
+  Player get currentPlayer {
+    if (players.isEmpty || currentPlayerIndex >= players.length) {
+      return const Player(id: '', name: '');
+    }
+    return players[currentPlayerIndex];
+  }
   bool get isGameOver => phase == GamePhase.gameEnd;
   bool get isRoundOver => phase == GamePhase.roundEnd;
 
@@ -55,6 +68,7 @@ class GameState extends Equatable {
     int? currentRound,
     int? totalRounds,
     GameConfig? config,
+    int? turnTimeRemaining,
   }) {
     return GameState(
       phase: phase ?? this.phase,
@@ -64,6 +78,7 @@ class GameState extends Equatable {
       currentRound: currentRound ?? this.currentRound,
       totalRounds: totalRounds ?? this.totalRounds,
       config: config ?? this.config,
+      turnTimeRemaining: turnTimeRemaining ?? this.turnTimeRemaining,
     );
   }
 
@@ -75,5 +90,7 @@ class GameState extends Equatable {
         currentPlayerIndex,
         currentRound,
         totalRounds,
+        config,
+        turnTimeRemaining,
       ];
 }

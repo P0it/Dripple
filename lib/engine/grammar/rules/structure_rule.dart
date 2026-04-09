@@ -11,12 +11,14 @@ class StructureRule extends GrammarRule {
     final pattern = _toStructurePattern(sentence);
 
     if (!SentenceTemplates.isValidPattern(pattern)) {
+      // Show pattern without wildcards for user-facing message
+      final display = pattern.join(' ');
       errors.add(ValidationError(
         code: 'invalid_structure',
-        message: 'Invalid sentence structure: ${pattern.join(" ")}',
+        message: 'Invalid sentence structure: $display',
         localizedMessages: {
-          'ko': '잘못된 문장 구조입니다: ${pattern.join(" ")}',
-          'ja': '無効な文構造です: ${pattern.join(" ")}',
+          'ko': '잘못된 문장 구조입니다: $display',
+          'ja': '無効な文構造です: $display',
         },
       ));
     }
@@ -24,11 +26,17 @@ class StructureRule extends GrammarRule {
     return errors;
   }
 
-  /// Convert a sentence to its structural pattern
+  /// Convert a sentence to its structural pattern.
+  /// Joker cards produce a '*' wildcard token that can match any position
+  /// in a template during pattern matching.
   List<String> _toStructurePattern(List<WordCard> sentence) {
     final pattern = <String>[];
 
     for (final card in sentence) {
+      if (card.type == CardType.joker) {
+        pattern.add('*');
+        continue;
+      }
       switch (card.pos) {
         case PartOfSpeech.pronoun:
           pattern.add('S'); // Subject

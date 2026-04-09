@@ -57,6 +57,8 @@ class EmoteEvent {
 /// Manages emote state with cooldown
 class EmoteNotifier extends StateNotifier<EmoteState> {
   static const cooldownDuration = Duration(seconds: 3);
+  Timer? _cooldownTimer;
+  Timer? _displayTimer;
 
   EmoteNotifier() : super(const EmoteState());
 
@@ -72,7 +74,8 @@ class EmoteNotifier extends StateNotifier<EmoteState> {
     );
 
     // Auto-reset after cooldown
-    Future.delayed(cooldownDuration, () {
+    _cooldownTimer?.cancel();
+    _cooldownTimer = Timer(cooldownDuration, () {
       if (mounted) {
         state = const EmoteState();
       }
@@ -86,11 +89,19 @@ class EmoteNotifier extends StateNotifier<EmoteState> {
     state = EmoteState(lastEmote: event);
 
     // Clear after display duration
-    Future.delayed(const Duration(seconds: 2), () {
+    _displayTimer?.cancel();
+    _displayTimer = Timer(const Duration(seconds: 2), () {
       if (mounted) {
         state = const EmoteState();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _cooldownTimer?.cancel();
+    _displayTimer?.cancel();
+    super.dispose();
   }
 }
 

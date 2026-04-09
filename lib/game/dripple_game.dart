@@ -83,13 +83,17 @@ class DrippleGame extends FlameGame {
         comp.position = targetPos;
         updatedComponents.add(comp);
       } else {
-        // New card — create component
-        final cardIndex = i;
+        // New card — create component. Use card ID to resolve index at drag time
+        // to avoid stale index after hand reorder.
+        final cardId = card.id;
         final comp = CardComponent(
           card: card,
           position: targetPos,
           onDragToSentenceZone: withDrag
-              ? (_) => onCardPlaced?.call(cardIndex)
+              ? (_) {
+                  final idx = _hand.indexWhere((c) => c.id == cardId);
+                  if (idx >= 0) onCardPlaced?.call(idx);
+                }
               : null,
         );
         updatedComponents.add(comp);

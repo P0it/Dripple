@@ -8,7 +8,6 @@ class Player extends Equatable {
   final List<WordCard> hand;
   final List<WordCard> sentenceZone;
   final int score;
-  final int comboCount;
 
   const Player({
     required this.id,
@@ -17,14 +16,12 @@ class Player extends Equatable {
     this.hand = const [],
     this.sentenceZone = const [],
     this.score = 0,
-    this.comboCount = 0,
   });
 
   Player copyWith({
     List<WordCard>? hand,
     List<WordCard>? sentenceZone,
     int? score,
-    int? comboCount,
   }) {
     return Player(
       id: id,
@@ -33,10 +30,9 @@ class Player extends Equatable {
       hand: hand ?? this.hand,
       sentenceZone: sentenceZone ?? this.sentenceZone,
       score: score ?? this.score,
-      comboCount: comboCount ?? this.comboCount,
     );
   }
 
   @override
-  List<Object?> get props => [id, name, isAI, hand, sentenceZone, score, comboCount];
+  List<Object?> get props => [id, name, isAI, hand, sentenceZone, score];
 }

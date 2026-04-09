@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../core/theme/app_theme.dart';
+import '../engine/ai/ai_player.dart';
 
 class ModeSelectionScreen extends StatelessWidget {
   const ModeSelectionScreen({super.key});
@@ -30,7 +31,7 @@ class ModeSelectionScreen extends StatelessWidget {
                   title: l10n.aiBattle,
                   subtitle: l10n.aiBattleDesc,
                   enabled: true,
-                  onTap: () => _showPlayerCountDialog(context, l10n),
+                  onTap: () => _showDifficultyDialog(context, l10n),
                 ),
                 const SizedBox(height: 16),
                 _ModeCard(
@@ -56,7 +57,55 @@ class ModeSelectionScreen extends StatelessWidget {
     );
   }
 
-  void _showPlayerCountDialog(BuildContext context, AppLocalizations l10n) {
+  /// Step 1: pick a difficulty level.
+  void _showDifficultyDialog(BuildContext context, AppLocalizations l10n) {
+    showDialog<AIDifficulty>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('AI Difficulty'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _DifficultyTile(
+              difficulty: AIDifficulty.easy,
+              label: 'Easy',
+              description: 'Relaxed – great for beginners',
+              icon: Icons.sentiment_satisfied_alt,
+              color: Colors.green,
+              onTap: () => Navigator.of(ctx).pop(AIDifficulty.easy),
+            ),
+            _DifficultyTile(
+              difficulty: AIDifficulty.medium,
+              label: 'Medium',
+              description: 'Balanced – the default challenge',
+              icon: Icons.sentiment_neutral,
+              color: Colors.orange,
+              onTap: () => Navigator.of(ctx).pop(AIDifficulty.medium),
+            ),
+            _DifficultyTile(
+              difficulty: AIDifficulty.hard,
+              label: 'Hard',
+              description: 'Ruthless – for experienced players',
+              icon: Icons.sentiment_very_dissatisfied,
+              color: Colors.red,
+              onTap: () => Navigator.of(ctx).pop(AIDifficulty.hard),
+            ),
+          ],
+        ),
+      ),
+    ).then((difficulty) {
+      if (difficulty != null && context.mounted) {
+        _showPlayerCountDialog(context, l10n, difficulty);
+      }
+    });
+  }
+
+  /// Step 2: pick number of players, then navigate.
+  void _showPlayerCountDialog(
+    BuildContext context,
+    AppLocalizations l10n,
+    AIDifficulty difficulty,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -70,7 +119,9 @@ class ModeSelectionScreen extends StatelessWidget {
                 title: Text(l10n.nPlayers(count)),
                 onTap: () {
                   Navigator.of(ctx).pop();
-                  context.push('/game?players=$count');
+                  context.push(
+                    '/game?players=$count&difficulty=${difficulty.name}',
+                  );
                 },
               ),
           ],
@@ -79,6 +130,42 @@ class ModeSelectionScreen extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Difficulty tile used inside the difficulty dialog
+// ---------------------------------------------------------------------------
+
+class _DifficultyTile extends StatelessWidget {
+  final AIDifficulty difficulty;
+  final String label;
+  final String description;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _DifficultyTile({
+    required this.difficulty,
+    required this.label,
+    required this.description,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(label, style: TextStyle(fontWeight: FontWeight.bold, color: color)),
+      subtitle: Text(description, style: const TextStyle(fontSize: 12)),
+      onTap: onTap,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Mode card widget (unchanged from original)
+// ---------------------------------------------------------------------------
 
 class _ModeCard extends StatelessWidget {
   final IconData icon;

@@ -13,7 +13,7 @@ class AppColors {
   static const cardSkip = Color(0xFFFBBF24);
   static const cardSteal = Color(0xFFEF4444);
   static const cardUndo = Color(0xFF3B82F6);
-  static const cardWild = Color(0xFF8B5CF6);
+  static const cardJoker = Color(0xFF8B5CF6);
 
   static const correctGreen = Color(0xFF22C55E);
   static const incorrectRed = Color(0xFFEF4444);

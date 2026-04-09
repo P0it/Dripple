@@ -62,7 +62,7 @@ class CardComponent extends PositionComponent with DragCallbacks {
         return const ui.Color(0xFFEF4444);
       case CardType.undo:
         return const ui.Color(0xFF3B82F6);
-      case CardType.wild:
+      case CardType.joker:
         return const ui.Color(0xFF8B5CF6);
       case CardType.word:
         return material.Colors.white;
@@ -116,7 +116,7 @@ class CardComponent extends PositionComponent with DragCallbacks {
         return '🫳';
       case CardType.undo:
         return '↩';
-      case CardType.wild:
+      case CardType.joker:
         return '🌟';
       default:
         return '';

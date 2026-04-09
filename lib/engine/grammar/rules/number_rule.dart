@@ -11,6 +11,8 @@ class NumberRule extends GrammarRule {
 
     for (int i = 0; i < sentence.length - 1; i++) {
       final card = sentence[i];
+      // WILD cards have no pos/grammar metadata — skip them entirely.
+      if (card.type == CardType.joker) continue;
       if (!card.isArticle) continue;
 
       // Find the noun this article refers to
@@ -45,9 +47,11 @@ class NumberRule extends GrammarRule {
     return errors;
   }
 
-  /// Find the first noun after the article (may have adjectives in between)
+  /// Find the first noun after the article (may have adjectives in between, skips WILD cards)
   WordCard? _findNoun(List<WordCard> sentence, int startIndex) {
     for (int i = startIndex; i < sentence.length; i++) {
+      // WILD cards have no pos — treat as transparent and keep scanning.
+      if (sentence[i].type == CardType.joker) continue;
       if (sentence[i].isNoun) return sentence[i];
       // Only skip adjectives and adverbs between article and noun
       if (!sentence[i].isAdjective && sentence[i].pos != PartOfSpeech.adverb) {

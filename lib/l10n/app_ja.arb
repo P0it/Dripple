@@ -43,5 +43,23 @@
   "errorAdjOrder": "形容詞の順序が正しくありません",
   "errorInvalidStructure": "無効な文構造です",
   "errorEmptySentence": "文を入力してください",
-  "errorTooShort": "文には最低2つの単語が必要です"
+  "errorTooShort": "文には最低2つの単語が必要です",
+
+  "audio": "オーディオ",
+  "soundEffects": "効果音",
+  "soundEffectsDesc": "カード音、判定音など",
+  "sfxVolume": "効果音の音量",
+  "backgroundMusic": "BGM",
+  "backgroundMusicDesc": "メニューテーマ、ゲーム音楽など",
+  "musicVolume": "音楽の音量",
+  "haptics": "ハプティクス",
+  "vibration": "バイブレーション",
+  "vibrationDesc": "ゲームイベント時の振動フィードバック",
+  "ok": "OK",
+  "searchingPlayers": "プレイヤーを検索中...",
+  "roomCode": "ルームコード",
+  "you": "あなた",
+  "waiting": "待機中...",
+  "waitingForPlayers": "{count}人のプレイヤーを待っています...",
+  "shareRoomCode": "ルームコードを友達に共有してください"
 }

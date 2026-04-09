@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-enum CardType { word, skip, steal, undo, wild }
+enum CardType { word, skip, steal, undo, joker }
 
 enum PartOfSpeech {
   noun,

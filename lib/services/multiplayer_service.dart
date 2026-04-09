@@ -1,6 +1,8 @@
 import 'dart:async';
 import '../character/emote_system.dart';
-import '../models/game_state.dart' show TurnAction;
+
+/// Turn action types for multiplayer sync
+enum TurnAction { placeCard, drawCard, playSpecial, submit }
 
 /// Game room state synced between players
 class GameRoom {

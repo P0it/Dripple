@@ -17,8 +17,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final sound = ref.read(soundManagerProvider);
-    final haptic = ref.read(hapticManagerProvider);
+    final sound = ref.watch(soundManagerProvider);
+    final haptic = ref.watch(hapticManagerProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -30,10 +30,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           const SizedBox(height: 16),
           // Audio section
-          _SectionHeader(title: 'Audio'),
+          _SectionHeader(title: l10n.audio),
           SwitchListTile(
-            title: const Text('Sound Effects'),
-            subtitle: const Text('Card sounds, judgment sounds, etc.'),
+            title: Text(l10n.soundEffects),
+            subtitle: Text(l10n.soundEffectsDesc),
             value: sound.sfxEnabled,
             activeColor: AppColors.primary,
             secondary: Icon(
@@ -45,7 +45,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
           ListTile(
-            title: const Text('SFX Volume'),
+            title: Text(l10n.sfxVolume),
             leading: const Icon(Icons.graphic_eq, color: AppColors.primary),
             subtitle: Slider(
               value: sound.sfxVolume,
@@ -59,8 +59,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const Divider(),
           SwitchListTile(
-            title: const Text('Background Music'),
-            subtitle: const Text('Menu theme, gameplay music, etc.'),
+            title: Text(l10n.backgroundMusic),
+            subtitle: Text(l10n.backgroundMusicDesc),
             value: sound.musicEnabled,
             activeColor: AppColors.primary,
             secondary: Icon(
@@ -72,7 +72,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
           ListTile(
-            title: const Text('Music Volume'),
+            title: Text(l10n.musicVolume),
             leading: const Icon(Icons.queue_music, color: AppColors.primary),
             subtitle: Slider(
               value: sound.musicVolume,
@@ -87,10 +87,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const SizedBox(height: 8),
           // Haptics section
-          _SectionHeader(title: 'Haptics'),
+          _SectionHeader(title: l10n.haptics),
           SwitchListTile(
-            title: const Text('Vibration'),
-            subtitle: const Text('Haptic feedback on game events'),
+            title: Text(l10n.vibration),
+            subtitle: Text(l10n.vibrationDesc),
             value: haptic.enabled,
             activeColor: AppColors.primary,
             secondary: Icon(

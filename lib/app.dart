@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'core/theme/app_theme.dart';
+import 'engine/ai/ai_player.dart';
 import 'screens/home_screen.dart';
 import 'screens/mode_selection_screen.dart';
 import 'screens/game_screen.dart';
@@ -39,7 +40,16 @@ final _router = GoRouter(
       pageBuilder: (context, state) {
         final playerCount =
             int.tryParse(state.uri.queryParameters['players'] ?? '2') ?? 2;
-        return _fadeTransition(GameScreen(playerCount: playerCount), state);
+        final difficultyName =
+            state.uri.queryParameters['difficulty'] ?? 'medium';
+        final difficulty = AIDifficulty.values.firstWhere(
+          (d) => d.name == difficultyName,
+          orElse: () => AIDifficulty.medium,
+        );
+        return _fadeTransition(
+          GameScreen(playerCount: playerCount, difficulty: difficulty),
+          state,
+        );
       },
     ),
     GoRoute(

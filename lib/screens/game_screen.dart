@@ -6,29 +6,56 @@ import 'package:go_router/go_router.dart';
 import '../character/emote_bar.dart';
 import '../core/game_feedback.dart';
 import '../core/theme/app_theme.dart';
+import '../engine/ai/ai_player.dart';
 import '../game/dripple_game.dart';
 import '../models/game_state.dart';
+import '../models/player.dart';
 import '../providers/game_provider.dart';
 import 'judgment_screen.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   final int playerCount;
+  final AIDifficulty difficulty;
 
-  const GameScreen({super.key, required this.playerCount});
+  const GameScreen({
+    super.key,
+    required this.playerCount,
+    this.difficulty = AIDifficulty.medium,
+  });
 
   @override
   ConsumerState<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends ConsumerState<GameScreen> {
+class _GameScreenState extends ConsumerState<GameScreen>
+    with SingleTickerProviderStateMixin {
   late DrippleGame _game;
   bool _initialized = false;
+  bool _isDrawing = false;
+  late AnimationController _overlayFadeController;
+  late Animation<double> _overlayFadeAnimation;
+  ProviderSubscription? _gameSubscription;
 
   @override
   void initState() {
     super.initState();
     _game = DrippleGame();
     _game.onCardPlaced = _onCardPlaced;
+    _overlayFadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _overlayFadeAnimation = CurvedAnimation(
+      parent: _overlayFadeController,
+      curve: Curves.easeIn,
+    );
+  }
+
+  @override
+  void dispose() {
+    _gameSubscription?.close();
+    _overlayFadeController.dispose();
+    super.dispose();
   }
 
   @override
@@ -36,9 +63,33 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     super.didChangeDependencies();
     if (!_initialized) {
       _initialized = true;
+      // Listen to game state changes and sync to Flame after frame
+      _gameSubscription = ref.listenManual(gameProvider, (prev, next) {
+        if (!mounted) return;
+        if (next.players.isNotEmpty && next.phase == GamePhase.playing) {
+          final humanPlayer = next.players[0];
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            _game.updateHand(humanPlayer.hand);
+            _game.updateSentenceZone(humanPlayer.sentenceZone);
+          });
+        }
+        // Trigger fade-in animation whenever an overlay phase is entered
+        const overlayPhases = {GamePhase.roundEnd, GamePhase.gameEnd};
+        final enteringOverlay = overlayPhases.contains(next.phase) &&
+            !overlayPhases.contains(prev?.phase);
+        if (enteringOverlay) {
+          _overlayFadeController.forward(from: 0);
+        } else if (!overlayPhases.contains(next.phase)) {
+          _overlayFadeController.reverse();
+        }
+      });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(gameProvider.notifier).startGame(
-              GameConfig(playerCount: widget.playerCount),
+              GameConfig(
+                playerCount: widget.playerCount,
+                difficulty: widget.difficulty,
+              ),
             );
         ref.read(gameFeedbackProvider).playGameMusic();
       });
@@ -61,9 +112,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
     // Trigger feedback based on result
     if (result.isCorrect) {
-      await feedback.onCorrectAnswer(
-        comboCount: ref.read(gameProvider).players[0].comboCount,
-      );
+      // Use scoreEarned from result to avoid post-await stale state
+      await feedback.onCorrectAnswer();
     } else {
       await feedback.onIncorrectAnswer();
     }
@@ -103,14 +153,20 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       } else {
         await ref.read(gameFeedbackProvider).onGameLose();
       }
-      if (mounted) context.go('/result');
+      // Navigation is handled by the gameEnd overlay; nothing more to do here.
     }
   }
 
-  void _onDraw() {
-    ref.read(gameProvider.notifier).drawCard();
-    ref.read(gameFeedbackProvider).onCardDraw();
-    _processAITurns(); // Safe — guarded by isProcessingAI
+  Future<void> _onDraw() async {
+    if (_isDrawing) return;
+    _isDrawing = true;
+    try {
+      ref.read(gameProvider.notifier).drawCard();
+      ref.read(gameFeedbackProvider).onCardDraw();
+      await _processAITurns();
+    } finally {
+      _isDrawing = false;
+    }
   }
 
   void _onUndo() {
@@ -122,55 +178,289 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   Widget build(BuildContext context) {
     final gameState = ref.watch(gameProvider);
 
-    // Sync game state to Flame
-    if (gameState.players.isNotEmpty && gameState.phase == GamePhase.playing) {
-      final humanPlayer = gameState.players[0];
-      _game.updateHand(humanPlayer.hand);
-      _game.updateSentenceZone(humanPlayer.sentenceZone);
-    }
-
     return Scaffold(
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // Scoreboard
-            _ScoreboardBar(gameState: gameState),
-            // Opponents area
-            _OpponentsBar(gameState: gameState),
-            // Sentence zone label
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text(
-                AppLocalizations.of(context)!.sentenceZone,
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+            // ---- Main game UI ----
+            Column(
+              children: [
+                // Scoreboard
+                _ScoreboardBar(gameState: gameState),
+                // Opponents area
+                _OpponentsBar(gameState: gameState),
+                // Sentence zone label
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(
+                    AppLocalizations.of(context)!.sentenceZone,
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                // Flame game area
+                Expanded(
+                  child: GameWidget(game: _game),
+                ),
+                // Emote bar
+                EmoteBar(
+                  playerId: gameState.players.isNotEmpty
+                      ? gameState.players[0].id
+                      : 'human_0',
+                ),
+                // Action bar
+                _ActionBar(
+                  onSubmit: _onSubmit,
+                  onDraw: _onDraw,
+                  onUndo: _onUndo,
+                  canSubmit: gameState.phase == GamePhase.playing &&
+                      gameState.players.isNotEmpty &&
+                      !gameState.currentPlayer.isAI &&
+                      gameState.currentPlayer.sentenceZone.length >= 2,
+                  deckCount: gameState.deck.length,
+                ),
+              ],
+            ),
+            // ---- Round-end overlay ----
+            if (gameState.phase == GamePhase.roundEnd)
+              _RoundEndOverlay(
+                gameState: gameState,
+                fadeAnimation: _overlayFadeAnimation,
+                onContinue: () {
+                  ref.read(gameProvider.notifier).continueToNextRound();
+                },
+              ),
+            // ---- Game-over overlay ----
+            if (gameState.phase == GamePhase.gameEnd)
+              _GameEndOverlay(
+                gameState: gameState,
+                fadeAnimation: _overlayFadeAnimation,
+                onDismiss: () {
+                  if (mounted) context.go('/result');
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Round-end overlay
+// ---------------------------------------------------------------------------
+
+class _RoundEndOverlay extends StatelessWidget {
+  final GameState gameState;
+  final Animation<double> fadeAnimation;
+  final VoidCallback onContinue;
+
+  const _RoundEndOverlay({
+    required this.gameState,
+    required this.fadeAnimation,
+    required this.onContinue,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: fadeAnimation,
+      child: Container(
+        color: Colors.black.withAlpha(179), // ~70% opacity
+        child: Center(
+          child: Card(
+            margin: const EdgeInsets.symmetric(horizontal: 32),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Round ${gameState.currentRound} Complete!',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Score list sorted by rank
+                  ...gameState.ranking.map((p) => _ScoreRow(player: p)),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: onContinue,
+                      child: const Text('Next Round'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Game-end overlay
+// ---------------------------------------------------------------------------
+
+class _GameEndOverlay extends StatefulWidget {
+  final GameState gameState;
+  final Animation<double> fadeAnimation;
+  final VoidCallback onDismiss;
+
+  const _GameEndOverlay({
+    required this.gameState,
+    required this.fadeAnimation,
+    required this.onDismiss,
+  });
+
+  @override
+  State<_GameEndOverlay> createState() => _GameEndOverlayState();
+}
+
+class _GameEndOverlayState extends State<_GameEndOverlay> {
+  bool _dismissed = false;
+
+  void _dismiss() {
+    if (_dismissed) return;
+    _dismissed = true;
+    widget.onDismiss();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto-navigate after 1.5 s if the player does not tap first.
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) _dismiss();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final winner = widget.gameState.ranking.first;
+    final isHumanWinner = winner.id == 'human_0';
+
+    return GestureDetector(
+      onTap: _dismiss,
+      child: FadeTransition(
+        opacity: widget.fadeAnimation,
+        child: Container(
+          color: Colors.black.withAlpha(204), // ~80% opacity
+          child: Center(
+            child: Card(
+              margin: const EdgeInsets.symmetric(horizontal: 32),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Game Over!',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: isHumanWinner
+                            ? AppColors.correctGreen
+                            : AppColors.incorrectRed,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      isHumanWinner ? 'You win!' : '${winner.name} wins!',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Final scores sorted by rank
+                    ...widget.gameState.ranking.map((p) => _ScoreRow(player: p)),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Tap anywhere to continue',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            // Flame game area
-            Expanded(
-              child: GameWidget(game: _game),
-            ),
-            // Emote bar
-            EmoteBar(
-              playerId: gameState.players.isNotEmpty
-                  ? gameState.players[0].id
-                  : 'human_0',
-            ),
-            // Action bar
-            _ActionBar(
-              onSubmit: _onSubmit,
-              onDraw: _onDraw,
-              onUndo: _onUndo,
-              canSubmit: gameState.phase == GamePhase.playing &&
-                  !gameState.currentPlayer.isAI &&
-                  gameState.currentPlayer.sentenceZone.length >= 2,
-              deckCount: gameState.deck.length,
-            ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Shared score row used by both overlays
+// ---------------------------------------------------------------------------
+
+class _ScoreRow extends StatelessWidget {
+  final Player player;
+
+  const _ScoreRow({required this.player});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 14,
+                backgroundColor:
+                    player.isAI ? AppColors.textSecondary : AppColors.primary,
+                child: Text(
+                  player.name[0],
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                player.name,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            '${player.score} pts',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -214,6 +504,16 @@ class _ScoreboardBar extends StatelessWidget {
             ),
           ),
           const Spacer(),
+          // Turn timer - only shown during a human turn
+          if (gameState.turnTimeRemaining >= 0 &&
+              gameState.phase == GamePhase.playing)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _TurnTimerWidget(
+                secondsRemaining: gameState.turnTimeRemaining,
+                totalSeconds: gameState.config.turnTimerSeconds,
+              ),
+            ),
           // Player scores
           ...gameState.players.map((p) => Padding(
                 padding: const EdgeInsets.only(left: 12),
@@ -246,6 +546,96 @@ class _ScoreboardBar extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Circular countdown arc displayed in the scoreboard bar during human turns.
+class _TurnTimerWidget extends StatelessWidget {
+  final int secondsRemaining;
+  final int totalSeconds;
+
+  const _TurnTimerWidget({
+    required this.secondsRemaining,
+    required this.totalSeconds,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isUrgent = secondsRemaining <= 5;
+    final arcColor = isUrgent ? AppColors.incorrectRed : Colors.white;
+    final fraction = totalSeconds > 0
+        ? (secondsRemaining / totalSeconds).clamp(0.0, 1.0)
+        : 0.0;
+
+    return SizedBox(
+      width: 32,
+      height: 32,
+      child: CustomPaint(
+        painter: _CountdownArcPainter(
+          fraction: fraction,
+          arcColor: arcColor,
+          trackColor: Colors.white24,
+        ),
+        child: Center(
+          child: Text(
+            '$secondsRemaining',
+            style: TextStyle(
+              color: arcColor,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CountdownArcPainter extends CustomPainter {
+  final double fraction;
+  final Color arcColor;
+  final Color trackColor;
+
+  const _CountdownArcPainter({
+    required this.fraction,
+    required this.arcColor,
+    required this.trackColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.shortestSide / 2) - 2;
+    const strokeWidth = 3.0;
+    const startAngle = -1.5707963267948966; // -pi/2 (12 o'clock)
+
+    final trackPaint = Paint()
+      ..color = trackColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    final arcPaint = Paint()
+      ..color = arcColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    // Background track (full circle)
+    canvas.drawArc(rect, 0, 6.283185307179586, false, trackPaint);
+
+    // Remaining time arc (sweeps clockwise from 12 o'clock)
+    if (fraction > 0) {
+      canvas.drawArc(rect, startAngle, fraction * 6.283185307179586, false, arcPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_CountdownArcPainter old) =>
+      old.fraction != fraction ||
+      old.arcColor != arcColor ||
+      old.trackColor != trackColor;
 }
 
 class _OpponentsBar extends StatelessWidget {
@@ -388,6 +778,7 @@ class _ActionButton extends StatelessWidget {
       children: [
         IconButton(
           onPressed: onPressed,
+          tooltip: label,
           icon: Icon(icon, color: color),
           style: IconButton.styleFrom(
             backgroundColor: color.withAlpha(26),

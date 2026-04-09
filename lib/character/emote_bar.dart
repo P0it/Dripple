@@ -50,12 +50,16 @@ class _EmoteButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: isOnCooldown ? null : onPressed,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 200),
-        opacity: isOnCooldown ? 0.4 : 1.0,
-        child: Container(
+    return Semantics(
+      label: emote.name,
+      button: true,
+      enabled: !isOnCooldown,
+      child: GestureDetector(
+        onTap: isOnCooldown ? null : onPressed,
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
+          opacity: isOnCooldown ? 0.4 : 1.0,
+          child: Container(
           width: 44,
           height: 44,
           decoration: BoxDecoration(
@@ -77,7 +81,8 @@ class _EmoteButton extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }
 

@@ -68,11 +68,13 @@ class GrammarEngine {
       ]);
     }
 
-    // Filter out special cards (WILD is handled separately)
+    // Filter out special cards, but keep joker cards (they act as any word)
     final wordCards =
-        sentence.where((c) => c.type == CardType.word).toList();
+        sentence.where((c) => c.type == CardType.word || c.type == CardType.joker).toList();
+    // Need at least 2 cards total and at least 1 real word (joker alone can't form a sentence)
+    final realWordCount = wordCards.where((c) => c.type == CardType.word).length;
 
-    if (wordCards.length < 2) {
+    if (wordCards.length < 2 || realWordCount < 1) {
       return ValidationResult.invalid([
         const ValidationError(
           code: 'too_short',

@@ -25,6 +25,7 @@ class SubjectVerbAgreementRule extends GrammarRule {
     final verb = _findVerb(sentence);
 
     if (subject == null || verb == null) return errors;
+    if (subject.person == null || subject.number == null) return errors;
 
     final subjectKey = '${subject.person}_${subject.number}';
 
@@ -76,13 +77,16 @@ class SubjectVerbAgreementRule extends GrammarRule {
   bool _isBeVerb(String word) => word == 'is' || word == 'am' || word == 'are';
 
   WordCard? _findSubject(List<WordCard> sentence) {
-    // Subject is typically the first pronoun or [article + noun]
+    // Subject is typically the first pronoun or [article + noun].
+    // WILD cards have no pos/grammar metadata — skip them.
     for (int i = 0; i < sentence.length; i++) {
       final card = sentence[i];
+      if (card.type == CardType.joker) continue;
       if (card.isPronoun) return card;
       if (card.isArticle) {
         // Look for the noun after this article
         for (int j = i + 1; j < sentence.length; j++) {
+          if (sentence[j].type == CardType.joker) continue;
           if (sentence[j].isNoun) return sentence[j];
           if (!sentence[j].isAdjective && sentence[j].pos != PartOfSpeech.adverb) break;
         }
@@ -94,6 +98,8 @@ class SubjectVerbAgreementRule extends GrammarRule {
 
   WordCard? _findVerb(List<WordCard> sentence) {
     for (final card in sentence) {
+      // WILD cards have no pos/grammar metadata — skip them.
+      if (card.type == CardType.joker) continue;
       if (card.isVerb) return card;
     }
     return null;

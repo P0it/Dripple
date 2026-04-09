@@ -42,7 +42,7 @@ class LobbyScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         Text(
-                          isOnline ? 'Searching for players...' : 'Room Code',
+                          isOnline ? l10n.searchingPlayers : l10n.roomCode,
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -99,7 +99,7 @@ class LobbyScreen extends StatelessWidget {
                             ),
                           ),
                           title: Text(
-                            isJoined ? 'You' : 'Waiting...',
+                            isJoined ? l10n.you : l10n.waiting,
                             style: TextStyle(
                               fontWeight: isJoined
                                   ? FontWeight.bold
@@ -132,14 +132,14 @@ class LobbyScreen extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline, color: Colors.white70),
+                      Icon(Icons.info_outline, color: Colors.white.withAlpha(220)),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           isOnline
-                              ? 'Waiting for $playerCount players to join...'
-                              : 'Share the room code with your friends',
-                          style: const TextStyle(color: Colors.white70),
+                              ? l10n.waitingForPlayers(playerCount)
+                              : l10n.shareRoomCode,
+                          style: TextStyle(color: Colors.white.withAlpha(220)),
                         ),
                       ),
                     ],

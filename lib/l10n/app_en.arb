@@ -88,5 +88,28 @@
   "errorAdjOrder": "Incorrect adjective order",
   "errorInvalidStructure": "Invalid sentence structure",
   "errorEmptySentence": "Sentence cannot be empty",
-  "errorTooShort": "Sentence must have at least 2 words"
+  "errorTooShort": "Sentence must have at least 2 words",
+
+  "audio": "Audio",
+  "soundEffects": "Sound Effects",
+  "soundEffectsDesc": "Card sounds, judgment sounds, etc.",
+  "sfxVolume": "SFX Volume",
+  "backgroundMusic": "Background Music",
+  "backgroundMusicDesc": "Menu theme, gameplay music, etc.",
+  "musicVolume": "Music Volume",
+  "haptics": "Haptics",
+  "vibration": "Vibration",
+  "vibrationDesc": "Haptic feedback on game events",
+  "ok": "OK",
+  "searchingPlayers": "Searching for players...",
+  "roomCode": "Room Code",
+  "you": "You",
+  "waiting": "Waiting...",
+  "waitingForPlayers": "Waiting for {count} players to join...",
+  "@waitingForPlayers": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "shareRoomCode": "Share the room code with your friends"
 }

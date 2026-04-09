@@ -36,12 +36,21 @@ class AdjectiveOrderRule extends GrammarRule {
     return errors;
   }
 
-  /// Find groups of consecutive adjectives in the sentence
+  /// Find groups of consecutive adjectives in the sentence.
+  /// WILD cards have no pos/grammar metadata and break adjacency like any non-adjective.
   List<List<WordCard>> _findAdjectiveGroups(List<WordCard> sentence) {
     final groups = <List<WordCard>>[];
     var currentGroup = <WordCard>[];
 
     for (final card in sentence) {
+      // WILD cards have no adjOrder — treat as a group boundary.
+      if (card.type == CardType.joker) {
+        if (currentGroup.length >= 2) {
+          groups.add(List.from(currentGroup));
+        }
+        currentGroup = [];
+        continue;
+      }
       if (card.isAdjective) {
         currentGroup.add(card);
       } else {

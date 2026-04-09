@@ -9,6 +9,8 @@ class ArticleRule extends GrammarRule {
 
     for (int i = 0; i < sentence.length - 1; i++) {
       final card = sentence[i];
+      // WILD cards have no pos/grammar metadata — skip them entirely.
+      if (card.type == CardType.joker) continue;
       if (!card.isArticle) continue;
 
       // Find the next noun or adjective (skip adverbs like "very")
@@ -39,10 +41,12 @@ class ArticleRule extends GrammarRule {
     return errors;
   }
 
-  /// Find the next noun or adjective after the article (skipping adverbs)
+  /// Find the next noun or adjective after the article (skipping adverbs and WILD cards)
   WordCard? _findNextRelevantWord(List<WordCard> sentence, int startIndex) {
     for (int i = startIndex; i < sentence.length; i++) {
       final card = sentence[i];
+      // WILD cards have no pos — treat as transparent and keep scanning.
+      if (card.type == CardType.joker) continue;
       if (card.isNoun || card.isAdjective) return card;
       if (card.pos != PartOfSpeech.adverb) break;
     }

@@ -3,6 +3,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../core/theme/app_theme.dart';
+import '../models/player.dart';
 import '../providers/game_provider.dart';
 
 class ResultScreen extends ConsumerWidget {
@@ -73,7 +74,7 @@ class ResultScreen extends ConsumerWidget {
 }
 
 class _Podium extends StatelessWidget {
-  final List ranking;
+  final List<Player> ranking;
 
   const _Podium({required this.ranking});
 
@@ -145,7 +146,7 @@ class _Podium extends StatelessWidget {
                       ],
                     ),
                     Text(
-                      AppLocalizations.of(context)!.combo(player.comboCount),
+                      '${player.score} pts',
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12,

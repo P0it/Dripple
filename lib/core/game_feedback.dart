@@ -89,12 +89,10 @@ class GameFeedback {
   }
 
   /// Correct sentence
-  Future<void> onCorrectAnswer({int comboCount = 0}) async {
+  Future<void> onCorrectAnswer() async {
     await Future.wait([
-      sound.onCorrectAnswer(comboCount: comboCount),
-      comboCount >= 2
-          ? haptic.onComboHit(comboCount)
-          : haptic.onCorrectAnswer(),
+      sound.onCorrectAnswer(),
+      haptic.onCorrectAnswer(),
     ]);
   }
 

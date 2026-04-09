@@ -54,7 +54,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Text(
                   l10n.wordCardBattle,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white70,
+                        color: Colors.white.withAlpha(220),
                       ),
                 ),
                 const Spacer(),
@@ -101,17 +101,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _navButton(IconData icon, String label, VoidCallback? onPressed) {
-    return Column(
-      children: [
-        IconButton(
-          onPressed: onPressed ?? () {},
-          icon: Icon(icon, color: Colors.white, size: 28),
-        ),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white70, fontSize: 12),
-        ),
-      ],
+    return Semantics(
+      label: label,
+      button: true,
+      enabled: onPressed != null,
+      child: Column(
+        children: [
+          Opacity(
+            opacity: onPressed != null ? 1.0 : 0.5,
+            child: IconButton(
+              onPressed: onPressed,
+              tooltip: label,
+              icon: Icon(icon, color: Colors.white, size: 28),
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(color: Colors.white.withAlpha(220), fontSize: 12),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -43,5 +43,23 @@
   "errorAdjOrder": "형용사 순서가 올바르지 않습니다",
   "errorInvalidStructure": "잘못된 문장 구조입니다",
   "errorEmptySentence": "문장을 입력해주세요",
-  "errorTooShort": "문장은 최소 2개의 단어가 필요합니다"
+  "errorTooShort": "문장은 최소 2개의 단어가 필요합니다",
+
+  "audio": "오디오",
+  "soundEffects": "효과음",
+  "soundEffectsDesc": "카드 소리, 판정 소리 등",
+  "sfxVolume": "효과음 볼륨",
+  "backgroundMusic": "배경 음악",
+  "backgroundMusicDesc": "메뉴 테마, 게임 음악 등",
+  "musicVolume": "음악 볼륨",
+  "haptics": "햅틱",
+  "vibration": "진동",
+  "vibrationDesc": "게임 이벤트 시 햅틱 피드백",
+  "ok": "확인",
+  "searchingPlayers": "플레이어 검색 중...",
+  "roomCode": "방 코드",
+  "you": "나",
+  "waiting": "대기 중...",
+  "waitingForPlayers": "{count}명의 플레이어를 기다리는 중...",
+  "shareRoomCode": "방 코드를 친구에게 공유하세요"
 }
