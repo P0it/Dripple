@@ -12,16 +12,47 @@ class CardComponent extends PositionComponent with DragCallbacks {
 
   bool isDragging = false;
   Vector2 _originalPosition = Vector2.zero();
+  bool _dragSuccess = false;
 
   static const double cardWidth = 80;
   static const double cardHeight = 110;
+
+  // Cached TextPainters — only created once, reused every frame
+  late final material.TextPainter _wordPainter;
+  late final material.TextPainter? _iconPainter;
 
   CardComponent({
     required this.card,
     this.onDragToSentenceZone,
     this.onTap,
     super.position,
-  }) : super(size: Vector2(cardWidth, cardHeight));
+  }) : super(size: Vector2(cardWidth, cardHeight)) {
+    // Pre-build text painters
+    _wordPainter = material.TextPainter(
+      text: material.TextSpan(
+        text: card.word,
+        style: material.TextStyle(
+          color: card.isSpecial ? material.Colors.white : material.Colors.black87,
+          fontSize: card.word.length > 6 ? 12 : 14,
+          fontWeight: material.FontWeight.bold,
+        ),
+      ),
+      textDirection: ui.TextDirection.ltr,
+      textAlign: ui.TextAlign.center,
+    )..layout(maxWidth: cardWidth - 8);
+
+    if (card.isSpecial) {
+      _iconPainter = material.TextPainter(
+        text: material.TextSpan(
+          text: _specialIcon(card.type),
+          style: const material.TextStyle(fontSize: 20),
+        ),
+        textDirection: ui.TextDirection.ltr,
+      )..layout();
+    } else {
+      _iconPainter = null;
+    }
+  }
 
   ui.Color get cardColor {
     switch (card.type) {
@@ -40,7 +71,6 @@ class CardComponent extends PositionComponent with DragCallbacks {
 
   @override
   void render(ui.Canvas canvas) {
-    // Card background
     final rrect = ui.RRect.fromRectAndRadius(
       size.toRect(),
       const ui.Radius.circular(8),
@@ -63,39 +93,18 @@ class CardComponent extends PositionComponent with DragCallbacks {
       ..strokeWidth = isDragging ? 3 : 1;
     canvas.drawRRect(rrect, borderPaint);
 
-    // Word text
-    final textPainter = material.TextPainter(
-      text: material.TextSpan(
-        text: card.word,
-        style: material.TextStyle(
-          color: card.isSpecial ? material.Colors.white : material.Colors.black87,
-          fontSize: card.word.length > 6 ? 12 : 14,
-          fontWeight: material.FontWeight.bold,
-        ),
-      ),
-      textDirection: ui.TextDirection.ltr,
-      textAlign: ui.TextAlign.center,
-    );
-    textPainter.layout(maxWidth: size.x - 8);
-    textPainter.paint(
+    // Word text (cached)
+    _wordPainter.paint(
       canvas,
       ui.Offset(
-        (size.x - textPainter.width) / 2,
-        (size.y - textPainter.height) / 2,
+        (size.x - _wordPainter.width) / 2,
+        (size.y - _wordPainter.height) / 2,
       ),
     );
 
-    // Special card icon indicator
-    if (card.isSpecial) {
-      final iconText = material.TextPainter(
-        text: material.TextSpan(
-          text: _specialIcon(card.type),
-          style: const material.TextStyle(fontSize: 20),
-        ),
-        textDirection: ui.TextDirection.ltr,
-      );
-      iconText.layout();
-      iconText.paint(canvas, ui.Offset((size.x - iconText.width) / 2, 8));
+    // Special card icon (cached)
+    if (_iconPainter case final painter?) {
+      painter.paint(canvas, ui.Offset((size.x - painter.width) / 2, 8));
     }
   }
 
@@ -118,6 +127,7 @@ class CardComponent extends PositionComponent with DragCallbacks {
   void onDragStart(DragStartEvent event) {
     super.onDragStart(event);
     isDragging = true;
+    _dragSuccess = false;
     _originalPosition = position.clone();
     priority = 100;
   }
@@ -133,15 +143,20 @@ class CardComponent extends PositionComponent with DragCallbacks {
     isDragging = false;
     priority = 0;
 
-    // Check if dragged upward enough (to sentence zone area)
-    if (_originalPosition.y - position.y > 80) {
+    // Use relative threshold (20% of screen height approximated by original Y)
+    final threshold = _originalPosition.y * 0.15;
+    if (_originalPosition.y - position.y > threshold) {
+      _dragSuccess = true;
       onDragToSentenceZone?.call(this);
     }
 
-    // Animate back to original position
-    add(MoveEffect.to(
-      _originalPosition,
-      EffectController(duration: 0.2, curve: material.Curves.easeOut),
-    ));
+    // Only animate back if the drop was NOT successful
+    // (successful drops will be removed by parent rebuild)
+    if (!_dragSuccess) {
+      add(MoveEffect.to(
+        _originalPosition,
+        EffectController(duration: 0.2, curve: material.Curves.easeOut),
+      ));
+    }
   }
 }

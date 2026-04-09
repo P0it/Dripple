@@ -106,13 +106,16 @@ class SoundManager {
     }
   }
 
-  /// Play a sound effect with custom volume (for things like distant sounds)
+  /// Play a sound effect with custom volume (for things like distant sounds).
+  /// Reuses the pooled player and restores volume after playback.
   Future<void> playAt(SoundEffect effect, {double volume = 1.0}) async {
     if (!_sfxEnabled) return;
 
     try {
-      // Use a fresh player for custom volume to avoid conflicts
-      final player = AudioPlayer()..setReleaseMode(ReleaseMode.release);
+      final player = _sfxPlayers[effect] ??= AudioPlayer()
+        ..setReleaseMode(ReleaseMode.stop);
+      _sfxPlayers[effect] = player;
+
       await player.setVolume((_sfxVolume * volume).clamp(0.0, 1.0));
       await player.play(AssetSource('sounds/${effect.name}.mp3'));
     } catch (_) {}
@@ -149,13 +152,23 @@ class SoundManager {
     }
   }
 
-  /// Crossfade to a different music track (smooth transition)
+  /// Crossfade to a different music track (smooth transition).
+  /// Cancels any in-progress crossfade before starting a new one.
+  int _crossfadeGeneration = 0;
+
   Future<void> crossfadeTo(MusicTrack track,
       {Duration duration = const Duration(milliseconds: 800)}) async {
     if (!_musicEnabled || _currentTrack == track) return;
     _currentTrack = track;
 
+    // Cancel any in-progress crossfade by incrementing generation
+    final generation = ++_crossfadeGeneration;
+
     try {
+      // Stop and dispose any previous crossfade player
+      await _bgmCrossfadePlayer?.stop();
+      await _bgmCrossfadePlayer?.dispose();
+
       // Start new track at zero volume
       _bgmCrossfadePlayer = AudioPlayer();
       await _bgmCrossfadePlayer!.setReleaseMode(ReleaseMode.loop);
@@ -167,6 +180,9 @@ class SoundManager {
       final stepDuration = duration ~/ steps;
 
       for (int i = 1; i <= steps; i++) {
+        // Abort if a newer crossfade has started
+        if (_crossfadeGeneration != generation) return;
+
         await Future.delayed(stepDuration);
         final progress = i / steps;
         _bgmPlayer?.setVolume(_musicVolume * (1 - progress));

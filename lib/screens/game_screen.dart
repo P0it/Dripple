@@ -81,27 +81,22 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
   Future<void> _processAITurns() async {
     final notifier = ref.read(gameProvider.notifier);
-    var gameState = ref.read(gameProvider);
+    if (notifier.isProcessingAI) return; // Guard against concurrent calls
 
-    while (gameState.phase == GamePhase.playing &&
-        gameState.currentPlayer.isAI) {
-      await Future.delayed(const Duration(milliseconds: 800));
+    final results = await notifier.processAITurns();
 
-      final aiResult = await notifier.executeAITurn();
+    for (final aiResult in results) {
       if (!mounted) return;
-
-      if (aiResult != null) {
-        await showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) => JudgmentDialog(result: aiResult),
-        );
-      }
-
-      gameState = ref.read(gameProvider);
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => JudgmentDialog(result: aiResult),
+      );
     }
 
-    if (gameState.phase == GamePhase.gameEnd && mounted) {
+    if (!mounted) return;
+    final gameState = ref.read(gameProvider);
+    if (gameState.phase == GamePhase.gameEnd) {
       final isWinner = gameState.ranking.first.id == 'human_0';
       if (isWinner) {
         await ref.read(gameFeedbackProvider).onGameWin();
@@ -115,7 +110,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   void _onDraw() {
     ref.read(gameProvider.notifier).drawCard();
     ref.read(gameFeedbackProvider).onCardDraw();
-    _processAITurns();
+    _processAITurns(); // Safe — guarded by isProcessingAI
   }
 
   void _onUndo() {

@@ -1,5 +1,6 @@
 import 'dart:async';
 import '../character/emote_system.dart';
+import '../models/game_state.dart' show TurnAction;
 
 /// Game room state synced between players
 class GameRoom {
@@ -67,8 +68,6 @@ class TurnData {
         sentenceCardIds: (json['sentenceCardIds'] as List?)?.cast<String>(),
       );
 }
-
-enum TurnAction { placeCard, drawCard, playSpecial, submit }
 
 /// Abstract multiplayer service interface.
 /// Implement with Firebase Realtime DB for production.
