@@ -1,0 +1,3 @@
+# Mark brainstorm HTML mockups as generated (exclude from language stats)
+.superpowers/** linguist-generated
+preview-server.js linguist-generated
