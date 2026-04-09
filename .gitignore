@@ -1,2 +1,40 @@
-node_modules/
+# Flutter/Dart
+*.dart_tool/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+*.iml
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
 .DS_Store
+node_modules/
+Thumbs.db
+
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+android/*.jks
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# Web
+web/.dart_tool/
+
+# Generated
+*.g.dart
+*.freezed.dart
+.dart_tool/
+pubspec.lock
