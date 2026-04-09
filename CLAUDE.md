@@ -104,7 +104,60 @@ flutter analyze
 
 # Test
 flutter test
+
+# Flutter SDK (if not in PATH)
+export PATH="/opt/flutter/bin:/opt/flutter/bin/cache/dart-sdk/bin:$PATH"
+FLUTTER_ALLOW_ROOT=true flutter <command>
 ```
+
+## Engineering Review (2026-04-09)
+
+### Critical Bugs (must fix before launch)
+1. **SKIP card double-advance** — `_advanceTurn()` called twice, second call can modify ended game (`game_provider.dart:192`)
+2. **STEAL card stale reference** — state mutation order causes wrong player reference (`game_provider.dart:208`)
+3. **WILD card not implemented** — exists in enum/deck but does nothing (`game_provider.dart:239`)
+4. **No round reset** — next round starts with leftover cards, no re-deal (`game_provider.dart:292`)
+5. **`_processAITurns` race condition** — Draw button fires-and-forgets, rapid taps cause concurrent AI loops (`game_screen.dart:115`)
+
+### Architecture Issues
+- `GameNotifier` mutates `state` multiple times per action → intermediate widget rebuilds
+- `lastJudgment` is a side-channel outside Riverpod → breaks unidirectional data flow
+- Flame `DrippleGame` duplicates Riverpod state → full card component rebuild every frame
+- No separation between game logic and UI orchestration
+- `CardDeck._idCounter` is global mutable state
+
+### Performance Issues
+- Flame components: full teardown/rebuild on every state change (should diff)
+- `playAt()` creates unbounded `AudioPlayer` instances without disposal
+- `CardComponent.render()` allocates new `TextPainter` every frame (should cache)
+- Crossfade overlap: calling `crossfadeTo` mid-fade causes volume oscillation
+
+### Multiplayer Gaps
+- All models lack `toJson`/`fromJson` (Firebase needs JSON serialization)
+- `TurnAction` enum duplicated in two files
+- No security model (opponent hands readable in proposed Firebase structure)
+- No conflict resolution for disconnections/stale turns
+
+### Testing Gaps
+- Only grammar engine tested (20 tests)
+- Zero tests for: GameNotifier, AI Player, CardDeck, EmoteNotifier, game flow integration
+- Widget test is trivial (checks text exists)
+
+### Missing for App Store
+- Audio/Rive assets (placeholder only)
+- App icon, splash screen
+- Crash reporting, analytics
+- Persistent storage (settings reset on restart)
+- Privacy policy, COPPA compliance
+- Settings screen strings not localized
+- Accessibility (no Semantics, Flame canvas opaque to screen readers)
+
+### Recommended Priority
+1. Fix 5 critical bugs
+2. Add GameNotifier + AI tests
+3. Implement turn timer
+4. Ship AI-only mode to store (v1 — no Firebase)
+5. Firebase multiplayer as v2
 
 ## gstack
 
