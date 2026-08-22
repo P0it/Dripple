@@ -90,7 +90,7 @@ class AIPlayer {
       return specialAction;
     }
 
-    final minLen = gameState.config.minSentenceLength;
+    final minLen = 2; // replaced wholesale in the AI rewrite
 
     // Try to find the best valid sentence from hand
     final sentence = _findBestSentence(player.hand, minLen);
