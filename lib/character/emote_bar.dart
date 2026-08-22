@@ -1,11 +1,13 @@
+import '../core/theme/app_theme.dart';
+import '../core/game_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/game_feedback.dart';
 import 'emote_system.dart';
 
 /// Emote bar with 5 character expression buttons.
-/// These are custom character face variations, NOT standard emoji.
-/// Currently using emoji placeholders until Rive character emote assets are ready.
+/// These are custom character face variations drawn as vector paths, so they
+/// look identical on every platform and inside the Flame canvas.
 class EmoteBar extends ConsumerWidget {
   final String playerId;
 
@@ -74,10 +76,8 @@ class _EmoteButton extends StatelessWidget {
             ],
           ),
           child: Center(
-            child: Text(
-              emote.label,
-              style: const TextStyle(fontSize: 22),
-            ),
+            child: GameIconView(emote.icon,
+                size: 24, color: AppColors.primary),
           ),
         ),
       ),
@@ -115,10 +115,7 @@ class EmoteBubble extends StatelessWidget {
             ),
           ],
         ),
-        child: Text(
-          emote.label,
-          style: const TextStyle(fontSize: 28),
-        ),
+        child: GameIconView(emote.icon, size: 30, color: AppColors.primary),
       ),
     );
   }

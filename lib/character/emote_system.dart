@@ -1,3 +1,4 @@
+import '../core/game_icons.dart';
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'character_emotion.dart';
@@ -25,18 +26,20 @@ enum EmoteType {
     }
   }
 
-  String get label {
+  /// Vector face for this emote. Emoji were dropped because they render
+  /// differently on every platform and not at all inside the Flame canvas.
+  GameIcon get icon {
     switch (this) {
       case EmoteType.happy:
-        return '😄';
+        return GameIcon.faceHappy;
       case EmoteType.angry:
-        return '😠';
+        return GameIcon.faceAngry;
       case EmoteType.taunt:
-        return '😏';
+        return GameIcon.faceSmug;
       case EmoteType.amazed:
-        return '🤩';
+        return GameIcon.faceExcited;
       case EmoteType.shocked:
-        return '😱';
+        return GameIcon.faceShocked;
     }
   }
 }

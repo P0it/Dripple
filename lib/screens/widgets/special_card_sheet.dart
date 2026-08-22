@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/game_icons.dart';
 import '../../models/game_state.dart';
 import '../../models/word_card.dart';
 import '../../providers/game_provider.dart';
@@ -56,8 +57,15 @@ class _JumpSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('⏭ JUMP',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GameIconView(GameIcon.jump, size: 26),
+              SizedBox(width: 8),
+              Text('JUMP',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            ],
+          ),
           const SizedBox(height: 8),
           const Text('다음 사람의 차례를 건너뜁니다.'),
           const SizedBox(height: 16),
@@ -99,8 +107,15 @@ class _StealSheetState extends State<_StealSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('🫳 STEAL',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GameIconView(GameIcon.steal, size: 26),
+              SizedBox(width: 8),
+              Text('STEAL',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            ],
+          ),
           const SizedBox(height: 4),
           const Text('상대를 고르고, 대신 줄 카드를 고르세요.'),
           const SizedBox(height: 16),

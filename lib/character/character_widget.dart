@@ -1,3 +1,4 @@
+import '../core/game_icons.dart';
 import 'package:flutter/material.dart';
 import 'character_emotion.dart';
 
@@ -106,9 +107,10 @@ class _PlaceholderCharacter extends StatelessWidget {
         ],
       ),
       child: Center(
-        child: Text(
-          _emotionEmoji,
-          style: TextStyle(fontSize: size * 0.45),
+        child: GameIconView(
+          _emotionIcon,
+          size: size * 0.55,
+          color: _bgColor,
         ),
       ),
     );
@@ -131,20 +133,20 @@ class _PlaceholderCharacter extends StatelessWidget {
     }
   }
 
-  String get _emotionEmoji {
+  GameIcon get _emotionIcon {
     switch (emotion) {
       case CharacterEmotion.idle:
-        return '😊';
+        return GameIcon.faceIdle;
       case CharacterEmotion.happy:
-        return '😄';
+        return GameIcon.faceHappy;
       case CharacterEmotion.sad:
-        return '😢';
+        return GameIcon.faceSad;
       case CharacterEmotion.taunt:
-        return '😏';
+        return GameIcon.faceSmug;
       case CharacterEmotion.shocked:
-        return '😲';
+        return GameIcon.faceShocked;
       case CharacterEmotion.celebrate:
-        return '🎉';
+        return GameIcon.faceCelebrate;
     }
   }
 }

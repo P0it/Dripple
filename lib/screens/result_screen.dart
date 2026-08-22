@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/game_icons.dart';
 import 'package:dripple/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -141,7 +142,8 @@ class _Podium extends StatelessWidget {
                         ),
                         if (isWinner) ...[
                           const SizedBox(width: 8),
-                          const Text('👑', style: TextStyle(fontSize: 18)),
+                          const GameIconView(GameIcon.crown,
+                              size: 20, color: Color(0xFFF59E0B)),
                         ],
                       ],
                     ),

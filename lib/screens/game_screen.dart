@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../character/emote_bar.dart';
 import '../core/game_feedback.dart';
+import '../core/game_icons.dart';
 import '../core/theme/app_theme.dart';
 import '../engine/ai/ai_player.dart';
 import '../game/dripple_game.dart';
@@ -730,7 +731,14 @@ class _SpecialCardRow extends StatelessWidget {
         children: [
           for (final i in entries)
             ActionChip(
-              label: Text(hand[i].type == CardType.jump ? '⏭ JUMP' : '🫳 STEAL'),
+              avatar: GameIconView(
+                hand[i].type == CardType.jump
+                    ? GameIcon.jump
+                    : GameIcon.steal,
+                size: 18,
+                color: AppColors.primary,
+              ),
+              label: Text(hand[i].type == CardType.jump ? 'JUMP' : 'STEAL'),
               onPressed: () => onTap(i),
             ),
         ],

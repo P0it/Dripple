@@ -3,6 +3,7 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart' as material;
+import '../../core/game_icons.dart';
 import '../../models/word_card.dart';
 
 class CardComponent extends PositionComponent with DragCallbacks {
@@ -22,7 +23,6 @@ class CardComponent extends PositionComponent with DragCallbacks {
 
   // Cached TextPainters — only created once, reused every frame
   late final material.TextPainter _wordPainter;
-  late final material.TextPainter? _iconPainter;
 
   CardComponent({
     required this.card,
@@ -43,17 +43,6 @@ class CardComponent extends PositionComponent with DragCallbacks {
       textAlign: ui.TextAlign.center,
     )..layout(maxWidth: cardWidth - 8);
 
-    if (card.isSpecial) {
-      _iconPainter = material.TextPainter(
-        text: material.TextSpan(
-          text: _specialIcon(card.type),
-          style: const material.TextStyle(fontSize: 20),
-        ),
-        textDirection: ui.TextDirection.ltr,
-      )..layout();
-    } else {
-      _iconPainter = null;
-    }
   }
 
   ui.Color get cardColor {
@@ -108,9 +97,16 @@ class CardComponent extends PositionComponent with DragCallbacks {
       ),
     );
 
-    // Special card icon (cached)
-    if (_iconPainter case final painter?) {
-      painter.paint(canvas, ui.Offset((size.x - painter.width) / 2, 8));
+    // Special card badge, drawn as a path so it matches the rest of the UI
+    // and does not depend on a colour-emoji font the canvas does not have.
+    final specialIcon = _specialIcon(card.type);
+    if (specialIcon != null) {
+      GameIconPainter.paint(
+        canvas,
+        specialIcon,
+        const ui.Rect.fromLTWH(0, 10, cardWidth, 30),
+        material.Colors.white,
+      );
     }
   }
 
@@ -152,16 +148,16 @@ class CardComponent extends PositionComponent with DragCallbacks {
     }
   }
 
-  String _specialIcon(CardType type) {
+  GameIcon? _specialIcon(CardType type) {
     switch (type) {
       case CardType.jump:
-        return '⏭';
+        return GameIcon.jump;
       case CardType.steal:
-        return '🫳';
+        return GameIcon.steal;
       case CardType.joker:
-        return '🌟';
-      default:
-        return '';
+        return GameIcon.joker;
+      case CardType.word:
+        return null;
     }
   }
 
