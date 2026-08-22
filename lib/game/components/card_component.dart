@@ -7,12 +7,14 @@ import '../../models/word_card.dart';
 
 class CardComponent extends PositionComponent with DragCallbacks {
   final WordCard card;
-  final void Function(CardComponent)? onDragToSentenceZone;
-  final void Function(CardComponent)? onTap;
+
+  /// Called when a drag finishes, with the component's dropped position.
+  /// The parent decides what the drop meant.
+  final void Function(CardComponent component, Vector2 dropPosition)?
+      onDragEnded;
 
   bool isDragging = false;
   Vector2 _originalPosition = Vector2.zero();
-  bool _dragSuccess = false;
 
   static const double cardWidth = 80;
   static const double cardHeight = 110;
@@ -23,8 +25,7 @@ class CardComponent extends PositionComponent with DragCallbacks {
 
   CardComponent({
     required this.card,
-    this.onDragToSentenceZone,
-    this.onTap,
+    this.onDragEnded,
     super.position,
   }) : super(size: Vector2(cardWidth, cardHeight)) {
     // Pre-build text painters
@@ -91,6 +92,12 @@ class CardComponent extends PositionComponent with DragCallbacks {
       ..strokeWidth = isDragging ? 3 : 1;
     canvas.drawRRect(rrect, borderPaint);
 
+    // Montessori grammar symbol — a child who cannot yet read the word can
+    // still see the sentence's shape.
+    if (card.posShape != PosShape.none) {
+      _paintPosSymbol(canvas);
+    }
+
     // Word text (cached)
     _wordPainter.paint(
       canvas,
@@ -103,6 +110,44 @@ class CardComponent extends PositionComponent with DragCallbacks {
     // Special card icon (cached)
     if (_iconPainter case final painter?) {
       painter.paint(canvas, ui.Offset((size.x - painter.width) / 2, 8));
+    }
+  }
+
+  void _paintPosSymbol(ui.Canvas canvas) {
+    final paint = ui.Paint()..color = ui.Color(card.posColor);
+    final cx = size.x / 2;
+    const topY = 16.0;
+
+    switch (card.posShape) {
+      case PosShape.triangleLarge:
+      case PosShape.triangleMedium:
+      case PosShape.triangleSmall:
+      case PosShape.trianglePronoun:
+        final half = switch (card.posShape) {
+          PosShape.triangleLarge => 11.0,
+          PosShape.triangleMedium => 9.0,
+          PosShape.trianglePronoun => 9.0,
+          _ => 7.0,
+        };
+        final path = ui.Path()
+          ..moveTo(cx, topY - half)
+          ..lineTo(cx - half, topY + half)
+          ..lineTo(cx + half, topY + half)
+          ..close();
+        canvas.drawPath(path, paint);
+      case PosShape.circle:
+        canvas.drawCircle(ui.Offset(cx, topY), 10, paint);
+      case PosShape.circleSmall:
+        canvas.drawCircle(ui.Offset(cx, topY), 6, paint);
+      case PosShape.crescent:
+        canvas.drawCircle(ui.Offset(cx, topY), 9, paint);
+        canvas.drawCircle(
+          ui.Offset(cx + 4, topY - 2),
+          8,
+          ui.Paint()..color = cardColor,
+        );
+      case PosShape.none:
+        break;
     }
   }
 
@@ -123,7 +168,6 @@ class CardComponent extends PositionComponent with DragCallbacks {
   void onDragStart(DragStartEvent event) {
     super.onDragStart(event);
     isDragging = true;
-    _dragSuccess = false;
     _originalPosition = position.clone();
     priority = 100;
   }
@@ -139,20 +183,14 @@ class CardComponent extends PositionComponent with DragCallbacks {
     isDragging = false;
     priority = 0;
 
-    // Use relative threshold (20% of screen height approximated by original Y)
-    final threshold = _originalPosition.y * 0.15;
-    if (_originalPosition.y - position.y > threshold) {
-      _dragSuccess = true;
-      onDragToSentenceZone?.call(this);
-    }
+    final dropPosition = position.clone();
+    onDragEnded?.call(this, dropPosition);
 
-    // Only animate back if the drop was NOT successful
-    // (successful drops will be removed by parent rebuild)
-    if (!_dragSuccess) {
-      add(MoveEffect.to(
-        _originalPosition,
-        EffectController(duration: 0.2, curve: material.Curves.easeOut),
-      ));
-    }
+    // Snap back; the parent repositions us on the next state update if the
+    // drop actually changed anything.
+    add(MoveEffect.to(
+      _originalPosition,
+      EffectController(duration: 0.15, curve: material.Curves.easeOut),
+    ));
   }
 }

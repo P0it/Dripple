@@ -3,7 +3,9 @@ import 'package:flame/game.dart';
 import '../models/word_card.dart';
 import 'components/card_component.dart';
 
-typedef OnCardPlaced = void Function(int cardIndex);
+typedef OnCardPlaced = void Function(int handIndex);
+typedef OnSentenceReorder = void Function(int from, int to);
+typedef OnSentenceRemove = void Function(int index);
 
 class DrippleGame extends FlameGame {
   List<WordCard> _hand = [];
@@ -12,6 +14,8 @@ class DrippleGame extends FlameGame {
   final List<CardComponent> _sentenceComponents = [];
 
   OnCardPlaced? onCardPlaced;
+  OnSentenceReorder? onSentenceReorder;
+  OnSentenceRemove? onSentenceRemove;
 
   double get _sentenceZoneY => size.y * 0.4;
   double get _handY => size.y * 0.72;
@@ -27,7 +31,7 @@ class DrippleGame extends FlameGame {
       newCards: hand,
       existingComponents: _handComponents,
       yPosition: _handY,
-      withDrag: true,
+      isSentenceZone: false,
     );
   }
 
@@ -39,7 +43,7 @@ class DrippleGame extends FlameGame {
       newCards: sentenceZone,
       existingComponents: _sentenceComponents,
       yPosition: _sentenceZoneY,
-      withDrag: false,
+      isSentenceZone: true,
     );
   }
 
@@ -48,7 +52,7 @@ class DrippleGame extends FlameGame {
     required List<WordCard> newCards,
     required List<CardComponent> existingComponents,
     required double yPosition,
-    required bool withDrag,
+    required bool isSentenceZone,
   }) {
     final newIds = newCards.map((c) => c.id).toSet();
 
@@ -83,18 +87,32 @@ class DrippleGame extends FlameGame {
         comp.position = targetPos;
         updatedComponents.add(comp);
       } else {
-        // New card — create component. Use card ID to resolve index at drag time
-        // to avoid stale index after hand reorder.
+        // New card — create component. Resolve the index by card id at drag
+        // time so a reorder cannot leave a stale index behind.
         final cardId = card.id;
         final comp = CardComponent(
           card: card,
           position: targetPos,
-          onDragToSentenceZone: withDrag
-              ? (_) {
-                  final idx = _hand.indexWhere((c) => c.id == cardId);
-                  if (idx >= 0) onCardPlaced?.call(idx);
-                }
-              : null,
+          onDragEnded: (component, dropPosition) {
+            if (isSentenceZone) {
+              final from = _sentenceZone.indexWhere((c) => c.id == cardId);
+              if (from < 0) return;
+              // Dragged clear of the zone — send it back to hand.
+              if ((dropPosition.y - _sentenceZoneY).abs() >
+                  CardComponent.cardHeight) {
+                onSentenceRemove?.call(from);
+                return;
+              }
+              final to = _indexAtX(dropPosition.x, _sentenceZone.length);
+              if (to != from) onSentenceReorder?.call(from, to);
+            } else {
+              // Hand card lifted toward the sentence zone.
+              if (dropPosition.y < _handY - CardComponent.cardHeight * 0.5) {
+                final idx = _hand.indexWhere((c) => c.id == cardId);
+                if (idx >= 0) onCardPlaced?.call(idx);
+              }
+            }
+          },
         );
         updatedComponents.add(comp);
         add(comp);
@@ -104,6 +122,16 @@ class DrippleGame extends FlameGame {
     existingComponents
       ..clear()
       ..addAll(updatedComponents);
+  }
+
+  /// Which slot an x-coordinate lands in, for a row of [count] cards.
+  int _indexAtX(double x, int count) {
+    if (count <= 1) return 0;
+    const step = CardComponent.cardWidth + 8;
+    final totalWidth = count * step - 8;
+    final startX = (size.x - totalWidth) / 2;
+    final raw = ((x - startX) / step).round();
+    return raw.clamp(0, count - 1);
   }
 
   bool _listsEqual(List<WordCard> a, List<WordCard> b) {
@@ -122,7 +150,7 @@ class DrippleGame extends FlameGame {
         newCards: _hand,
         existingComponents: _handComponents,
         yPosition: _handY,
-        withDrag: true,
+        isSentenceZone: false,
       );
     }
     if (_sentenceZone.isNotEmpty) {
@@ -130,7 +158,7 @@ class DrippleGame extends FlameGame {
         newCards: _sentenceZone,
         existingComponents: _sentenceComponents,
         yPosition: _sentenceZoneY,
-        withDrag: false,
+        isSentenceZone: true,
       );
     }
   }
