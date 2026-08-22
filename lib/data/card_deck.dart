@@ -21,7 +21,6 @@ class CardDeck {
       ..._adjectives(),
       ..._adverbs(),
       ..._prepositions(),
-      ..._conjunctions(),
       ..._specialCards(),
     ];
   }
@@ -515,34 +514,16 @@ class CardDeck {
         ),
       ];
 
-  // === CONJUNCTIONS (3 cards) ===
-  static List<WordCard> _conjunctions() => [
-        WordCard(
-          id: _nextId(), word: 'and', pos: PartOfSpeech.conjunction,
-          meanings: {'ko': '그리고', 'ja': 'そして', 'en': 'and'},
-        ),
-        WordCard(
-          id: _nextId(), word: 'but', pos: PartOfSpeech.conjunction,
-          meanings: {'ko': '하지만', 'ja': 'しかし', 'en': 'but'},
-        ),
-        WordCard(
-          id: _nextId(), word: 'or', pos: PartOfSpeech.conjunction,
-          meanings: {'ko': '또는', 'ja': 'または', 'en': 'or'},
-        ),
-      ];
 
   // === SPECIAL CARDS (12 cards) ===
   static List<WordCard> _specialCards() => [
-        WordCard.special(_nextId(), CardType.skip),
-        WordCard.special(_nextId(), CardType.skip),
-        WordCard.special(_nextId(), CardType.skip),
-        WordCard.special(_nextId(), CardType.skip),
+        WordCard.special(_nextId(), CardType.jump),
+        WordCard.special(_nextId(), CardType.jump),
+        WordCard.special(_nextId(), CardType.jump),
+        WordCard.special(_nextId(), CardType.jump),
         WordCard.special(_nextId(), CardType.steal),
         WordCard.special(_nextId(), CardType.steal),
         WordCard.special(_nextId(), CardType.steal),
-        WordCard.special(_nextId(), CardType.undo),
-        WordCard.special(_nextId(), CardType.undo),
-        WordCard.special(_nextId(), CardType.undo),
         WordCard.special(_nextId(), CardType.joker),
         WordCard.special(_nextId(), CardType.joker),
         WordCard.special(_nextId(), CardType.joker),

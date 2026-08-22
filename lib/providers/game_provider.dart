@@ -243,7 +243,7 @@ class GameNotifier extends StateNotifier<GameState> {
     final newHand = List<WordCard>.from(player.hand)..removeAt(cardIndex);
 
     switch (card.type) {
-      case CardType.skip:
+      case CardType.jump:
         // Skip next player: advance by 2 in a single atomic update
         final skipCount = state.players.length > 2 ? 2 : 1;
         final nextIndex =
@@ -304,38 +304,6 @@ class GameNotifier extends StateNotifier<GameState> {
           }
         }
         // No valid target or no card to give — just remove card and advance
-        _updateCurrentPlayer(player.copyWith(hand: newHand));
-        _advanceTurn();
-
-      case CardType.undo:
-        if (targetPlayerIndex != null &&
-            targetPlayerIndex != state.currentPlayerIndex) {
-          final target = state.players[targetPlayerIndex];
-          if (target.sentenceZone.isNotEmpty) {
-            final removedCard = target.sentenceZone.last;
-            final newSentence = List<WordCard>.from(target.sentenceZone)
-              ..removeLast();
-
-            // Single atomic update
-            final newPlayers = List<Player>.from(state.players);
-            newPlayers[state.currentPlayerIndex] =
-                player.copyWith(hand: newHand);
-            newPlayers[targetPlayerIndex] = target.copyWith(
-              hand: [...target.hand, removedCard],
-              sentenceZone: newSentence,
-            );
-
-            final nextIndex =
-                (state.currentPlayerIndex + 1) % state.players.length;
-
-            state = state.copyWith(
-              players: newPlayers,
-              currentPlayerIndex: nextIndex,
-            );
-            _startTurnTimer();
-            return;
-          }
-        }
         _updateCurrentPlayer(player.copyWith(hand: newHand));
         _advanceTurn();
 

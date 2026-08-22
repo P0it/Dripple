@@ -237,11 +237,7 @@ class AIPlayer {
               return AIAction.special(card, target: leaderId, giveIndex: giveIdx);
             }
           }
-        case CardType.undo:
-          if (gameState.players[leaderId].sentenceZone.isNotEmpty) {
-            return AIAction.special(card, target: leaderId);
-          }
-        case CardType.skip:
+        case CardType.jump:
           return AIAction.special(card);
         default:
           break;

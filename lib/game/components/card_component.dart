@@ -56,12 +56,10 @@ class CardComponent extends PositionComponent with DragCallbacks {
 
   ui.Color get cardColor {
     switch (card.type) {
-      case CardType.skip:
+      case CardType.jump:
         return const ui.Color(0xFFFBBF24);
       case CardType.steal:
         return const ui.Color(0xFFEF4444);
-      case CardType.undo:
-        return const ui.Color(0xFF3B82F6);
       case CardType.joker:
         return const ui.Color(0xFF8B5CF6);
       case CardType.word:
@@ -110,12 +108,10 @@ class CardComponent extends PositionComponent with DragCallbacks {
 
   String _specialIcon(CardType type) {
     switch (type) {
-      case CardType.skip:
+      case CardType.jump:
         return '⏭';
       case CardType.steal:
         return '🫳';
-      case CardType.undo:
-        return '↩';
       case CardType.joker:
         return '🌟';
       default:
