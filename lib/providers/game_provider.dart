@@ -58,7 +58,7 @@ class GameNotifier extends StateNotifier<GameState> {
     _isProcessingAI = false;
     // Rebuild the AI player with the difficulty chosen for this game.
     _aiPlayer = AIPlayer(difficulty: config.difficulty);
-    final deck = CardDeck.generateDeck()..shuffle(_random);
+    final deck = CardDeck().generate()..shuffle(_random);
 
     final players = <Player>[];
     players.add(Player(id: 'human_0', name: 'You'));
@@ -507,7 +507,7 @@ class GameNotifier extends StateNotifier<GameState> {
   /// Start a new round: generate fresh deck, deal cards to all players.
   /// Does NOT change [phase] — callers are responsible for setting phase.
   void _startNewRound(int firstPlayerIndex) {
-    final newDeck = CardDeck.generateDeck()..shuffle(_random);
+    final newDeck = CardDeck().generate()..shuffle(_random);
     final mutableDeck = List<WordCard>.from(newDeck);
     final config = state.config;
 
