@@ -4,50 +4,47 @@ import '../../models/player.dart';
 import '../../models/game_state.dart';
 import '../grammar/grammar_engine.dart';
 
-/// Controls how strategically the AI player behaves.
+/// How hard the AI plays.
 ///
-/// - [easy]   – 40 % random draw, only tries 2-card SV patterns.
-/// - [medium] – 20 % random draw, tries up to 3-card sentences (default).
-/// - [hard]   – 5 % random draw, tries all patterns including 4-card
-///              Art+Noun+Verb+Object, and uses special cards more aggressively.
+/// - [easy]   – sentences up to 3 cards, discards at random 30 % of the time.
+/// - [medium] – sentences up to 5 cards, discards at random 10 % of the time.
+/// - [hard]   – no practical length cap, always plays the longest sentence
+///              it finds.
 enum AIDifficulty { easy, medium, hard }
 
-enum AIActionType { buildAndSubmit, drawCard, playSpecial }
+enum AIActionType { submitSentence, discard, playJump, playSteal }
 
 class AIAction {
   final AIActionType type;
-  final List<WordCard>? cardsToPlace;
+
+  /// For [AIActionType.submitSentence]: the cards in sentence order.
+  final List<WordCard>? cards;
   final WordCard? specialCard;
-  final int? targetPlayer;
-  /// For STEAL: index of the card to give to the target (in hand after
-  /// removing the STEAL card).
+  final int? targetPlayerIndex;
+
+  /// Index into the hand *after* the STEAL card is removed.
   final int? giveCardIndex;
+  final int? discardIndex;
 
   const AIAction({
     required this.type,
-    this.cardsToPlace,
+    this.cards,
     this.specialCard,
-    this.targetPlayer,
+    this.targetPlayerIndex,
     this.giveCardIndex,
+    this.discardIndex,
   });
-
-  factory AIAction.submit(List<WordCard> cards) =>
-      AIAction(type: AIActionType.buildAndSubmit, cardsToPlace: cards);
-
-  factory AIAction.draw() =>
-      const AIAction(type: AIActionType.drawCard);
-
-  factory AIAction.special(WordCard card, {int? target, int? giveIndex}) =>
-      AIAction(
-        type: AIActionType.playSpecial,
-        specialCard: card,
-        targetPlayer: target,
-        giveCardIndex: giveIndex,
-      );
 }
 
-/// Rule-based AI player that selects cards to form valid sentences.
+/// Rule-based opponent.
+///
+/// Sentence search runs the real grammar engine over permutations of a
+/// bounded candidate pool. The pool cap keeps the worst case at
+/// 8P7 = 40,320 validations, which is instant, while the diversity rule
+/// in [_candidatePool] keeps the pool grammatically useful.
 class AIPlayer {
+  static const int _maxCandidates = 8;
+
   final GrammarEngine _engine;
   final Random _random;
   final AIDifficulty difficulty;
@@ -59,209 +56,165 @@ class AIPlayer {
   })  : _engine = engine ?? GrammarEngine(),
         _random = random ?? Random();
 
-  /// Decide what action to take on the AI's turn.
-  ///
-  /// Behaviour varies by [difficulty]:
-  /// - Easy:   40 % random draw; only attempts 2-card Subject+Verb patterns.
-  /// - Medium: 20 % random draw; attempts up to 3-card patterns (default).
-  /// - Hard:   5 % random draw; attempts all patterns including 4-card
-  ///           Art+Noun+Verb+Object; uses special cards 60 % of the time.
-  AIAction decideTurn(Player player, GameState gameState) {
-    // Difficulty-scaled random draw probability
-    final drawChance = switch (difficulty) {
-      AIDifficulty.easy => 0.40,
-      AIDifficulty.medium => 0.20,
-      AIDifficulty.hard => 0.05,
-    };
+  int get _maxSentenceLength => switch (difficulty) {
+        AIDifficulty.easy => 3,
+        AIDifficulty.medium => 5,
+        AIDifficulty.hard => 7,
+      };
 
-    if (_random.nextDouble() < drawChance) {
-      return AIAction.draw();
-    }
+  double get _randomDiscardChance => switch (difficulty) {
+        AIDifficulty.easy => 0.30,
+        AIDifficulty.medium => 0.10,
+        AIDifficulty.hard => 0.0,
+      };
 
-    // Special-card aggressiveness: hard AI uses specials more often
-    final specialChance = switch (difficulty) {
-      AIDifficulty.easy => 0.10,
-      AIDifficulty.medium => 0.30,
-      AIDifficulty.hard => 0.60,
-    };
-
-    final specialAction = _tryPlaySpecial(player, gameState);
-    if (specialAction != null && _random.nextDouble() < specialChance) {
-      return specialAction;
-    }
-
-    final minLen = 2; // replaced wholesale in the AI rewrite
-
-    // Try to find the best valid sentence from hand
-    final sentence = _findBestSentence(player.hand, minLen);
-    if (sentence != null && sentence.length >= minLen) {
-      return AIAction.submit(sentence);
-    }
-
-    // If existing sentence zone + hand cards can extend to a valid sentence
-    if (player.sentenceZone.isNotEmpty) {
-      final totalNeeded = minLen - player.sentenceZone.length;
-      if (totalNeeded > 0) {
-        final combined = [...player.sentenceZone];
-        final additionalCards = _findCompletionCards(combined, player.hand);
-        if (additionalCards != null &&
-            (player.sentenceZone.length + additionalCards.length) >= minLen) {
-          return AIAction.submit(additionalCards);
-        }
+  /// Decide what to do in the action phase of the AI's turn.
+  AIAction decideAction(Player me, GameState state) {
+    if (_random.nextDouble() >= _randomDiscardChance) {
+      final sentence = findSentence(me.hand);
+      if (sentence != null) {
+        return AIAction(type: AIActionType.submitSentence, cards: sentence);
       }
     }
 
-    return AIAction.draw();
+    final special = _tryPlaySpecial(me, state);
+    if (special != null) return special;
+
+    return AIAction(
+      type: AIActionType.discard,
+      discardIndex: _pickDiscardIndex(me.hand),
+    );
   }
 
-  /// Try to find the longest valid sentence from available cards.
-  ///
-  /// The maximum sentence complexity explored scales with [difficulty]:
-  /// - Easy:   Subject + Verb only (2 cards).
-  /// - Medium: Subject + Verb + Object/Adjective, Art + Noun + Verb (3 cards).
-  /// - Hard:   All of the above plus Art + Noun + Verb + Object (4 cards).
-  List<WordCard>? _findBestSentence(List<WordCard> hand, [int minLen = 2]) {
-    final wordCards = hand.where((c) => c.type == CardType.word).toList();
-    if (wordCards.length < 2) return null;
+  /// Find a valid sentence in [hand], or null. Returns the actual card
+  /// instances from [hand] so callers can remove them by identity or id.
+  List<WordCard>? findSentence(List<WordCard> hand) {
+    final pool = _candidatePool(hand);
+    if (pool.length < 2) return null;
 
-    List<WordCard>? best;
+    final maxLen = min(_maxSentenceLength, pool.length);
 
-    // Pattern: Subject + Verb (all difficulty levels)
-    for (final subj in wordCards.where((c) => c.canBeSubject)) {
-      for (final verb in wordCards.where((c) => c.isVerb)) {
-        final sentence = [subj, verb];
-        if (_isValid(sentence)) {
-          if (best == null || sentence.length > best.length) {
-            best = sentence;
-          }
-
-          // Medium and Hard: try 3-card extensions
-          if (difficulty != AIDifficulty.easy) {
-            // Subject + Verb + Object
-            for (final obj in wordCards.where(
-                (c) => c.isNoun && c.id != subj.id)) {
-              final extended = [subj, verb, obj];
-              if (_isValid(extended)) {
-                if (best == null || extended.length > best.length) {
-                  best = extended;
-                }
-              }
-            }
-
-            // Subject + Verb + Adjective (SVC)
-            for (final adj in wordCards.where((c) => c.isAdjective)) {
-              final extended = [subj, verb, adj];
-              if (_isValid(extended)) {
-                if (best == null || extended.length > best.length) {
-                  best = extended;
-                }
-              }
-            }
-          }
-        }
-      }
+    // Longest first: a longer sentence always empties the hand faster.
+    for (int len = maxLen; len >= 2; len--) {
+      final found = _searchPermutations(pool, len);
+      if (found != null) return found;
     }
-
-    // Medium and Hard: Article + Noun + Verb patterns
-    if (difficulty != AIDifficulty.easy) {
-      for (final art in wordCards.where((c) => c.isArticle)) {
-        for (final noun in wordCards.where((c) => c.isNoun)) {
-          for (final verb in wordCards.where((c) => c.isVerb)) {
-            final sentence = [art, noun, verb];
-            if (_isValid(sentence)) {
-              if (best == null || sentence.length > best.length) {
-                best = sentence;
-              }
-
-              // Hard only: Art + Noun + Verb + Object (4 cards)
-              if (difficulty == AIDifficulty.hard) {
-                for (final obj in wordCards.where(
-                    (c) => c.isNoun && c.id != noun.id)) {
-                  final extended = [art, noun, verb, obj];
-                  if (_isValid(extended)) {
-                    if (best == null || extended.length > best.length) {
-                      best = extended;
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return best;
-  }
-
-  /// Find additional cards from hand that would complete a sentence
-  List<WordCard>? _findCompletionCards(
-      List<WordCard> current, List<WordCard> hand) {
-    final wordCards = hand.where((c) => c.type == CardType.word).toList();
-
-    // Try adding one card at a time
-    for (final card in wordCards) {
-      final attempt = [...current, card];
-      if (_isValid(attempt)) return [card];
-    }
-
     return null;
   }
 
-  /// Try to play a special card strategically
-  AIAction? _tryPlaySpecial(Player player, GameState gameState) {
-    final specials = player.hand.where((c) => c.isSpecial).toList();
-    if (specials.isEmpty) return null;
+  /// Depth-first walk over ordered selections of exactly [len] cards.
+  List<WordCard>? _searchPermutations(List<WordCard> pool, int len) {
+    final used = List<bool>.filled(pool.length, false);
+    final current = <WordCard>[];
 
-    // Find the leading player (not self)
-    final others = gameState.players
-        .asMap()
-        .entries
-        .where((e) => e.value.id != player.id)
+    List<WordCard>? walk() {
+      if (current.length == len) {
+        return _engine.validate(current).isValid
+            ? List<WordCard>.from(current)
+            : null;
+      }
+      for (int i = 0; i < pool.length; i++) {
+        if (used[i]) continue;
+        used[i] = true;
+        current.add(pool[i]);
+        final result = walk();
+        if (result != null) return result;
+        current.removeLast();
+        used[i] = false;
+      }
+      return null;
+    }
+
+    return walk();
+  }
+
+  /// Pick up to [_maxCandidates] cards, spreading them across parts of
+  /// speech first so the pool can actually form a sentence. Taking the
+  /// first 8 cards of a hand would often yield eight nouns.
+  List<WordCard> _candidatePool(List<WordCard> hand) {
+    final usable = hand
+        .where((c) => c.type == CardType.word || c.type == CardType.joker)
         .toList();
-    if (others.isEmpty) return null;
+    if (usable.length <= _maxCandidates) return usable;
 
-    others.sort((a, b) => b.value.score.compareTo(a.value.score));
-    final leaderId = others.first.key;
+    final buckets = <String, List<WordCard>>{};
+    for (final card in usable) {
+      final key = card.type == CardType.joker ? 'joker' : card.pos!.name;
+      buckets.putIfAbsent(key, () => []).add(card);
+    }
 
-    for (final card in specials) {
-      switch (card.type) {
-        case CardType.steal:
-          if (gameState.players[leaderId].hand.isNotEmpty) {
-            // Pick the least useful card to give away.
-            // Hand after removing the STEAL card:
-            final handAfterSteal = List<WordCard>.from(player.hand)
-              ..removeWhere((c) => c.id == card.id);
-            if (handAfterSteal.isNotEmpty) {
-              final giveIdx = _pickLeastUsefulIndex(handAfterSteal);
-              return AIAction.special(card, target: leaderId, giveIndex: giveIdx);
-            }
-          }
-        case CardType.jump:
-          return AIAction.special(card);
-        default:
-          break;
+    final pool = <WordCard>[];
+    // Round-robin across buckets until the pool is full.
+    var added = true;
+    while (pool.length < _maxCandidates && added) {
+      added = false;
+      for (final bucket in buckets.values) {
+        if (pool.length >= _maxCandidates) break;
+        if (bucket.isNotEmpty) {
+          pool.add(bucket.removeAt(0));
+          added = true;
+        }
       }
+    }
+    return pool;
+  }
+
+  /// Use a special card when no sentence is available.
+  AIAction? _tryPlaySpecial(Player me, GameState state) {
+    WordCard? jump;
+    WordCard? steal;
+    for (final c in me.hand) {
+      if (c.type == CardType.jump) jump ??= c;
+      if (c.type == CardType.steal) steal ??= c;
+    }
+
+    if (steal != null) {
+      // Target whoever is closest to winning — the fewest cards left.
+      int? bestIdx;
+      var bestCount = 1 << 30;
+      for (int i = 0; i < state.players.length; i++) {
+        if (i == state.currentPlayerIndex) continue;
+        final count = state.players[i].hand.length;
+        if (count > 0 && count < bestCount) {
+          bestCount = count;
+          bestIdx = i;
+        }
+      }
+      if (bestIdx != null) {
+        final handAfter = List<WordCard>.from(me.hand)
+          ..removeWhere((c) => c.id == steal!.id);
+        if (handAfter.isNotEmpty) {
+          return AIAction(
+            type: AIActionType.playSteal,
+            specialCard: steal,
+            targetPlayerIndex: bestIdx,
+            giveCardIndex: _pickDiscardIndex(handAfter),
+          );
+        }
+      }
+    }
+
+    if (jump != null) {
+      return AIAction(type: AIActionType.playJump, specialCard: jump);
     }
 
     return null;
   }
 
-  /// Pick the index of the least useful card to give away in a STEAL exchange.
-  /// Prefers giving away duplicates, then adverbs/adjectives, then articles.
-  int _pickLeastUsefulIndex(List<WordCard> hand) {
-    // Score each card: lower = less useful = better to give away
+  /// Index of the least useful card to part with.
+  int _pickDiscardIndex(List<WordCard> hand) {
     int usefulness(WordCard c) {
-      if (c.isSpecial) return 10; // keep special cards
+      if (c.type == CardType.joker) return 10;
+      if (c.type == CardType.jump || c.type == CardType.steal) return 9;
       if (c.isVerb) return 8;
-      if (c.canBeSubject) return 7; // pronouns, nouns
+      if (c.canBeSubject) return 7;
       if (c.isArticle) return 4;
       if (c.isAdjective) return 3;
-      return 2; // adverbs, prepositions, conjunctions
+      return 2; // adverbs, prepositions
     }
 
-    int bestIdx = 0;
-    int bestScore = usefulness(hand[0]);
+    var bestIdx = 0;
+    var bestScore = usefulness(hand[0]);
     for (int i = 1; i < hand.length; i++) {
       final s = usefulness(hand[i]);
       if (s < bestScore) {
@@ -270,9 +223,5 @@ class AIPlayer {
       }
     }
     return bestIdx;
-  }
-
-  bool _isValid(List<WordCard> sentence) {
-    return _engine.validate(sentence).isValid;
   }
 }

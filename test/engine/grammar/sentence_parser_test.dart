@@ -117,6 +117,22 @@ void main() {
       ]), false);
     });
 
+    test('rejects a subject pronoun in object position: "cats like I"', () {
+      expect(parser.parse([
+        _c('cats', PartOfSpeech.noun),
+        _c('like', PartOfSpeech.verb),
+        _c('I', PartOfSpeech.pronoun),
+      ]), false);
+    });
+
+    test('accepts case-neutral pronoun as object: "cats like you"', () {
+      expect(parser.parse([
+        _c('cats', PartOfSpeech.noun),
+        _c('like', PartOfSpeech.verb),
+        _c('you', PartOfSpeech.pronoun),
+      ]), true);
+    });
+
     test('rejects single card', () {
       expect(parser.parse([_c('I', PartOfSpeech.pronoun)]), false);
     });

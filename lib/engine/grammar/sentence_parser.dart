@@ -31,10 +31,15 @@ class SentenceParser {
   }
 
   /// NP := Pronoun | (Art)? (Adj)* Noun
-  List<int> _parseNP(List<WordCard> c, int i) {
+  ///
+  /// In object position ([object] true) subject-only pronouns are rejected,
+  /// so "cats like I" does not parse.
+  List<int> _parseNP(List<WordCard> c, int i, {bool object = false}) {
     final out = <int>{};
 
-    if (_is(c, i, PartOfSpeech.pronoun)) out.add(i + 1);
+    if (_is(c, i, PartOfSpeech.pronoun) && (!object || c[i].canBeObject)) {
+      out.add(i + 1);
+    }
 
     final starts = <int>[i];
     if (_is(c, i, PartOfSpeech.article)) starts.add(i + 1);
@@ -77,7 +82,7 @@ class SentenceParser {
   /// PP := Prep NP
   List<int> _parsePP(List<WordCard> c, int i) {
     if (!_is(c, i, PartOfSpeech.preposition)) return const [];
-    return _parseNP(c, i + 1);
+    return _parseNP(c, i + 1, object: true);
   }
 
   /// VP := Verb (NP | AdjP)? (Adv)? (PP)*
@@ -90,7 +95,7 @@ class SentenceParser {
     // Optional complement: NP or AdjP.
     final afterComplement = <int>{...afterVerb};
     for (final e in afterVerb) {
-      afterComplement.addAll(_parseNP(c, e));
+      afterComplement.addAll(_parseNP(c, e, object: true));
       afterComplement.addAll(_parseAdjP(c, e));
     }
 

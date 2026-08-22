@@ -63,6 +63,17 @@ class WordCard extends Equatable {
   /// Whether this card can act as a subject (pronoun or noun)
   bool get canBeSubject => isPronoun || isNoun;
 
+  /// Whether this card can stand in object position (after a verb or a
+  /// preposition).
+  ///
+  /// The deck carries only subject pronouns, so "cats like I" must be
+  /// rejected. Only the case-neutral pronouns may appear as objects.
+  bool get canBeObject {
+    if (type == CardType.joker) return true;
+    if (isPronoun) return word == 'you' || word == 'it';
+    return isNoun;
+  }
+
   /// Montessori grammar symbol shape for this card's part of speech.
   PosShape get posShape {
     if (isSpecial) return PosShape.none;
