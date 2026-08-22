@@ -12,6 +12,8 @@ import '../models/game_state.dart';
 import '../models/player.dart';
 import '../providers/game_provider.dart';
 import 'judgment_screen.dart';
+import 'widgets/special_card_sheet.dart';
+import '../models/word_card.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   final int playerCount;
@@ -31,7 +33,6 @@ class _GameScreenState extends ConsumerState<GameScreen>
     with SingleTickerProviderStateMixin {
   late DrippleGame _game;
   bool _initialized = false;
-  bool _isDrawing = false;
   late AnimationController _overlayFadeController;
   late Animation<double> _overlayFadeAnimation;
   ProviderSubscription? _gameSubscription;
@@ -41,6 +42,10 @@ class _GameScreenState extends ConsumerState<GameScreen>
     super.initState();
     _game = DrippleGame();
     _game.onCardPlaced = _onCardPlaced;
+    _game.onSentenceReorder = (from, to) =>
+        ref.read(gameProvider.notifier).reorderSentence(from, to);
+    _game.onSentenceRemove = (index) =>
+        ref.read(gameProvider.notifier).removeFromSentence(index);
     _overlayFadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 350),
@@ -75,7 +80,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
           });
         }
         // Trigger fade-in animation whenever an overlay phase is entered
-        const overlayPhases = {GamePhase.roundEnd, GamePhase.gameEnd};
+        const overlayPhases = {GamePhase.gameEnd};
         final enteringOverlay = overlayPhases.contains(next.phase) &&
             !overlayPhases.contains(prev?.phase);
         if (enteringOverlay) {
@@ -105,72 +110,60 @@ class _GameScreenState extends ConsumerState<GameScreen>
     final feedback = ref.read(gameFeedbackProvider);
     await feedback.onSubmit();
 
-    final notifier = ref.read(gameProvider.notifier);
-    final result = notifier.submitSentence();
-
+    final result = ref.read(gameProvider.notifier).submitSentence();
     if (!mounted) return;
 
-    // Trigger feedback based on result
     if (result.isCorrect) {
-      // Use scoreEarned from result to avoid post-await stale state
       await feedback.onCorrectAnswer();
     } else {
       await feedback.onIncorrectAnswer();
     }
-
     if (!mounted) return;
+
     await showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => JudgmentDialog(result: result),
     );
-
-    // Process AI turns
-    await _processAITurns();
   }
 
-  Future<void> _processAITurns() async {
-    final notifier = ref.read(gameProvider.notifier);
-    if (notifier.isProcessingAI) return; // Guard against concurrent calls
-
-    final results = await notifier.processAITurns();
-
-    for (final aiResult in results) {
-      if (!mounted) return;
-      await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => JudgmentDialog(result: aiResult),
-      );
-    }
-
-    if (!mounted) return;
-    final gameState = ref.read(gameProvider);
-    if (gameState.phase == GamePhase.gameEnd) {
-      final isWinner = gameState.ranking.first.id == 'human_0';
-      if (isWinner) {
-        await ref.read(gameFeedbackProvider).onGameWin();
-      } else {
-        await ref.read(gameFeedbackProvider).onGameLose();
-      }
-      // Navigation is handled by the gameEnd overlay; nothing more to do here.
-    }
+  void _onDrawFromDeck() {
+    ref.read(gameProvider.notifier).drawFromDeck();
+    ref.read(gameFeedbackProvider).onCardDraw();
   }
 
-  Future<void> _onDraw() async {
-    if (_isDrawing) return;
-    _isDrawing = true;
-    try {
-      ref.read(gameProvider.notifier).drawCard();
-      ref.read(gameFeedbackProvider).onCardDraw();
-      await _processAITurns();
-    } finally {
-      _isDrawing = false;
-    }
+  void _onDrawFromDiscard() {
+    ref.read(gameProvider.notifier).drawFromDiscard();
+    ref.read(gameFeedbackProvider).onCardDraw();
   }
 
-  void _onUndo() {
-    ref.read(gameProvider.notifier).undoPlacement();
+  Future<void> _onDiscard() async {
+    final state = ref.read(gameProvider);
+    final hand = state.currentPlayer.hand;
+    final blockedId = state.drawnFromDiscardCardId;
+
+    final index = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: const Text('버릴 카드를 고르세요'),
+        children: [
+          for (int i = 0; i < hand.length; i++)
+            SimpleDialogOption(
+              onPressed: hand[i].id == blockedId
+                  ? null
+                  : () => Navigator.of(dialogContext).pop(i),
+              child: Text(
+                hand[i].id == blockedId
+                    ? '${hand[i].word} (이번 턴에 가져온 카드)'
+                    : hand[i].word,
+              ),
+            ),
+        ],
+      ),
+    );
+
+    if (index == null || !mounted) return;
+    ref.read(gameProvider.notifier).discardCard(index);
     ref.read(gameFeedbackProvider).onButtonTap();
   }
 
@@ -211,28 +204,30 @@ class _GameScreenState extends ConsumerState<GameScreen>
                       ? gameState.players[0].id
                       : 'human_0',
                 ),
+                // Special card actions (JUMP / STEAL)
+                if (gameState.phase == GamePhase.playing &&
+                    gameState.players.isNotEmpty &&
+                    !gameState.currentPlayer.isAI &&
+                    gameState.turnPhase == TurnPhase.action)
+                  _SpecialCardRow(
+                    hand: gameState.currentPlayer.hand,
+                    onTap: (handIndex) => showSpecialCardSheet(
+                      context,
+                      ref: ref,
+                      card: gameState.currentPlayer.hand[handIndex],
+                      handIndex: handIndex,
+                    ),
+                  ),
                 // Action bar
                 _ActionBar(
+                  gameState: gameState,
+                  onDrawFromDeck: _onDrawFromDeck,
+                  onDrawFromDiscard: _onDrawFromDiscard,
                   onSubmit: _onSubmit,
-                  onDraw: _onDraw,
-                  onUndo: _onUndo,
-                  canSubmit: gameState.phase == GamePhase.playing &&
-                      gameState.players.isNotEmpty &&
-                      !gameState.currentPlayer.isAI &&
-                      gameState.currentPlayer.sentenceZone.length >= 2,
-                  deckCount: gameState.deck.length,
+                  onDiscard: _onDiscard,
                 ),
               ],
             ),
-            // ---- Round-end overlay ----
-            if (gameState.phase == GamePhase.roundEnd)
-              _RoundEndOverlay(
-                gameState: gameState,
-                fadeAnimation: _overlayFadeAnimation,
-                onContinue: () {
-                  ref.read(gameProvider.notifier).continueToNextRound();
-                },
-              ),
             // ---- Game-over overlay ----
             if (gameState.phase == GamePhase.gameEnd)
               _GameEndOverlay(
@@ -249,66 +244,6 @@ class _GameScreenState extends ConsumerState<GameScreen>
   }
 }
 
-// ---------------------------------------------------------------------------
-// Round-end overlay
-// ---------------------------------------------------------------------------
-
-class _RoundEndOverlay extends StatelessWidget {
-  final GameState gameState;
-  final Animation<double> fadeAnimation;
-  final VoidCallback onContinue;
-
-  const _RoundEndOverlay({
-    required this.gameState,
-    required this.fadeAnimation,
-    required this.onContinue,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: fadeAnimation,
-      child: Container(
-        color: Colors.black.withAlpha(179), // ~70% opacity
-        child: Center(
-          child: Card(
-            margin: const EdgeInsets.symmetric(horizontal: 32),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Round ${gameState.currentRound} Complete!',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  // Score list sorted by rank
-                  ...gameState.ranking.map((p) => _ScoreRow(player: p)),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: onContinue,
-                      child: const Text('Next Round'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Game-end overlay
@@ -487,7 +422,7 @@ class _ScoreboardBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Round indicator
+          // Turn step indicator — rounds are gone; the turn has two steps.
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
@@ -495,7 +430,7 @@ class _ScoreboardBar extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              AppLocalizations.of(context)!.roundIndicator(gameState.currentRound, gameState.totalRounds),
+              gameState.turnPhase == TurnPhase.draw ? '① 뽑기' : '② 액션',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -514,7 +449,7 @@ class _ScoreboardBar extends StatelessWidget {
                 totalSeconds: gameState.config.turnTimerSeconds,
               ),
             ),
-          // Player scores
+          // Cards remaining per player — one card left is the danger sign.
           ...gameState.players.map((p) => Padding(
                 padding: const EdgeInsets.only(left: 12),
                 child: Row(
@@ -533,10 +468,13 @@ class _ScoreboardBar extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${p.score}',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      '${p.hand.length}',
+                      style: TextStyle(
+                        color: p.hand.length == 1
+                            ? Colors.amberAccent
+                            : Colors.white,
                         fontWeight: FontWeight.bold,
+                        fontSize: p.hand.length == 1 ? 18 : 14,
                       ),
                     ),
                   ],
@@ -692,65 +630,74 @@ class _OpponentsBar extends StatelessWidget {
 }
 
 class _ActionBar extends StatelessWidget {
+  final GameState gameState;
+  final VoidCallback onDrawFromDeck;
+  final VoidCallback onDrawFromDiscard;
   final VoidCallback onSubmit;
-  final VoidCallback onDraw;
-  final VoidCallback onUndo;
-  final bool canSubmit;
-  final int deckCount;
+  final VoidCallback onDiscard;
 
   const _ActionBar({
+    required this.gameState,
+    required this.onDrawFromDeck,
+    required this.onDrawFromDiscard,
     required this.onSubmit,
-    required this.onDraw,
-    required this.onUndo,
-    required this.canSubmit,
-    required this.deckCount,
+    required this.onDiscard,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+    final isHumanTurn = gameState.phase == GamePhase.playing &&
+        gameState.players.isNotEmpty &&
+        !gameState.currentPlayer.isAI;
+
+    if (!isHumanTurn) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          '상대의 차례입니다...',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+      );
+    }
+
+    // Turn step 1: you must draw exactly one card.
+    if (gameState.turnPhase == TurnPhase.draw) {
+      final top = gameState.discardTop;
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            FilledButton.icon(
+              onPressed: onDrawFromDeck,
+              icon: const Icon(Icons.layers),
+              label: Text('덱에서 뽑기 (${gameState.deck.length})'),
+            ),
+            FilledButton.icon(
+              onPressed: top == null ? null : onDrawFromDiscard,
+              icon: const Icon(Icons.download),
+              label: Text(top == null ? '버린 더미 없음' : '"${top.word}" 가져오기'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Turn step 2: exactly one action.
+    return Padding(
+      padding: const EdgeInsets.all(12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          // Draw pile
-          _ActionButton(
-            icon: Icons.add_card,
-            label: '${AppLocalizations.of(context)!.draw} ($deckCount)',
-            onPressed: deckCount > 0 ? onDraw : null,
-            color: AppColors.cardUndo,
+          FilledButton(
+            onPressed: gameState.currentPlayer.sentenceZone.length >= 2
+                ? onSubmit
+                : null,
+            child: const Text('문장 완성'),
           ),
-          // Undo
-          _ActionButton(
-            icon: Icons.undo,
-            label: AppLocalizations.of(context)!.undo,
-            onPressed: onUndo,
-            color: Colors.grey,
-          ),
-          // Submit
-          SizedBox(
-            width: 120,
-            height: 44,
-            child: ElevatedButton.icon(
-              onPressed: canSubmit ? onSubmit : null,
-              icon: const Icon(Icons.check_circle, size: 20),
-              label: Text(AppLocalizations.of(context)!.submit),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.correctGreen,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: Colors.grey.shade300,
-              ),
-            ),
+          OutlinedButton(
+            onPressed: onDiscard,
+            child: const Text('카드 버리기'),
           ),
         ],
       ),
@@ -758,37 +705,36 @@ class _ActionBar extends StatelessWidget {
   }
 }
 
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback? onPressed;
-  final Color color;
+/// JUMP / STEAL cards surfaced as chips — the hand itself is drawn by Flame,
+/// which has no notion of tapping a card to open a sheet.
+class _SpecialCardRow extends StatelessWidget {
+  final List<WordCard> hand;
+  final void Function(int handIndex) onTap;
 
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    this.onPressed,
-    required this.color,
-  });
+  const _SpecialCardRow({required this.hand, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          onPressed: onPressed,
-          tooltip: label,
-          icon: Icon(icon, color: color),
-          style: IconButton.styleFrom(
-            backgroundColor: color.withAlpha(26),
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
-        ),
-      ],
+    final entries = <int>[];
+    for (int i = 0; i < hand.length; i++) {
+      if (hand[i].type == CardType.jump || hand[i].type == CardType.steal) {
+        entries.add(i);
+      }
+    }
+    if (entries.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Wrap(
+        spacing: 8,
+        children: [
+          for (final i in entries)
+            ActionChip(
+              label: Text(hand[i].type == CardType.jump ? '⏭ JUMP' : '🫳 STEAL'),
+              onPressed: () => onTap(i),
+            ),
+        ],
+      ),
     );
   }
 }

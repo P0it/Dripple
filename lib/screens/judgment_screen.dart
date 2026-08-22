@@ -66,7 +66,9 @@ class JudgmentDialog extends StatelessWidget {
           const SizedBox(height: 8),
           if (isCorrect)
             Text(
-              l10n.pointsEarned(result.scoreEarned),
+              // Scoring is gone — emptying your hand is the goal, so the
+              // meaningful number is how many cards just left it.
+              '-${result.sentence.length}',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 20,
