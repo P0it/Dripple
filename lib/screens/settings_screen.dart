@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:dripple/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/game_feedback.dart';
 import '../core/haptic_manager.dart';
@@ -35,7 +35,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: Text(l10n.soundEffects),
             subtitle: Text(l10n.soundEffectsDesc),
             value: sound.sfxEnabled,
-            activeColor: AppColors.primary,
+            activeThumbColor: AppColors.primary,
             secondary: Icon(
               sound.sfxEnabled ? Icons.volume_up : Icons.volume_off,
               color: AppColors.primary,
@@ -62,7 +62,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: Text(l10n.backgroundMusic),
             subtitle: Text(l10n.backgroundMusicDesc),
             value: sound.musicEnabled,
-            activeColor: AppColors.primary,
+            activeThumbColor: AppColors.primary,
             secondary: Icon(
               sound.musicEnabled ? Icons.music_note : Icons.music_off,
               color: AppColors.primary,
@@ -92,7 +92,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: Text(l10n.vibration),
             subtitle: Text(l10n.vibrationDesc),
             value: haptic.enabled,
-            activeColor: AppColors.primary,
+            activeThumbColor: AppColors.primary,
             secondary: Icon(
               haptic.enabled ? Icons.vibration : Icons.phonelink_erase,
               color: AppColors.primary,
