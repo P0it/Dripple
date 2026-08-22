@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-enum CardType { word, skip, steal, undo, joker }
+enum CardType { word, jump, steal, joker }
 
 enum PartOfSpeech {
   noun,
@@ -10,7 +10,19 @@ enum PartOfSpeech {
   article,
   pronoun,
   preposition,
-  conjunction,
+}
+
+/// Montessori grammar symbol shapes. A child who cannot yet read the word
+/// can still see the shape of the sentence.
+enum PosShape {
+  triangleLarge,   // noun
+  triangleMedium,  // adjective
+  triangleSmall,   // article
+  trianglePronoun, // pronoun
+  circle,          // verb
+  circleSmall,     // adverb
+  crescent,        // preposition
+  none,            // special cards
 }
 
 class WordCard extends Equatable {
@@ -50,6 +62,63 @@ class WordCard extends Equatable {
 
   /// Whether this card can act as a subject (pronoun or noun)
   bool get canBeSubject => isPronoun || isNoun;
+
+  /// Whether this card can stand in object position (after a verb or a
+  /// preposition).
+  ///
+  /// The deck carries only subject pronouns, so "cats like I" must be
+  /// rejected. Only the case-neutral pronouns may appear as objects.
+  bool get canBeObject {
+    if (type == CardType.joker) return true;
+    if (isPronoun) return word == 'you' || word == 'it';
+    return isNoun;
+  }
+
+  /// Montessori grammar symbol shape for this card's part of speech.
+  PosShape get posShape {
+    if (isSpecial) return PosShape.none;
+    switch (pos) {
+      case PartOfSpeech.noun:
+        return PosShape.triangleLarge;
+      case PartOfSpeech.adjective:
+        return PosShape.triangleMedium;
+      case PartOfSpeech.article:
+        return PosShape.triangleSmall;
+      case PartOfSpeech.pronoun:
+        return PosShape.trianglePronoun;
+      case PartOfSpeech.verb:
+        return PosShape.circle;
+      case PartOfSpeech.adverb:
+        return PosShape.circleSmall;
+      case PartOfSpeech.preposition:
+        return PosShape.crescent;
+      default:
+        return PosShape.none;
+    }
+  }
+
+  /// ARGB colour for this card's part of speech (Montessori convention).
+  int get posColor {
+    if (isSpecial) return 0xFF8B5CF6;
+    switch (pos) {
+      case PartOfSpeech.noun:
+        return 0xFF1F2937; // black
+      case PartOfSpeech.adjective:
+        return 0xFF1E3A8A; // navy
+      case PartOfSpeech.article:
+        return 0xFF7DD3FC; // light blue
+      case PartOfSpeech.pronoun:
+        return 0xFF7C3AED; // purple
+      case PartOfSpeech.verb:
+        return 0xFFDC2626; // red
+      case PartOfSpeech.adverb:
+        return 0xFFF97316; // orange
+      case PartOfSpeech.preposition:
+        return 0xFF16A34A; // green
+      default:
+        return 0xFF6B7280;
+    }
+  }
 
   /// Create a special card
   factory WordCard.special(String id, CardType type) {

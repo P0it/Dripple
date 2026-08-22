@@ -8,17 +8,16 @@ import '../data/card_deck.dart';
 import '../engine/grammar/grammar_engine.dart';
 import '../engine/ai/ai_player.dart';
 
-/// Judgment result after sentence submission
+/// Outcome of a sentence submission, surfaced to the UI for the judgment
+/// dialog.
 class JudgmentResult {
   final bool isCorrect;
-  final int scoreEarned;
   final List<ValidationError> errors;
   final String playerName;
   final List<WordCard> sentence;
 
   const JudgmentResult({
     required this.isCorrect,
-    this.scoreEarned = 0,
     this.errors = const [],
     required this.playerName,
     required this.sentence,
@@ -27,18 +26,25 @@ class JudgmentResult {
 
 class GameNotifier extends StateNotifier<GameState> {
   final GrammarEngine _grammarEngine;
-  // Mutable so startGame can recreate it with the chosen AIDifficulty.
-  AIPlayer _aiPlayer;
   final Random _random;
+  AIPlayer _aiPlayer;
 
-  bool _isProcessingAI = false;
+  /// Disabled in tests so turns can be stepped deterministically.
+  final bool autoRunAI;
+
+  /// Pause before each AI action, so a child can see what happened.
+  final Duration aiTurnDelay;
+
   Timer? _turnTimer;
   int _timerGeneration = 0;
+  bool _isProcessingAI = false;
 
   GameNotifier({
     GrammarEngine? grammarEngine,
     AIPlayer? aiPlayer,
     Random? random,
+    this.autoRunAI = true,
+    this.aiTurnDelay = const Duration(milliseconds: 700),
   })  : _grammarEngine = grammarEngine ?? GrammarEngine(),
         _aiPlayer = aiPlayer ?? AIPlayer(),
         _random = random ?? Random(),
@@ -50,408 +56,147 @@ class GameNotifier extends StateNotifier<GameState> {
     super.dispose();
   }
 
-  /// Whether AI turns are currently being processed
   bool get isProcessingAI => _isProcessingAI;
 
-  /// Initialize a new game
+  /// Test-only escape hatch for setting up specific board states.
+  void debugSetState(GameState s) => state = s;
+
+  // -------------------------------------------------------------------------
+  // Setup
+  // -------------------------------------------------------------------------
+
   void startGame(GameConfig config) {
     _isProcessingAI = false;
-    // Rebuild the AI player with the difficulty chosen for this game.
     _aiPlayer = AIPlayer(difficulty: config.difficulty);
-    final deck = CardDeck.generateDeck()..shuffle(_random);
 
-    final players = <Player>[];
-    players.add(Player(id: 'human_0', name: 'You'));
-    for (int i = 1; i < config.playerCount; i++) {
-      players.add(Player(id: 'ai_$i', name: 'AI $i', isAI: true));
-    }
+    final deck = CardDeck().generate()..shuffle(_random);
+    final (hands, remaining) = CardDeck.dealGuaranteedHands(
+      deck: deck,
+      playerCount: config.playerCount,
+      handSize: config.initialHandSize,
+    );
 
-    final mutableDeck = List<WordCard>.from(deck);
-    final dealtPlayers = players.map((p) {
-      final hand = <WordCard>[];
-      for (int i = 0; i < config.initialHandSize && mutableDeck.isNotEmpty; i++) {
-        hand.add(mutableDeck.removeLast());
-      }
-      return p.copyWith(hand: hand);
-    }).toList();
+    final players = <Player>[
+      Player(id: 'human_0', name: 'You', hand: hands[0]),
+      for (int i = 1; i < config.playerCount; i++)
+        Player(id: 'ai_$i', name: 'AI $i', isAI: true, hand: hands[i]),
+    ];
+
+    final workingDeck = List<WordCard>.from(remaining);
+    // Open one card face up to seed the discard pile.
+    final opener = workingDeck.removeLast();
 
     state = GameState(
       phase: GamePhase.playing,
-      players: dealtPlayers,
-      deck: mutableDeck,
+      turnPhase: TurnPhase.draw,
+      players: players,
+      deck: workingDeck,
+      discardPile: [opener],
       currentPlayerIndex: 0,
-      currentRound: 1,
-      totalRounds: config.totalRounds,
       config: config,
     );
 
-    // Player 0 is always human — start the timer immediately.
     _startTurnTimer();
+    if (autoRunAI) unawaited(_runAITurnsIfNeeded());
   }
 
-  /// Place a card from hand to sentence zone.
-  /// WILD cards can also be placed (they act as any word).
-  void placeCard(int cardIndex) {
+  // -------------------------------------------------------------------------
+  // Draw phase
+  // -------------------------------------------------------------------------
+
+  void drawFromDeck() {
     if (state.phase != GamePhase.playing) return;
-    final player = state.currentPlayer;
-    if (player.isAI) return;
-    if (cardIndex < 0 || cardIndex >= player.hand.length) return;
+    if (state.turnPhase != TurnPhase.draw) return;
 
-    final card = player.hand[cardIndex];
-    // Special cards other than WILD use playSpecialCard
-    if (card.isSpecial && card.type != CardType.joker) return;
+    var working = state;
+    if (working.deck.isEmpty) {
+      if (working.deckRecycleCount >= 2) {
+        _endGameOnExhaustion();
+        return;
+      }
+      working = _recycleDiscardIntoDeck(working);
+      if (working.deck.isEmpty) {
+        _endGameOnExhaustion();
+        return;
+      }
+    }
 
-    final newHand = List<WordCard>.from(player.hand)..removeAt(cardIndex);
-    final newSentence = [...player.sentenceZone, card];
+    final newDeck = List<WordCard>.from(working.deck);
+    final drawn = newDeck.removeLast();
 
-    _updateCurrentPlayer(
-      player.copyWith(hand: newHand, sentenceZone: newSentence),
+    final players = List<Player>.from(working.players);
+    final me = players[working.currentPlayerIndex];
+    players[working.currentPlayerIndex] = me.copyWith(hand: [...me.hand, drawn]);
+
+    state = working.copyWith(
+      players: players,
+      deck: newDeck,
+      turnPhase: TurnPhase.action,
     );
   }
 
-  /// Remove last card from sentence zone back to hand
-  void undoPlacement() {
+  void drawFromDiscard() {
     if (state.phase != GamePhase.playing) return;
-    final player = state.currentPlayer;
-    if (player.isAI) return;
-    if (player.sentenceZone.isEmpty) return;
+    if (state.turnPhase != TurnPhase.draw) return;
+    if (state.discardPile.isEmpty) return;
 
-    final card = player.sentenceZone.last;
-    final newSentence = List<WordCard>.from(player.sentenceZone)..removeLast();
-    final newHand = [...player.hand, card];
+    final newPile = List<WordCard>.from(state.discardPile);
+    final taken = newPile.removeLast();
 
-    _updateCurrentPlayer(
-      player.copyWith(hand: newHand, sentenceZone: newSentence),
-    );
-  }
-
-  /// Draw a card from the deck (atomic state update)
-  void drawCard() {
-    if (state.phase != GamePhase.playing) return;
-    if (state.deck.isEmpty) return;
-
-    // Cancel before mutating state so the timer can't fire mid-action.
-    _cancelTurnTimer();
-
-    final player = state.currentPlayer;
-    final newDeck = List<WordCard>.from(state.deck);
-    final drawnCard = newDeck.removeLast();
-    final newHand = [...player.hand, drawnCard];
-
-    // Single atomic state update instead of multiple assignments
-    final newPlayers = List<Player>.from(state.players);
-    newPlayers[state.currentPlayerIndex] =
-        player.copyWith(hand: newHand);
-
-    final nextIndex =
-        (state.currentPlayerIndex + 1) % state.players.length;
+    final players = List<Player>.from(state.players);
+    final me = players[state.currentPlayerIndex];
+    players[state.currentPlayerIndex] = me.copyWith(hand: [...me.hand, taken]);
 
     state = state.copyWith(
-      players: newPlayers,
-      deck: newDeck,
-      currentPlayerIndex: nextIndex,
+      players: players,
+      discardPile: newPile,
+      turnPhase: TurnPhase.action,
+      drawnFromDiscardCardId: taken.id,
     );
-
-    _startTurnTimer();
   }
 
-  /// Submit the current sentence for validation
-  JudgmentResult submitSentence() {
-    if (state.phase != GamePhase.playing) {
-      return JudgmentResult(
-        isCorrect: false,
-        playerName: state.players.isNotEmpty
-            ? state.currentPlayer.name
-            : '',
-        sentence: const [],
-      );
-    }
+  /// Shuffle the discard pile (minus its top card) back into the deck.
+  GameState _recycleDiscardIntoDeck(GameState s) {
+    if (s.discardPile.length <= 1) return s;
 
-    final player = state.currentPlayer;
+    final pile = List<WordCard>.from(s.discardPile);
+    final top = pile.removeLast();
+    pile.shuffle(_random);
 
-    // Block submission if sentence is too short
-    if (player.sentenceZone.length < state.config.minSentenceLength) {
-      return JudgmentResult(
-        isCorrect: false,
-        errors: [ValidationError(
-          code: 'too_few_cards',
-          message: 'Need at least ${state.config.minSentenceLength} cards',
-          localizedMessages: {
-            'ko': '최소 ${state.config.minSentenceLength}장의 카드가 필요합니다',
-            'ja': '最低${state.config.minSentenceLength}枚のカードが必要です',
-          },
-        )],
-        playerName: player.name,
-        sentence: List<WordCard>.from(player.sentenceZone),
-      );
-    }
-
-    // Stop the countdown before any state mutation.
-    _cancelTurnTimer();
-
-    // Capture sentence BEFORE any state mutation
-    final submittedSentence = List<WordCard>.from(player.sentenceZone);
-    final result = _grammarEngine.validate(submittedSentence);
-
-    JudgmentResult judgment;
-
-    if (result.isValid) {
-      _updateCurrentPlayer(player.copyWith(
-        sentenceZone: const [],
-        score: player.score + result.score,
-      ));
-
-      judgment = JudgmentResult(
-        isCorrect: true,
-        scoreEarned: result.score,
-        playerName: player.name,
-        sentence: submittedSentence,
-      );
-    } else {
-      final returnedHand = [...player.hand, ...player.sentenceZone];
-      _updateCurrentPlayer(player.copyWith(
-        hand: returnedHand,
-        sentenceZone: const [],
-      ));
-
-      judgment = JudgmentResult(
-        isCorrect: false,
-        errors: result.errors,
-        playerName: player.name,
-        sentence: submittedSentence,
-      );
-    }
-
-    _advanceTurn();
-    return judgment;
+    return s.copyWith(
+      deck: pile,
+      discardPile: [top],
+      deckRecycleCount: s.deckRecycleCount + 1,
+    );
   }
 
-  /// Play a special card.
-  /// For STEAL: [targetPlayerIndex] is whose card to steal,
-  /// [giveCardIndex] is which card from your hand to give them (forced exchange).
-  void playSpecialCard(int cardIndex, {int? targetPlayerIndex, int? giveCardIndex}) {
-    if (state.phase != GamePhase.playing) return;
-    final player = state.currentPlayer;
-    if (cardIndex < 0 || cardIndex >= player.hand.length) return;
+  // -------------------------------------------------------------------------
+  // Turn timer
+  // -------------------------------------------------------------------------
 
-    final card = player.hand[cardIndex];
-    if (!card.isSpecial) return;
-
-    // Cancel before any state mutation so the timer can't fire mid-action.
-    _cancelTurnTimer();
-
-    final newHand = List<WordCard>.from(player.hand)..removeAt(cardIndex);
-
-    switch (card.type) {
-      case CardType.skip:
-        // Skip next player: advance by 2 in a single atomic update
-        final skipCount = state.players.length > 2 ? 2 : 1;
-        final nextIndex =
-            (state.currentPlayerIndex + skipCount) % state.players.length;
-
-        final newPlayers = List<Player>.from(state.players);
-        newPlayers[state.currentPlayerIndex] =
-            player.copyWith(hand: newHand);
-
-        state = state.copyWith(
-          players: newPlayers,
-          currentPlayerIndex: nextIndex,
-        );
-        _startTurnTimer();
-        return;
-
-      case CardType.steal:
-        // Forced exchange: steal 1 random card from target, give 1 card back.
-        // giveCardIndex refers to the index in newHand (after removing the
-        // STEAL card itself).
-        if (targetPlayerIndex != null &&
-            targetPlayerIndex != state.currentPlayerIndex &&
-            giveCardIndex != null) {
-          final target = state.players[targetPlayerIndex];
-          if (target.hand.isNotEmpty &&
-              giveCardIndex >= 0 && giveCardIndex < newHand.length) {
-            // Steal a random card from target
-            final stolenIndex = _random.nextInt(target.hand.length);
-            final stolenCard = target.hand[stolenIndex];
-
-            // Give one of our cards to target
-            final givenCard = newHand[giveCardIndex];
-
-            final myUpdatedHand = List<WordCard>.from(newHand)
-              ..removeAt(giveCardIndex)
-              ..add(stolenCard);
-
-            final targetUpdatedHand = List<WordCard>.from(target.hand)
-              ..removeAt(stolenIndex)
-              ..add(givenCard);
-
-            // Single atomic update
-            final newPlayers = List<Player>.from(state.players);
-            newPlayers[state.currentPlayerIndex] =
-                player.copyWith(hand: myUpdatedHand);
-            newPlayers[targetPlayerIndex] =
-                target.copyWith(hand: targetUpdatedHand);
-
-            final nextIndex =
-                (state.currentPlayerIndex + 1) % state.players.length;
-
-            state = state.copyWith(
-              players: newPlayers,
-              currentPlayerIndex: nextIndex,
-            );
-            _startTurnTimer();
-            return;
-          }
-        }
-        // No valid target or no card to give — just remove card and advance
-        _updateCurrentPlayer(player.copyWith(hand: newHand));
-        _advanceTurn();
-
-      case CardType.undo:
-        if (targetPlayerIndex != null &&
-            targetPlayerIndex != state.currentPlayerIndex) {
-          final target = state.players[targetPlayerIndex];
-          if (target.sentenceZone.isNotEmpty) {
-            final removedCard = target.sentenceZone.last;
-            final newSentence = List<WordCard>.from(target.sentenceZone)
-              ..removeLast();
-
-            // Single atomic update
-            final newPlayers = List<Player>.from(state.players);
-            newPlayers[state.currentPlayerIndex] =
-                player.copyWith(hand: newHand);
-            newPlayers[targetPlayerIndex] = target.copyWith(
-              hand: [...target.hand, removedCard],
-              sentenceZone: newSentence,
-            );
-
-            final nextIndex =
-                (state.currentPlayerIndex + 1) % state.players.length;
-
-            state = state.copyWith(
-              players: newPlayers,
-              currentPlayerIndex: nextIndex,
-            );
-            _startTurnTimer();
-            return;
-          }
-        }
-        _updateCurrentPlayer(player.copyWith(hand: newHand));
-        _advanceTurn();
-
-      case CardType.joker:
-        // WILD cards are placed via placeCard(), not played as special
-        // If somehow played here, just discard it
-        _updateCurrentPlayer(player.copyWith(hand: newHand));
-        _advanceTurn();
-
-      case CardType.word:
-        break;
-    }
-  }
-
-  /// Execute AI turn. Returns a JudgmentResult if AI submitted a sentence.
-  Future<JudgmentResult?> executeAITurn() async {
-    if (state.phase != GamePhase.playing) return null;
-    final player = state.currentPlayer;
-    if (!player.isAI) return null;
-
-    final action = _aiPlayer.decideTurn(player, state);
-
-    switch (action.type) {
-      case AIActionType.buildAndSubmit:
-        final cardsToPlace = action.cardsToPlace ?? [];
-        var currentPlayer = player;
-        for (final card in cardsToPlace) {
-          final idx = currentPlayer.hand.indexWhere((c) => c.id == card.id);
-          if (idx >= 0) {
-            final newHand = List<WordCard>.from(currentPlayer.hand)
-              ..removeAt(idx);
-            final newSentence = [...currentPlayer.sentenceZone, card];
-            currentPlayer =
-                currentPlayer.copyWith(hand: newHand, sentenceZone: newSentence);
-          }
-        }
-        _updateCurrentPlayer(currentPlayer);
-        return submitSentence();
-
-      case AIActionType.drawCard:
-        drawCard();
-        return null;
-
-      case AIActionType.playSpecial:
-        final cardIdx =
-            player.hand.indexWhere((c) => c.id == action.specialCard?.id);
-        if (cardIdx >= 0) {
-          playSpecialCard(
-            cardIdx,
-            targetPlayerIndex: action.targetPlayer,
-            giveCardIndex: action.giveCardIndex,
-          );
-        }
-        return null;
-    }
-  }
-
-  /// Process all consecutive AI turns. Guarded against concurrent execution.
-  Future<List<JudgmentResult>> processAITurns() async {
-    if (_isProcessingAI) return [];
-    _isProcessingAI = true;
-
-    // Suppress the human timer while AI is in control.
-    _cancelTurnTimer();
-
-    final results = <JudgmentResult>[];
-
-    try {
-      while (state.phase == GamePhase.playing &&
-          state.currentPlayer.isAI) {
-        await Future.delayed(const Duration(milliseconds: 800));
-        final result = await executeAITurn();
-        if (result != null) results.add(result);
-      }
-    } finally {
-      _isProcessingAI = false;
-    }
-
-    // Resume the human timer now that it is the human's turn again
-    // (or do nothing if the game has ended).
-    if (state.phase == GamePhase.playing && !state.currentPlayer.isAI) {
-      _startTurnTimer();
-    }
-
-    return results;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Turn timer helpers
-  // ---------------------------------------------------------------------------
-
-  /// Start (or restart) the countdown for the current human turn.
-  /// Does nothing if the current player is an AI.
   void _startTurnTimer() {
     _turnTimer?.cancel();
+    _turnTimer = null;
 
-    if (state.currentPlayer.isAI) {
-      // AI manages its own timing; surface -1 so the UI hides the widget.
-      state = state.copyWith(turnTimeRemaining: -1);
+    final seconds = state.config.turnTimerSeconds;
+    if (seconds <= 0 || state.currentPlayer.isAI) {
+      if (state.turnTimeRemaining != -1) {
+        state = state.copyWith(turnTimeRemaining: -1);
+      }
       return;
     }
 
-    final seconds = state.config.turnTimerSeconds;
     state = state.copyWith(turnTimeRemaining: seconds);
-
     final generation = ++_timerGeneration;
+
     _turnTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted || generation != _timerGeneration) return;
-      final remaining = state.turnTimeRemaining;
-      if (remaining <= 0 || state.phase != GamePhase.playing) {
+      if (state.phase != GamePhase.playing) {
         _turnTimer?.cancel();
         return;
       }
-
-      final next = remaining - 1;
-      if (next == 0) {
+      final next = state.turnTimeRemaining - 1;
+      if (next <= 0) {
         _turnTimer?.cancel();
         _forfeitTurn();
       } else {
@@ -460,118 +205,378 @@ class GameNotifier extends StateNotifier<GameState> {
     });
   }
 
-  /// Cancel the active timer and mark it inactive in state.
   void _cancelTurnTimer() {
     _turnTimer?.cancel();
     _turnTimer = null;
-    // Only update state when it is meaningful to avoid spurious rebuilds.
+    _timerGeneration++;
     if (state.turnTimeRemaining != -1) {
       state = state.copyWith(turnTimeRemaining: -1);
     }
   }
 
-  /// Called when the timer reaches zero for the human player.
-  /// Returns all sentence-zone cards to hand and advances the turn (draw
-  /// penalty, same as the draw-card path).
+  /// Timer expiry: return sentence-zone cards to hand and end the turn.
   void _forfeitTurn() {
     if (state.phase != GamePhase.playing) return;
-    final player = state.currentPlayer;
-    if (player.isAI) return; // Safety guard — should never happen.
-
-    // Return sentence-zone cards to hand.
-    final returnedHand = [...player.hand, ...player.sentenceZone];
-    _updateCurrentPlayer(player.copyWith(
-      hand: returnedHand,
-      sentenceZone: const [],
-    ));
-
-    _advanceTurn();
+    endTurn();
   }
 
-  // ---------------------------------------------------------------------------
-  // Turn management
-  // ---------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // Sentence zone editing (free-form — a child who gets stuck must be able
+  // to back out of any arrangement, not just undo the last card)
+  // -------------------------------------------------------------------------
 
-  /// Advance to the next turn. Handles round transitions.
-  void _advanceTurn() {
-    if (state.phase == GamePhase.gameEnd) return;
+  void placeCard(int handIndex) {
+    if (state.phase != GamePhase.playing) return;
+    final me = state.currentPlayer;
+    if (handIndex < 0 || handIndex >= me.hand.length) return;
 
-    final nextIndex =
-        (state.currentPlayerIndex + 1) % state.players.length;
+    final card = me.hand[handIndex];
+    // JUMP and STEAL are actions, not words.
+    if (card.type == CardType.jump || card.type == CardType.steal) return;
 
-    // Check if round is over (wrapped back to first player AND deck is empty)
-    if (nextIndex == 0 && state.deck.isEmpty) {
-      if (state.currentRound >= state.totalRounds) {
-        _cancelTurnTimer();
-        state = state.copyWith(phase: GamePhase.gameEnd);
-        return;
-      }
-      // Pause at roundEnd so the UI can show the transition overlay.
-      // The UI must call continueToNextRound() to proceed.
-      _cancelTurnTimer();
-      state = state.copyWith(
-        phase: GamePhase.roundEnd,
-        currentPlayerIndex: nextIndex,
+    final hand = List<WordCard>.from(me.hand)..removeAt(handIndex);
+    _updateCurrentPlayer(
+      me.copyWith(hand: hand, sentenceZone: [...me.sentenceZone, card]),
+    );
+  }
+
+  void removeFromSentence(int sentenceIndex) {
+    if (state.phase != GamePhase.playing) return;
+    final me = state.currentPlayer;
+    if (sentenceIndex < 0 || sentenceIndex >= me.sentenceZone.length) return;
+
+    final zone = List<WordCard>.from(me.sentenceZone);
+    final card = zone.removeAt(sentenceIndex);
+    _updateCurrentPlayer(
+      me.copyWith(hand: [...me.hand, card], sentenceZone: zone),
+    );
+  }
+
+  void reorderSentence(int from, int to) {
+    if (state.phase != GamePhase.playing) return;
+    final me = state.currentPlayer;
+    final zone = List<WordCard>.from(me.sentenceZone);
+    if (from < 0 || from >= zone.length) return;
+    if (to < 0 || to >= zone.length) return;
+    if (from == to) return;
+
+    final card = zone.removeAt(from);
+    zone.insert(to, card);
+    _updateCurrentPlayer(me.copyWith(sentenceZone: zone));
+  }
+
+  // -------------------------------------------------------------------------
+  // Action phase
+  // -------------------------------------------------------------------------
+
+  /// Validate the sentence zone. On success the cards leave the hand for
+  /// good and the turn ends. On failure the cards return to hand and the
+  /// turn continues — failure must not cost a child their turn.
+  JudgmentResult submitSentence() {
+    final me = state.currentPlayer;
+    final submitted = List<WordCard>.from(me.sentenceZone);
+
+    if (state.phase != GamePhase.playing ||
+        state.turnPhase != TurnPhase.action) {
+      return JudgmentResult(
+        isCorrect: false,
+        playerName: me.name,
+        sentence: submitted,
       );
-      return;
     }
 
-    state = state.copyWith(currentPlayerIndex: nextIndex);
+    final result = _grammarEngine.validate(submitted);
 
-    // Restart the timer for whoever's turn it now is.
-    // If it's an AI turn, _startTurnTimer() will set turnTimeRemaining to -1
-    // and return without creating a periodic timer, which is correct — the
-    // AI drives its own pacing via processAITurns().
-    _startTurnTimer();
-  }
-
-  /// Called by the UI when the player dismisses the round-end overlay.
-  /// Deals a fresh hand to all players and resumes gameplay.
-  void continueToNextRound() {
-    if (state.phase != GamePhase.roundEnd) return;
-    _startNewRound(state.currentPlayerIndex);
-    // Phase is set back to playing AFTER the new round state is written,
-    // so widgets that read phase see a consistent snapshot.
-    state = state.copyWith(phase: GamePhase.playing);
-    _startTurnTimer();
-  }
-
-  /// Start a new round: generate fresh deck, deal cards to all players.
-  /// Does NOT change [phase] — callers are responsible for setting phase.
-  void _startNewRound(int firstPlayerIndex) {
-    final newDeck = CardDeck.generateDeck()..shuffle(_random);
-    final mutableDeck = List<WordCard>.from(newDeck);
-    final config = state.config;
-
-    final newPlayers = state.players.map((p) {
-      final hand = <WordCard>[];
-      for (int i = 0; i < config.initialHandSize && mutableDeck.isNotEmpty; i++) {
-        hand.add(mutableDeck.removeLast());
-      }
-      return p.copyWith(
-        hand: hand,
+    if (!result.isValid) {
+      _updateCurrentPlayer(me.copyWith(
+        hand: [...me.hand, ...submitted],
         sentenceZone: const [],
+      ));
+      return JudgmentResult(
+        isCorrect: false,
+        errors: result.errors,
+        playerName: me.name,
+        sentence: submitted,
       );
-    }).toList();
+    }
+
+    _updateCurrentPlayer(me.copyWith(sentenceZone: const []));
+
+    final judgment = JudgmentResult(
+      isCorrect: true,
+      playerName: me.name,
+      sentence: submitted,
+    );
+
+    if (state.currentPlayer.hand.isEmpty) {
+      _endGame(winnerIndex: state.currentPlayerIndex);
+    } else {
+      endTurn();
+    }
+    return judgment;
+  }
+
+  /// Discard one card face up. Returns false if the discard is illegal.
+  bool discardCard(int handIndex) {
+    if (state.phase != GamePhase.playing) return false;
+    if (state.turnPhase != TurnPhase.action) return false;
+
+    final me = state.currentPlayer;
+    if (handIndex < 0 || handIndex >= me.hand.length) return false;
+
+    final card = me.hand[handIndex];
+    // Rummy: the card you just took from the pile cannot go straight back.
+    if (card.id == state.drawnFromDiscardCardId) return false;
+
+    final hand = List<WordCard>.from(me.hand)..removeAt(handIndex);
+    final players = List<Player>.from(state.players);
+    players[state.currentPlayerIndex] = me.copyWith(hand: hand);
 
     state = state.copyWith(
-      players: newPlayers,
-      deck: mutableDeck,
-      currentPlayerIndex: firstPlayerIndex,
-      currentRound: state.currentRound + 1,
+      players: players,
+      discardPile: [...state.discardPile, card],
     );
-    // Timer is started by the caller (continueToNextRound) after setting phase.
+
+    if (hand.isEmpty) {
+      _endGame(winnerIndex: state.currentPlayerIndex);
+    } else {
+      endTurn();
+    }
+    return true;
   }
+
+  /// JUMP: skip the next player's turn. Costs the turn's single action.
+  bool playJump(int handIndex) {
+    if (state.phase != GamePhase.playing) return false;
+    if (state.turnPhase != TurnPhase.action) return false;
+
+    final me = state.currentPlayer;
+    if (handIndex < 0 || handIndex >= me.hand.length) return false;
+    if (me.hand[handIndex].type != CardType.jump) return false;
+
+    final hand = List<WordCard>.from(me.hand)..removeAt(handIndex);
+    _updateCurrentPlayer(me.copyWith(hand: hand));
+
+    if (hand.isEmpty) {
+      _endGame(winnerIndex: state.currentPlayerIndex);
+      return true;
+    }
+    endTurn(skip: 1);
+    return true;
+  }
+
+  /// STEAL: take one random card from [targetPlayerIndex] and give them one
+  /// card of your choosing. Opponent hands are hidden, so the player picks
+  /// the victim, not the card.
+  ///
+  /// [giveCardIndex] indexes the hand *after* the STEAL card is removed.
+  bool playSteal(
+    int handIndex, {
+    required int targetPlayerIndex,
+    required int giveCardIndex,
+  }) {
+    if (state.phase != GamePhase.playing) return false;
+    if (state.turnPhase != TurnPhase.action) return false;
+    if (targetPlayerIndex == state.currentPlayerIndex) return false;
+    if (targetPlayerIndex < 0 || targetPlayerIndex >= state.players.length) {
+      return false;
+    }
+
+    final me = state.currentPlayer;
+    if (handIndex < 0 || handIndex >= me.hand.length) return false;
+    if (me.hand[handIndex].type != CardType.steal) return false;
+
+    final target = state.players[targetPlayerIndex];
+    if (target.hand.isEmpty) return false;
+
+    final handAfterSteal = List<WordCard>.from(me.hand)..removeAt(handIndex);
+    if (giveCardIndex < 0 || giveCardIndex >= handAfterSteal.length) {
+      return false;
+    }
+
+    final stolenIndex = _random.nextInt(target.hand.length);
+    final stolen = target.hand[stolenIndex];
+    final given = handAfterSteal[giveCardIndex];
+
+    final myHand = List<WordCard>.from(handAfterSteal)
+      ..removeAt(giveCardIndex)
+      ..add(stolen);
+    final targetHand = List<WordCard>.from(target.hand)
+      ..removeAt(stolenIndex)
+      ..add(given);
+
+    final players = List<Player>.from(state.players);
+    players[state.currentPlayerIndex] = me.copyWith(hand: myHand);
+    players[targetPlayerIndex] = target.copyWith(hand: targetHand);
+
+    state = state.copyWith(players: players);
+
+    if (myHand.isEmpty) {
+      _endGame(winnerIndex: state.currentPlayerIndex);
+      return true;
+    }
+    endTurn();
+    return true;
+  }
+
+  // -------------------------------------------------------------------------
+  // Turn advance / game end
+  // -------------------------------------------------------------------------
+
+  /// Advance to [skip]+1 players ahead. JUMP passes skip: 1.
+  void endTurn({int skip = 0}) {
+    if (state.phase != GamePhase.playing) return;
+    _cancelTurnTimer();
+
+    // Any cards left staged in the sentence zone go back to hand.
+    final me = state.currentPlayer;
+    var working = state;
+    if (me.sentenceZone.isNotEmpty) {
+      final players = List<Player>.from(working.players);
+      players[working.currentPlayerIndex] = me.copyWith(
+        hand: [...me.hand, ...me.sentenceZone],
+        sentenceZone: const [],
+      );
+      working = working.copyWith(players: players);
+    }
+
+    final next =
+        (working.currentPlayerIndex + 1 + skip) % working.players.length;
+
+    state = working
+        .clearDrawnFromDiscard()
+        .copyWith(currentPlayerIndex: next, turnPhase: TurnPhase.draw);
+
+    _startTurnTimer();
+    if (autoRunAI) unawaited(_runAITurnsIfNeeded());
+  }
+
+  void _endGame({required int winnerIndex}) {
+    _cancelTurnTimer();
+    state = state.copyWith(
+      phase: GamePhase.gameEnd,
+      winnerIndex: winnerIndex,
+    );
+  }
+
+  /// Anti-stalling: after two recycles the deck running dry ends the game,
+  /// and the player holding the fewest cards wins.
+  void _endGameOnExhaustion() {
+    final winnerId = state.ranking.first.id;
+    _endGame(winnerIndex: state.players.indexWhere((p) => p.id == winnerId));
+  }
+
+  // -------------------------------------------------------------------------
+  // AI turn driving
+  // -------------------------------------------------------------------------
+
+  Future<void> _runAITurnsIfNeeded() async {
+    if (state.phase != GamePhase.playing) return;
+    if (!state.currentPlayer.isAI) return;
+    await runAITurns();
+  }
+
+  /// Drive every consecutive AI turn until control returns to a human or
+  /// the game ends.
+  ///
+  /// This lives in the notifier, not the screen. When the UI owned it, any
+  /// turn advance the UI did not initiate — a timer expiry, a JUMP — left
+  /// nobody to run the AI and the game froze.
+  Future<List<JudgmentResult>> runAITurns() async {
+    if (_isProcessingAI) return const [];
+    _isProcessingAI = true;
+
+    final results = <JudgmentResult>[];
+    try {
+      // The bound is a safety net against a rule bug spinning forever.
+      var guard = 0;
+      while (state.phase == GamePhase.playing &&
+          state.currentPlayer.isAI &&
+          guard++ < 200) {
+        if (aiTurnDelay > Duration.zero) {
+          await Future<void>.delayed(aiTurnDelay);
+        }
+        if (!mounted) break;
+        final result = _executeOneAITurn();
+        if (result != null) results.add(result);
+      }
+    } finally {
+      _isProcessingAI = false;
+    }
+    return results;
+  }
+
+  /// One complete AI turn: mandatory draw, then a single action.
+  JudgmentResult? _executeOneAITurn() {
+    final startIndex = state.currentPlayerIndex;
+
+    // --- Draw phase ---
+    if (state.turnPhase == TurnPhase.draw) {
+      final top = state.discardTop;
+      final wantsDiscard = top != null &&
+          _aiPlayer.findSentence(state.currentPlayer.hand) == null &&
+          _aiPlayer.findSentence([...state.currentPlayer.hand, top]) != null;
+      if (wantsDiscard) {
+        drawFromDiscard();
+      } else {
+        drawFromDeck();
+      }
+    }
+    if (state.phase != GamePhase.playing) return null;
+    if (state.currentPlayerIndex != startIndex) return null;
+
+    // --- Action phase ---
+    final me = state.currentPlayer;
+    final action = _aiPlayer.decideAction(me, state);
+
+    switch (action.type) {
+      case AIActionType.submitSentence:
+        for (final card in action.cards!) {
+          final idx =
+              state.currentPlayer.hand.indexWhere((c) => c.id == card.id);
+          if (idx >= 0) placeCard(idx);
+        }
+        return submitSentence();
+
+      case AIActionType.playJump:
+        final idx = me.hand.indexWhere((c) => c.id == action.specialCard!.id);
+        if (idx >= 0 && playJump(idx)) return null;
+
+      case AIActionType.playSteal:
+        final idx = me.hand.indexWhere((c) => c.id == action.specialCard!.id);
+        if (idx >= 0 &&
+            playSteal(
+              idx,
+              targetPlayerIndex: action.targetPlayerIndex!,
+              giveCardIndex: action.giveCardIndex!,
+            )) {
+          return null;
+        }
+
+      case AIActionType.discard:
+        if (discardCard(action.discardIndex!)) return null;
+    }
+
+    // Fallback: the chosen action was rejected. Discard any legal card so
+    // the turn always ends and the loop cannot spin.
+    final hand = state.currentPlayer.hand;
+    for (int i = 0; i < hand.length; i++) {
+      if (discardCard(i)) return null;
+    }
+    endTurn();
+    return null;
+  }
+
+  // -------------------------------------------------------------------------
+  // Helpers
+  // -------------------------------------------------------------------------
 
   void _updateCurrentPlayer(Player updated) {
-    _updatePlayer(state.currentPlayerIndex, updated);
+    final players = List<Player>.from(state.players);
+    players[state.currentPlayerIndex] = updated;
+    state = state.copyWith(players: players);
   }
 
-  void _updatePlayer(int index, Player updated) {
-    final newPlayers = List<Player>.from(state.players);
-    newPlayers[index] = updated;
-    state = state.copyWith(players: newPlayers);
-  }
 }
 
 final gameProvider = StateNotifierProvider<GameNotifier, GameState>((ref) {

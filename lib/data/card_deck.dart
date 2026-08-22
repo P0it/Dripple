@@ -4,15 +4,11 @@ import '../models/word_card.dart';
 /// Cards are designed as semantically compatible groups to prevent
 /// nonsensical sentences (e.g., "The chair eats a book").
 class CardDeck {
-  static int _idCounter = 0;
-  static String _nextId() => 'card_${_idCounter++}';
-
-  /// Reset ID counter (for testing)
-  static void resetIds() => _idCounter = 0;
+  int _idCounter = 0;
+  String _nextId() => 'card_${_idCounter++}';
 
   /// Generate a full deck of cards
-  static List<WordCard> generateDeck() {
-    // Don't reset _idCounter — ensures unique IDs across rounds
+  List<WordCard> generate() {
     return [
       ..._pronouns(),
       ..._articles(),
@@ -21,13 +17,54 @@ class CardDeck {
       ..._adjectives(),
       ..._adverbs(),
       ..._prepositions(),
-      ..._conjunctions(),
       ..._specialCards(),
     ];
   }
 
-  // === PRONOUNS (8 cards) ===
-  static List<WordCard> _pronouns() => [
+  /// Deal [playerCount] hands of [handSize] cards, guaranteeing every hand
+  /// contains at least one verb and at least one subject-capable card.
+  ///
+  /// Without this an opening hand can be unplayable, which to a 6-10 year
+  /// old reads as the game being broken. Mirrors Scrabble's "redraw if you
+  /// have no vowels" tournament rule.
+  ///
+  /// Returns the hands and the remaining deck.
+  static (List<List<WordCard>>, List<WordCard>) dealGuaranteedHands({
+    required List<WordCard> deck,
+    required int playerCount,
+    required int handSize,
+  }) {
+    final pool = List<WordCard>.from(deck);
+    final hands = <List<WordCard>>[];
+
+    WordCard? takeWhere(bool Function(WordCard) test) {
+      final idx = pool.indexWhere(test);
+      if (idx < 0) return null;
+      return pool.removeAt(idx);
+    }
+
+    for (int p = 0; p < playerCount; p++) {
+      final hand = <WordCard>[];
+
+      final verb = takeWhere((c) => c.isVerb);
+      if (verb != null) hand.add(verb);
+
+      final subject = takeWhere((c) => c.canBeSubject);
+      if (subject != null) hand.add(subject);
+
+      while (hand.length < handSize && pool.isNotEmpty) {
+        hand.add(pool.removeLast());
+      }
+
+      hand.shuffle();
+      hands.add(hand);
+    }
+
+    return (hands, pool);
+  }
+
+  // === PRONOUNS (12 cards) ===
+  List<WordCard> _pronouns() => [
         WordCard(
           id: _nextId(), word: 'I', pos: PartOfSpeech.pronoun,
           person: 1, number: 'singular',
@@ -68,10 +105,30 @@ class CardDeck {
           person: 2, number: 'plural',
           meanings: {'ko': '너희', 'ja': 'あなたたち', 'en': 'you'},
         ),
+        WordCard(
+          id: _nextId(), word: 'I', pos: PartOfSpeech.pronoun,
+          person: 1, number: 'singular',
+          meanings: {'ko': '나', 'ja': '私', 'en': 'I'},
+        ),
+        WordCard(
+          id: _nextId(), word: 'you', pos: PartOfSpeech.pronoun,
+          person: 2, number: 'singular',
+          meanings: {'ko': '너', 'ja': 'あなた', 'en': 'you'},
+        ),
+        WordCard(
+          id: _nextId(), word: 'he', pos: PartOfSpeech.pronoun,
+          person: 3, number: 'singular',
+          meanings: {'ko': '그', 'ja': '彼', 'en': 'he'},
+        ),
+        WordCard(
+          id: _nextId(), word: 'we', pos: PartOfSpeech.pronoun,
+          person: 1, number: 'plural',
+          meanings: {'ko': '우리', 'ja': '私たち', 'en': 'we'},
+        ),
       ];
 
-  // === ARTICLES (7 cards) ===
-  static List<WordCard> _articles() => [
+  // === ARTICLES (10 cards) ===
+  List<WordCard> _articles() => [
         WordCard(
           id: _nextId(), word: 'a', pos: PartOfSpeech.article,
           vowelStart: false,
@@ -104,10 +161,24 @@ class CardDeck {
           id: _nextId(), word: 'the', pos: PartOfSpeech.article,
           meanings: {'ko': '그', 'ja': 'その', 'en': 'the'},
         ),
+        WordCard(
+          id: _nextId(), word: 'a', pos: PartOfSpeech.article,
+          vowelStart: false,
+          meanings: {'ko': '하나의', 'ja': 'ある', 'en': 'a'},
+        ),
+        WordCard(
+          id: _nextId(), word: 'an', pos: PartOfSpeech.article,
+          vowelStart: true,
+          meanings: {'ko': '하나의', 'ja': 'ある', 'en': 'an'},
+        ),
+        WordCard(
+          id: _nextId(), word: 'the', pos: PartOfSpeech.article,
+          meanings: {'ko': '그', 'ja': 'その', 'en': 'the'},
+        ),
       ];
 
-  // === NOUNS (30 cards) ===
-  static List<WordCard> _nouns() => [
+  // === NOUNS (26 cards) ===
+  List<WordCard> _nouns() => [
         // Animals
         WordCard(
           id: _nextId(), word: 'cat', pos: PartOfSpeech.noun,
@@ -138,11 +209,6 @@ class CardDeck {
           id: _nextId(), word: 'fish', pos: PartOfSpeech.noun,
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '물고기', 'ja': '魚', 'en': 'fish'},
-        ),
-        WordCard(
-          id: _nextId(), word: 'rabbit', pos: PartOfSpeech.noun,
-          person: 3, number: 'singular', countable: true, vowelStart: false,
-          meanings: {'ko': '토끼', 'ja': 'うさぎ', 'en': 'rabbit'},
         ),
         // Food
         WordCard(
@@ -175,11 +241,6 @@ class CardDeck {
           person: 3, number: 'singular', countable: false, vowelStart: false,
           meanings: {'ko': '우유', 'ja': '牛乳', 'en': 'milk'},
         ),
-        WordCard(
-          id: _nextId(), word: 'rice', pos: PartOfSpeech.noun,
-          person: 3, number: 'singular', countable: false, vowelStart: false,
-          meanings: {'ko': '밥', 'ja': 'ご飯', 'en': 'rice'},
-        ),
         // Objects
         WordCard(
           id: _nextId(), word: 'ball', pos: PartOfSpeech.noun,
@@ -200,11 +261,6 @@ class CardDeck {
           id: _nextId(), word: 'car', pos: PartOfSpeech.noun,
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '자동차', 'ja': '車', 'en': 'car'},
-        ),
-        WordCard(
-          id: _nextId(), word: 'hat', pos: PartOfSpeech.noun,
-          person: 3, number: 'singular', countable: true, vowelStart: false,
-          meanings: {'ko': '모자', 'ja': '帽子', 'en': 'hat'},
         ),
         WordCard(
           id: _nextId(), word: 'house', pos: PartOfSpeech.noun,
@@ -247,11 +303,6 @@ class CardDeck {
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '선생님', 'ja': '先生', 'en': 'teacher'},
         ),
-        WordCard(
-          id: _nextId(), word: 'baby', pos: PartOfSpeech.noun,
-          person: 3, number: 'singular', countable: true, vowelStart: false,
-          meanings: {'ko': '아기', 'ja': '赤ちゃん', 'en': 'baby'},
-        ),
         // Places / Nature
         WordCard(
           id: _nextId(), word: 'tree', pos: PartOfSpeech.noun,
@@ -266,7 +317,7 @@ class CardDeck {
       ];
 
   // === VERBS (24 cards) ===
-  static List<WordCard> _verbs() => [
+  List<WordCard> _verbs() => [
         // like / likes
         WordCard(
           id: _nextId(), word: 'like', pos: PartOfSpeech.verb,
@@ -399,10 +450,20 @@ class CardDeck {
           person: 1, number: 'plural',
           meanings: {'ko': '필요하다', 'ja': '必要', 'en': 'need'},
         ),
+        WordCard(
+          id: _nextId(), word: 'needs', pos: PartOfSpeech.verb,
+          person: 3, number: 'singular',
+          meanings: {'ko': '필요하다', 'ja': '必要', 'en': 'needs'},
+        ),
+        WordCard(
+          id: _nextId(), word: 'go', pos: PartOfSpeech.verb,
+          person: 1, number: 'plural',
+          meanings: {'ko': '가다', 'ja': '行く', 'en': 'go'},
+        ),
       ];
 
-  // === ADJECTIVES (14 cards) ===
-  static List<WordCard> _adjectives() => [
+  // === ADJECTIVES (12 cards) ===
+  List<WordCard> _adjectives() => [
         WordCard(
           id: _nextId(), word: 'big', pos: PartOfSpeech.adjective,
           adjOrder: 2, // size
@@ -459,24 +520,14 @@ class CardDeck {
           meanings: {'ko': '오래된', 'ja': '古い', 'en': 'old'},
         ),
         WordCard(
-          id: _nextId(), word: 'new', pos: PartOfSpeech.adjective,
-          adjOrder: 4,
-          meanings: {'ko': '새로운', 'ja': '新しい', 'en': 'new'},
-        ),
-        WordCard(
           id: _nextId(), word: 'good', pos: PartOfSpeech.adjective,
           adjOrder: 1,
           meanings: {'ko': '좋은', 'ja': '良い', 'en': 'good'},
         ),
-        WordCard(
-          id: _nextId(), word: 'bad', pos: PartOfSpeech.adjective,
-          adjOrder: 1,
-          meanings: {'ko': '나쁜', 'ja': '悪い', 'en': 'bad'},
-        ),
       ];
 
   // === ADVERBS (4 cards) ===
-  static List<WordCard> _adverbs() => [
+  List<WordCard> _adverbs() => [
         WordCard(
           id: _nextId(), word: 'very', pos: PartOfSpeech.adverb,
           meanings: {'ko': '매우', 'ja': 'とても', 'en': 'very'},
@@ -493,58 +544,39 @@ class CardDeck {
           id: _nextId(), word: 'never', pos: PartOfSpeech.adverb,
           meanings: {'ko': '절대', 'ja': '決して', 'en': 'never'},
         ),
+        WordCard(
+          id: _nextId(), word: 'fast', pos: PartOfSpeech.adverb,
+          meanings: {'ko': '빠르게', 'ja': '速く', 'en': 'fast'},
+        ),
+        WordCard(
+          id: _nextId(), word: 'slowly', pos: PartOfSpeech.adverb,
+          meanings: {'ko': '천천히', 'ja': 'ゆっくり', 'en': 'slowly'},
+        ),
       ];
 
   // === PREPOSITIONS (4 cards) ===
-  static List<WordCard> _prepositions() => [
-        WordCard(
-          id: _nextId(), word: 'in', pos: PartOfSpeech.preposition,
-          meanings: {'ko': '~안에', 'ja': '~の中に', 'en': 'in'},
-        ),
-        WordCard(
-          id: _nextId(), word: 'on', pos: PartOfSpeech.preposition,
-          meanings: {'ko': '~위에', 'ja': '~の上に', 'en': 'on'},
-        ),
-        WordCard(
-          id: _nextId(), word: 'with', pos: PartOfSpeech.preposition,
-          meanings: {'ko': '~와 함께', 'ja': '~と一緒に', 'en': 'with'},
-        ),
-        WordCard(
-          id: _nextId(), word: 'for', pos: PartOfSpeech.preposition,
-          meanings: {'ko': '~을 위해', 'ja': '~のために', 'en': 'for'},
-        ),
+  List<WordCard> _prepositions() => [
+        for (final w in const [
+          'in', 'in', 'on', 'on', 'under', 'under', 'with', 'with',
+        ])
+          WordCard(
+            id: _nextId(), word: w, pos: PartOfSpeech.preposition,
+            meanings: _prepMeanings[w]!,
+          ),
       ];
 
-  // === CONJUNCTIONS (3 cards) ===
-  static List<WordCard> _conjunctions() => [
-        WordCard(
-          id: _nextId(), word: 'and', pos: PartOfSpeech.conjunction,
-          meanings: {'ko': '그리고', 'ja': 'そして', 'en': 'and'},
-        ),
-        WordCard(
-          id: _nextId(), word: 'but', pos: PartOfSpeech.conjunction,
-          meanings: {'ko': '하지만', 'ja': 'しかし', 'en': 'but'},
-        ),
-        WordCard(
-          id: _nextId(), word: 'or', pos: PartOfSpeech.conjunction,
-          meanings: {'ko': '또는', 'ja': 'または', 'en': 'or'},
-        ),
-      ];
+  static const _prepMeanings = {
+    'in': {'ko': '~안에', 'ja': '~の中に', 'en': 'in'},
+    'on': {'ko': '~위에', 'ja': '~の上に', 'en': 'on'},
+    'under': {'ko': '~아래에', 'ja': '~の下に', 'en': 'under'},
+    'with': {'ko': '~와 함께', 'ja': '~と一緒に', 'en': 'with'},
+  };
+
 
   // === SPECIAL CARDS (12 cards) ===
-  static List<WordCard> _specialCards() => [
-        WordCard.special(_nextId(), CardType.skip),
-        WordCard.special(_nextId(), CardType.skip),
-        WordCard.special(_nextId(), CardType.skip),
-        WordCard.special(_nextId(), CardType.skip),
-        WordCard.special(_nextId(), CardType.steal),
-        WordCard.special(_nextId(), CardType.steal),
-        WordCard.special(_nextId(), CardType.steal),
-        WordCard.special(_nextId(), CardType.undo),
-        WordCard.special(_nextId(), CardType.undo),
-        WordCard.special(_nextId(), CardType.undo),
-        WordCard.special(_nextId(), CardType.joker),
-        WordCard.special(_nextId(), CardType.joker),
-        WordCard.special(_nextId(), CardType.joker),
+  List<WordCard> _specialCards() => [
+        for (int i = 0; i < 4; i++) WordCard.special(_nextId(), CardType.joker),
+        for (int i = 0; i < 3; i++) WordCard.special(_nextId(), CardType.jump),
+        for (int i = 0; i < 3; i++) WordCard.special(_nextId(), CardType.steal),
       ];
 }

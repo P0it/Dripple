@@ -3,48 +3,67 @@ import 'player.dart';
 import 'word_card.dart';
 import '../engine/ai/ai_player.dart';
 
-enum GamePhase { setup, playing, roundEnd, gameEnd }
+enum GamePhase { setup, playing, gameEnd }
 
-class GameConfig {
+/// A turn is always "draw exactly one card, then take exactly one action".
+enum TurnPhase { draw, action }
+
+class GameConfig extends Equatable {
   final int playerCount;
-  final int totalRounds;
   final int initialHandSize;
+
+  /// 0 disables the countdown. Off by default — this is a children's game.
   final int turnTimerSeconds;
   final AIDifficulty difficulty;
-  /// Minimum number of cards in the sentence zone to allow submission.
-  final int minSentenceLength;
 
   const GameConfig({
-    this.playerCount = 2,
-    this.totalRounds = 5,
+    this.playerCount = 4,
     this.initialHandSize = 7,
-    this.turnTimerSeconds = 30,
+    this.turnTimerSeconds = 0,
     this.difficulty = AIDifficulty.medium,
-    this.minSentenceLength = 5,
   });
+
+  @override
+  List<Object?> get props =>
+      [playerCount, initialHandSize, turnTimerSeconds, difficulty];
 }
 
 class GameState extends Equatable {
   final GamePhase phase;
+  final TurnPhase turnPhase;
   final List<Player> players;
   final List<WordCard> deck;
+
+  /// Face-up discard pile. The last element is the top card.
+  final List<WordCard> discardPile;
   final int currentPlayerIndex;
-  final int currentRound;
-  final int totalRounds;
   final GameConfig config;
-  /// Seconds remaining on the current human turn. -1 means timer is inactive
-  /// (e.g. AI turn or game not started).
+
+  /// Seconds left on the current human turn. -1 means inactive.
   final int turnTimeRemaining;
+
+  /// How many times the discard pile has been recycled into the deck.
+  /// Two recycles followed by exhaustion ends the game (anti-stalling).
+  final int deckRecycleCount;
+
+  /// Id of the card taken from the discard pile this turn. Rummy forbids
+  /// discarding it again on the same turn, which would otherwise let two
+  /// players shuffle one card back and forth forever.
+  final String? drawnFromDiscardCardId;
+  final int? winnerIndex;
 
   const GameState({
     this.phase = GamePhase.setup,
+    this.turnPhase = TurnPhase.draw,
     this.players = const [],
     this.deck = const [],
+    this.discardPile = const [],
     this.currentPlayerIndex = 0,
-    this.currentRound = 1,
-    this.totalRounds = 5,
     this.config = const GameConfig(),
     this.turnTimeRemaining = -1,
+    this.deckRecycleCount = 0,
+    this.drawnFromDiscardCardId,
+    this.winnerIndex,
   });
 
   Player get currentPlayer {
@@ -53,44 +72,73 @@ class GameState extends Equatable {
     }
     return players[currentPlayerIndex];
   }
-  bool get isGameOver => phase == GamePhase.gameEnd;
-  bool get isRoundOver => phase == GamePhase.roundEnd;
 
-  /// Get players sorted by score (descending)
-  List<Player> get ranking =>
-      List<Player>.from(players)..sort((a, b) => b.score.compareTo(a.score));
+  WordCard? get discardTop => discardPile.isEmpty ? null : discardPile.last;
+
+  bool get isGameOver => phase == GamePhase.gameEnd;
+
+  /// Players ordered by fewest cards remaining — the win condition is
+  /// emptying your hand, so this is the standing.
+  List<Player> get ranking => List<Player>.from(players)
+    ..sort((a, b) => a.hand.length.compareTo(b.hand.length));
 
   GameState copyWith({
     GamePhase? phase,
+    TurnPhase? turnPhase,
     List<Player>? players,
     List<WordCard>? deck,
+    List<WordCard>? discardPile,
     int? currentPlayerIndex,
-    int? currentRound,
-    int? totalRounds,
     GameConfig? config,
     int? turnTimeRemaining,
+    int? deckRecycleCount,
+    String? drawnFromDiscardCardId,
+    int? winnerIndex,
   }) {
     return GameState(
       phase: phase ?? this.phase,
+      turnPhase: turnPhase ?? this.turnPhase,
       players: players ?? this.players,
       deck: deck ?? this.deck,
+      discardPile: discardPile ?? this.discardPile,
       currentPlayerIndex: currentPlayerIndex ?? this.currentPlayerIndex,
-      currentRound: currentRound ?? this.currentRound,
-      totalRounds: totalRounds ?? this.totalRounds,
       config: config ?? this.config,
       turnTimeRemaining: turnTimeRemaining ?? this.turnTimeRemaining,
+      deckRecycleCount: deckRecycleCount ?? this.deckRecycleCount,
+      drawnFromDiscardCardId:
+          drawnFromDiscardCardId ?? this.drawnFromDiscardCardId,
+      winnerIndex: winnerIndex ?? this.winnerIndex,
     );
   }
+
+  /// copyWith cannot set a nullable field back to null, so clearing the
+  /// discard-draw marker needs its own method.
+  GameState clearDrawnFromDiscard() => GameState(
+        phase: phase,
+        turnPhase: turnPhase,
+        players: players,
+        deck: deck,
+        discardPile: discardPile,
+        currentPlayerIndex: currentPlayerIndex,
+        config: config,
+        turnTimeRemaining: turnTimeRemaining,
+        deckRecycleCount: deckRecycleCount,
+        drawnFromDiscardCardId: null,
+        winnerIndex: winnerIndex,
+      );
 
   @override
   List<Object?> get props => [
         phase,
+        turnPhase,
         players,
         deck,
+        discardPile,
         currentPlayerIndex,
-        currentRound,
-        totalRounds,
         config,
         turnTimeRemaining,
+        deckRecycleCount,
+        drawnFromDiscardCardId,
+        winnerIndex,
       ];
 }
