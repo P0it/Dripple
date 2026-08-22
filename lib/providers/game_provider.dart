@@ -32,6 +32,9 @@ class GameNotifier extends StateNotifier<GameState> {
   /// Disabled in tests so turns can be stepped deterministically.
   final bool autoRunAI;
 
+  /// Pause before each AI action, so a child can see what happened.
+  final Duration aiTurnDelay;
+
   Timer? _turnTimer;
   int _timerGeneration = 0;
   bool _isProcessingAI = false;
@@ -41,6 +44,7 @@ class GameNotifier extends StateNotifier<GameState> {
     AIPlayer? aiPlayer,
     Random? random,
     this.autoRunAI = true,
+    this.aiTurnDelay = const Duration(milliseconds: 700),
   })  : _grammarEngine = grammarEngine ?? GrammarEngine(),
         _aiPlayer = aiPlayer ?? AIPlayer(),
         _random = random ?? Random(),
@@ -93,6 +97,7 @@ class GameNotifier extends StateNotifier<GameState> {
     );
 
     _startTurnTimer();
+    if (autoRunAI) unawaited(_runAITurnsIfNeeded());
   }
 
   // -------------------------------------------------------------------------
@@ -461,8 +466,106 @@ class GameNotifier extends StateNotifier<GameState> {
     _endGame(winnerIndex: state.players.indexWhere((p) => p.id == winnerId));
   }
 
-  /// Implemented in the AI-ownership task.
-  Future<void> _runAITurnsIfNeeded() async {}
+  // -------------------------------------------------------------------------
+  // AI turn driving
+  // -------------------------------------------------------------------------
+
+  Future<void> _runAITurnsIfNeeded() async {
+    if (state.phase != GamePhase.playing) return;
+    if (!state.currentPlayer.isAI) return;
+    await runAITurns();
+  }
+
+  /// Drive every consecutive AI turn until control returns to a human or
+  /// the game ends.
+  ///
+  /// This lives in the notifier, not the screen. When the UI owned it, any
+  /// turn advance the UI did not initiate — a timer expiry, a JUMP — left
+  /// nobody to run the AI and the game froze.
+  Future<List<JudgmentResult>> runAITurns() async {
+    if (_isProcessingAI) return const [];
+    _isProcessingAI = true;
+
+    final results = <JudgmentResult>[];
+    try {
+      // The bound is a safety net against a rule bug spinning forever.
+      var guard = 0;
+      while (state.phase == GamePhase.playing &&
+          state.currentPlayer.isAI &&
+          guard++ < 200) {
+        if (aiTurnDelay > Duration.zero) {
+          await Future<void>.delayed(aiTurnDelay);
+        }
+        if (!mounted) break;
+        final result = _executeOneAITurn();
+        if (result != null) results.add(result);
+      }
+    } finally {
+      _isProcessingAI = false;
+    }
+    return results;
+  }
+
+  /// One complete AI turn: mandatory draw, then a single action.
+  JudgmentResult? _executeOneAITurn() {
+    final startIndex = state.currentPlayerIndex;
+
+    // --- Draw phase ---
+    if (state.turnPhase == TurnPhase.draw) {
+      final top = state.discardTop;
+      final wantsDiscard = top != null &&
+          _aiPlayer.findSentence(state.currentPlayer.hand) == null &&
+          _aiPlayer.findSentence([...state.currentPlayer.hand, top]) != null;
+      if (wantsDiscard) {
+        drawFromDiscard();
+      } else {
+        drawFromDeck();
+      }
+    }
+    if (state.phase != GamePhase.playing) return null;
+    if (state.currentPlayerIndex != startIndex) return null;
+
+    // --- Action phase ---
+    final me = state.currentPlayer;
+    final action = _aiPlayer.decideAction(me, state);
+
+    switch (action.type) {
+      case AIActionType.submitSentence:
+        for (final card in action.cards!) {
+          final idx =
+              state.currentPlayer.hand.indexWhere((c) => c.id == card.id);
+          if (idx >= 0) placeCard(idx);
+        }
+        return submitSentence();
+
+      case AIActionType.playJump:
+        final idx = me.hand.indexWhere((c) => c.id == action.specialCard!.id);
+        if (idx >= 0 && playJump(idx)) return null;
+
+      case AIActionType.playSteal:
+        final idx = me.hand.indexWhere((c) => c.id == action.specialCard!.id);
+        if (idx >= 0 &&
+            playSteal(
+              idx,
+              targetPlayerIndex: action.targetPlayerIndex!,
+              giveCardIndex: action.giveCardIndex!,
+            )) {
+          return null;
+        }
+
+      case AIActionType.discard:
+        if (discardCard(action.discardIndex!)) return null;
+    }
+
+    // Fallback: the chosen action was rejected. Discard any legal card so
+    // the turn always ends and the loop cannot spin.
+    final hand = state.currentPlayer.hand;
+    for (int i = 0; i < hand.length; i++) {
+      if (discardCard(i)) return null;
+    }
+    endTurn();
+    return null;
+  }
 
   // -------------------------------------------------------------------------
   // Helpers
