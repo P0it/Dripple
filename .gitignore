@@ -38,3 +38,4 @@ web/.dart_tool/
 *.freezed.dart
 .dart_tool/
 pubspec.lock
+.playwright-mcp/

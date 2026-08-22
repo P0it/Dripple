@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:flame/game.dart';
 import '../models/word_card.dart';
+import 'card_row_layout.dart';
 import 'components/card_component.dart';
 
 typedef OnCardPlaced = void Function(int handIndex);
@@ -71,11 +72,8 @@ class DrippleGame extends FlameGame {
     };
 
     // Add new components and reposition all
-    final step = _stepFor(newCards.length);
-    final totalWidth = newCards.isEmpty
-        ? 0.0
-        : (newCards.length - 1) * step + CardComponent.cardWidth;
-    final startX = newCards.isEmpty ? 0.0 : (size.x - totalWidth) / 2;
+    final step = CardRowLayout.step(size.x, newCards.length);
+    final startX = CardRowLayout.startX(size.x, newCards.length);
 
     final updatedComponents = <CardComponent>[];
 
@@ -108,7 +106,8 @@ class DrippleGame extends FlameGame {
                 onSentenceRemove?.call(from);
                 return;
               }
-              final to = _indexAtX(dropPosition.x, _sentenceZone.length);
+              final to = CardRowLayout.indexAtX(
+                  dropPosition.x, size.x, _sentenceZone.length);
               if (to != from) onSentenceReorder?.call(from, to);
             } else {
               // Hand card lifted toward the sentence zone.
@@ -128,35 +127,6 @@ class DrippleGame extends FlameGame {
     existingComponents
       ..clear()
       ..addAll(updatedComponents);
-  }
-
-  /// Horizontal distance between adjacent cards.
-  ///
-  /// A full hand at full spacing is wider than a phone screen, so cards
-  /// overlap once they would run off the edge — the way a real hand of
-  /// cards fans. Always leaves [_edgePadding] on both sides so the first
-  /// and last card stay reachable.
-  double _stepFor(int count) {
-    const preferred = CardComponent.cardWidth + 8;
-    if (count <= 1) return preferred;
-
-    final available = size.x - _edgePadding * 2 - CardComponent.cardWidth;
-    if (available <= 0) return preferred;
-
-    final fitted = available / (count - 1);
-    return fitted < preferred ? fitted : preferred;
-  }
-
-  static const double _edgePadding = 12;
-
-  /// Which slot an x-coordinate lands in, for a row of [count] cards.
-  int _indexAtX(double x, int count) {
-    if (count <= 1) return 0;
-    final step = _stepFor(count);
-    final totalWidth = (count - 1) * step + CardComponent.cardWidth;
-    final startX = (size.x - totalWidth) / 2;
-    final raw = ((x - startX) / step).round();
-    return raw.clamp(0, count - 1);
   }
 
   bool _listsEqual(List<WordCard> a, List<WordCard> b) {
