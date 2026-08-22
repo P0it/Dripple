@@ -15,6 +15,12 @@ enum GameIcon {
   joker,
   // Result screen
   crown,
+  // Board actions
+  deck,
+  discard,
+  check,
+  soundOn,
+  soundOff,
   // Emotes and character states
   faceIdle,
   faceHappy,
@@ -57,6 +63,16 @@ class GameIconPainter {
         _joker(canvas, color);
       case GameIcon.crown:
         _crown(canvas, color);
+      case GameIcon.deck:
+        _deck(canvas, color);
+      case GameIcon.discard:
+        _discard(canvas, color);
+      case GameIcon.check:
+        _check(canvas, color);
+      case GameIcon.soundOn:
+        _sound(canvas, color, on: true);
+      case GameIcon.soundOff:
+        _sound(canvas, color, on: false);
       case GameIcon.faceIdle:
         _face(canvas, color, eyes: _Eyes.dots, mouth: _Mouth.neutral);
       case GameIcon.faceHappy:
@@ -174,6 +190,75 @@ class GameIconPainter {
       ),
       _fill(color),
     );
+  }
+
+  /// A stack of cards.
+  static void _deck(Canvas canvas, Color color) {
+    final line = _stroke(color, 0.085);
+    for (final dy in [0.0, 0.12]) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0.16, 0.20 + dy, 0.62, 0.46),
+          const Radius.circular(0.07),
+        ),
+        line,
+      );
+    }
+  }
+
+  /// A card dropping onto a pile.
+  static void _discard(Canvas canvas, Color color) {
+    final line = _stroke(color, 0.085);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        const Rect.fromLTWH(0.22, 0.06, 0.50, 0.34),
+        const Radius.circular(0.06),
+      ),
+      line,
+    );
+    canvas.drawLine(const Offset(0.47, 0.48), const Offset(0.47, 0.70), line);
+    canvas.drawPath(
+      Path()
+        ..moveTo(0.33, 0.58)
+        ..lineTo(0.47, 0.74)
+        ..lineTo(0.61, 0.58),
+      line,
+    );
+    canvas.drawLine(const Offset(0.12, 0.88), const Offset(0.82, 0.88), line);
+  }
+
+  static void _check(Canvas canvas, Color color) {
+    canvas.drawPath(
+      Path()
+        ..moveTo(0.16, 0.52)
+        ..lineTo(0.40, 0.75)
+        ..lineTo(0.84, 0.25),
+      _stroke(color, 0.15),
+    );
+  }
+
+  static void _sound(Canvas canvas, Color color, {required bool on}) {
+    final line = _stroke(color, 0.09);
+    canvas.drawPath(
+      Path()
+        ..moveTo(0.14, 0.36)
+        ..lineTo(0.30, 0.36)
+        ..lineTo(0.50, 0.16)
+        ..lineTo(0.50, 0.84)
+        ..lineTo(0.30, 0.64)
+        ..lineTo(0.14, 0.64)
+        ..close(),
+      _fill(color),
+    );
+    if (on) {
+      canvas.drawArc(
+          const Rect.fromLTRB(0.44, 0.28, 0.80, 0.72), -0.9, 1.8, false, line);
+      canvas.drawArc(
+          const Rect.fromLTRB(0.44, 0.14, 0.96, 0.86), -0.9, 1.8, false, line);
+    } else {
+      canvas.drawLine(const Offset(0.64, 0.36), const Offset(0.90, 0.64), line);
+      canvas.drawLine(const Offset(0.90, 0.36), const Offset(0.64, 0.64), line);
+    }
   }
 
   // ---------------------------------------------------------------------------

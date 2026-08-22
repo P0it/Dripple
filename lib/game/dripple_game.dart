@@ -7,6 +7,7 @@ import 'components/card_component.dart';
 typedef OnCardPlaced = void Function(int handIndex);
 typedef OnSentenceReorder = void Function(int from, int to);
 typedef OnSentenceRemove = void Function(int index);
+typedef OnHandCardTapped = void Function(int handIndex);
 
 class DrippleGame extends FlameGame {
   List<WordCard> _hand = [];
@@ -17,9 +18,24 @@ class DrippleGame extends FlameGame {
   OnCardPlaced? onCardPlaced;
   OnSentenceReorder? onSentenceReorder;
   OnSentenceRemove? onSentenceRemove;
+  OnHandCardTapped? onHandCardTapped;
 
-  double get _sentenceZoneY => size.y * 0.4;
-  double get _handY => size.y * 0.72;
+  /// When true the hand is a discard picker: cards are marked and a tap
+  /// throws the card away instead of playing it.
+  bool _discardMode = false;
+
+  set discardMode(bool value) {
+    if (_discardMode == value) return;
+    _discardMode = value;
+    for (final comp in _handComponents) {
+      comp.markedForDiscard = value;
+    }
+  }
+
+  bool get discardMode => _discardMode;
+
+  double get _sentenceZoneY => size.y * 0.30;
+  double get _handY => size.y * 0.74;
 
   @override
   ui.Color backgroundColor() => const ui.Color(0xFFF0FDF4);
@@ -72,15 +88,14 @@ class DrippleGame extends FlameGame {
     };
 
     // Add new components and reposition all
-    final step = CardRowLayout.step(size.x, newCards.length);
-    final startX = CardRowLayout.startX(size.x, newCards.length);
+    final slots = CardRowLayout.positions(size.x, newCards.length, yPosition);
 
     final updatedComponents = <CardComponent>[];
 
     for (int i = 0; i < newCards.length; i++) {
       final card = newCards[i];
-      final targetX = startX + i * step;
-      final targetPos = Vector2(targetX, yPosition);
+      final slot = slots[i];
+      final targetPos = Vector2(slot.dx, slot.dy);
 
       if (existingMap.containsKey(card.id)) {
         // Existing card — just reposition
@@ -88,6 +103,7 @@ class DrippleGame extends FlameGame {
         comp.position = targetPos;
         // Overlapping cards must stack left-to-right, like a fanned hand.
         comp.priority = i;
+        comp.markedForDiscard = !isSentenceZone && _discardMode;
         updatedComponents.add(comp);
       } else {
         // New card — create component. Resolve the index by card id at drag
@@ -96,22 +112,40 @@ class DrippleGame extends FlameGame {
         final comp = CardComponent(
           card: card,
           position: targetPos,
+          onTapped: (component) {
+            if (isSentenceZone) {
+              final idx = _sentenceZone.indexWhere((c) => c.id == cardId);
+              if (idx >= 0) onSentenceRemove?.call(idx);
+              return;
+            }
+            final idx = _hand.indexWhere((c) => c.id == cardId);
+            if (idx >= 0) onHandCardTapped?.call(idx);
+          },
           onDragEnded: (component, dropPosition) {
             if (isSentenceZone) {
               final from = _sentenceZone.indexWhere((c) => c.id == cardId);
               if (from < 0) return;
               // Dragged clear of the zone — send it back to hand.
-              if ((dropPosition.y - _sentenceZoneY).abs() >
-                  CardComponent.cardHeight) {
+              final zoneReach = CardRowLayout.blockHeight(
+                      size.x, _sentenceZone.length) /
+                  2 +
+                  CardComponent.cardHeight * 0.6;
+              if ((dropPosition.y - _sentenceZoneY).abs() > zoneReach) {
                 onSentenceRemove?.call(from);
                 return;
               }
-              final to = CardRowLayout.indexAtX(
-                  dropPosition.x, size.x, _sentenceZone.length);
+              final to = CardRowLayout.indexAt(
+                ui.Offset(dropPosition.x, dropPosition.y),
+                size.x,
+                _sentenceZone.length,
+                _sentenceZoneY,
+              );
               if (to != from) onSentenceReorder?.call(from, to);
             } else {
               // Hand card lifted toward the sentence zone.
-              if (dropPosition.y < _handY - CardComponent.cardHeight * 0.5) {
+              final handReach =
+                  CardRowLayout.blockHeight(size.x, _hand.length) / 2;
+              if (dropPosition.y < _handY - handReach) {
                 final idx = _hand.indexWhere((c) => c.id == cardId);
                 if (idx >= 0) onCardPlaced?.call(idx);
               }
@@ -119,6 +153,7 @@ class DrippleGame extends FlameGame {
           },
         );
         comp.priority = i;
+        comp.markedForDiscard = !isSentenceZone && _discardMode;
         updatedComponents.add(comp);
         add(comp);
       }

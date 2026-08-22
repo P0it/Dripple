@@ -1,53 +1,86 @@
-import 'components/card_component.dart';
+import 'dart:math' as math;
+import 'dart:ui';
 
-/// Horizontal layout maths for a row of cards.
+import 'card_painter.dart';
+
+/// Where each card in a hand or sentence goes.
 ///
-/// Extracted from [DrippleGame] so it can be tested without a running Flame
-/// game loop — the overflow behaviour is the part most likely to regress.
+/// Cards wrap onto extra rows rather than overlapping. Overlapping fits more
+/// cards but hides the word, and a child who cannot read the card cannot play
+/// it — so the row count grows instead of the card shrinking.
 class CardRowLayout {
-  /// Space left on each side of the row.
+  const CardRowLayout._();
+
+  /// Space left on each side of the board.
   static const double edgePadding = 12;
 
-  /// Gap between cards when they all fit.
-  static const double preferredGap = 8;
+  /// Gap between cards, horizontally and between rows.
+  static const double gap = 8;
 
-  static const double _preferredStep =
-      CardComponent.cardWidth + preferredGap;
+  static const double cardWidth = CardPainter.defaultWidth;
+  static const double cardHeight = CardPainter.defaultHeight;
 
-  /// Distance between the left edges of adjacent cards.
+  /// How many cards fit on one row at this width. Always at least one.
+  static int perRow(double screenWidth) {
+    final usable = screenWidth - edgePadding * 2 + gap;
+    final fit = usable ~/ (cardWidth + gap);
+    return math.max(1, fit);
+  }
+
+  /// Number of rows [count] cards occupy.
+  static int rowCount(double screenWidth, int count) {
+    if (count <= 0) return 0;
+    return (count / perRow(screenWidth)).ceil();
+  }
+
+  /// Total height of the block, including the gaps between rows.
+  static double blockHeight(double screenWidth, int count) {
+    final rows = rowCount(screenWidth, count);
+    if (rows == 0) return 0;
+    return rows * cardHeight + (rows - 1) * gap;
+  }
+
+  /// Top-left offsets for every card, laid out around [centerY].
   ///
-  /// A full hand at full spacing is wider than a phone screen, so cards
-  /// overlap once they would run off the edge — the way a real hand fans.
-  /// Always leaves [edgePadding] on both sides so the outermost cards stay
-  /// reachable.
-  static double step(double screenWidth, int count) {
-    if (count <= 1) return _preferredStep;
+  /// Rows are centred horizontally; a short final row sits centred under the
+  /// full ones rather than left-aligned, which reads as deliberate.
+  static List<Offset> positions(double screenWidth, int count, double centerY) {
+    if (count <= 0) return const [];
 
-    final available =
-        screenWidth - edgePadding * 2 - CardComponent.cardWidth;
-    if (available <= 0) return _preferredStep;
+    final columns = perRow(screenWidth);
+    final rows = rowCount(screenWidth, count);
+    final blockTop = centerY - blockHeight(screenWidth, count) / 2;
 
-    final fitted = available / (count - 1);
-    return fitted < _preferredStep ? fitted : _preferredStep;
+    final out = <Offset>[];
+    for (int row = 0; row < rows; row++) {
+      final first = row * columns;
+      final inRow = math.min(columns, count - first);
+      final rowWidth = inRow * cardWidth + (inRow - 1) * gap;
+      final startX = (screenWidth - rowWidth) / 2;
+      final y = blockTop + row * (cardHeight + gap);
+
+      for (int i = 0; i < inRow; i++) {
+        out.add(Offset(startX + i * (cardWidth + gap), y));
+      }
+    }
+    return out;
   }
 
-  /// Total width the row occupies.
-  static double totalWidth(double screenWidth, int count) {
-    if (count <= 0) return 0;
-    return (count - 1) * step(screenWidth, count) + CardComponent.cardWidth;
-  }
-
-  /// X coordinate of the left edge of the row, centred on screen.
-  static double startX(double screenWidth, int count) {
-    if (count <= 0) return 0;
-    return (screenWidth - totalWidth(screenWidth, count)) / 2;
-  }
-
-  /// Which slot an x-coordinate falls into, for a row of [count] cards.
-  static int indexAtX(double x, double screenWidth, int count) {
+  /// Which slot a dropped card's top-left corner falls into.
+  static int indexAt(
+      Offset position, double screenWidth, int count, double centerY) {
     if (count <= 1) return 0;
-    final raw =
-        ((x - startX(screenWidth, count)) / step(screenWidth, count)).round();
-    return raw.clamp(0, count - 1);
+
+    final slots = positions(screenWidth, count, centerY);
+    var best = 0;
+    var bestDistance = double.infinity;
+    for (int i = 0; i < slots.length; i++) {
+      final d = (slots[i] - position).distanceSquared;
+      if (d < bestDistance) {
+        bestDistance = d;
+        best = i;
+      }
+    }
+    return best;
   }
 }

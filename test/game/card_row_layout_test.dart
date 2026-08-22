@@ -1,76 +1,82 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dripple/game/card_row_layout.dart';
-import 'package:dripple/game/components/card_component.dart';
 
-/// The row must never run off screen — on a phone a full hand at full
-/// spacing is roughly 700px wide, which put the outermost cards out of reach.
+/// Cards must never run off screen and must never overlap — a child who
+/// cannot read a card cannot play it.
 void main() {
-  const phone = 390.0;
-  const tablet = 1200.0;
+  const widths = [320.0, 390.0, 430.0, 768.0, 1200.0];
+  const counts = [1, 2, 4, 5, 7, 8, 12, 20];
 
-  group('step', () {
-    test('uses full spacing when the row fits', () {
-      expect(CardRowLayout.step(tablet, 7),
-          CardComponent.cardWidth + CardRowLayout.preferredGap);
+  group('perRow', () {
+    test('fits fewer cards on a narrow screen', () {
+      expect(CardRowLayout.perRow(320), lessThan(CardRowLayout.perRow(1200)));
     });
 
-    test('tightens the spacing when the row would overflow', () {
-      final s = CardRowLayout.step(phone, 7);
-      expect(s, lessThan(CardComponent.cardWidth + CardRowLayout.preferredGap));
-      expect(s, greaterThan(0));
-    });
-
-    test('a single card uses full spacing', () {
-      expect(CardRowLayout.step(phone, 1),
-          CardComponent.cardWidth + CardRowLayout.preferredGap);
+    test('never returns zero, even on an absurdly narrow screen', () {
+      expect(CardRowLayout.perRow(50), 1);
     });
   });
 
-  group('the row always stays on screen', () {
-    for (final width in [320.0, 390.0, 430.0, 768.0, 1200.0]) {
-      for (final count in [1, 2, 5, 7, 8, 12, 20]) {
-        test('${width.toInt()}px wide, $count cards', () {
-          final start = CardRowLayout.startX(width, count);
-          final end = start + CardRowLayout.totalWidth(width, count);
+  group('rowCount', () {
+    test('wraps onto extra rows instead of squeezing', () {
+      final columns = CardRowLayout.perRow(390);
+      expect(CardRowLayout.rowCount(390, columns), 1);
+      expect(CardRowLayout.rowCount(390, columns + 1), 2);
+    });
 
-          expect(start, greaterThanOrEqualTo(CardRowLayout.edgePadding - 0.01),
-              reason: 'row starts off the left edge');
-          expect(end, lessThanOrEqualTo(width - CardRowLayout.edgePadding + 0.01),
-              reason: 'row runs past the right edge');
-        });
-      }
+    test('no cards means no rows', () {
+      expect(CardRowLayout.rowCount(390, 0), 0);
+    });
+  });
+
+  for (final width in widths) {
+    for (final count in counts) {
+      test('${width.toInt()}px, $count cards: every card is fully on screen',
+          () {
+        final slots = CardRowLayout.positions(width, count, 400);
+        expect(slots.length, count);
+
+        for (final s in slots) {
+          expect(s.dx, greaterThanOrEqualTo(-0.01),
+              reason: 'card starts off the left edge');
+          expect(s.dx + CardRowLayout.cardWidth,
+              lessThanOrEqualTo(width + 0.01),
+              reason: 'card runs past the right edge');
+        }
+      });
+
+      test('${width.toInt()}px, $count cards: no two cards overlap', () {
+        final slots = CardRowLayout.positions(width, count, 400);
+        for (int i = 0; i < slots.length; i++) {
+          for (int j = i + 1; j < slots.length; j++) {
+            final dx = (slots[i].dx - slots[j].dx).abs();
+            final dy = (slots[i].dy - slots[j].dy).abs();
+            final overlaps = dx < CardRowLayout.cardWidth - 0.01 &&
+                dy < CardRowLayout.cardHeight - 0.01;
+            expect(overlaps, false,
+                reason: 'cards $i and $j overlap at ${slots[i]} / ${slots[j]}');
+          }
+        }
+      });
     }
-  });
+  }
 
-  group('indexAtX', () {
-    // indexAtX receives a dragged card's left edge, so slot i is anchored
-    // at start + i * step.
-    test('maps each slot position back to its own index', () {
+  group('indexAt', () {
+    test('maps each slot back to its own index', () {
+      const width = 390.0;
       const count = 7;
-      final step = CardRowLayout.step(phone, count);
-      final start = CardRowLayout.startX(phone, count);
-
+      final slots = CardRowLayout.positions(width, count, 400);
       for (int i = 0; i < count; i++) {
-        expect(CardRowLayout.indexAtX(start + i * step, phone, count), i,
-            reason: 'exact slot $i');
-        expect(
-            CardRowLayout.indexAtX(start + i * step + step * 0.3, phone, count),
-            i,
-            reason: 'slot $i, dragged slightly right');
+        expect(CardRowLayout.indexAt(slots[i], width, count, 400), i);
       }
     });
 
-    test('dragging past halfway lands in the next slot', () {
+    test('picks the nearest slot for an in-between drop', () {
+      const width = 390.0;
       const count = 7;
-      final step = CardRowLayout.step(phone, count);
-      final start = CardRowLayout.startX(phone, count);
-
-      expect(CardRowLayout.indexAtX(start + step * 0.7, phone, count), 1);
-    });
-
-    test('clamps coordinates outside the row', () {
-      expect(CardRowLayout.indexAtX(-500, phone, 7), 0);
-      expect(CardRowLayout.indexAtX(5000, phone, 7), 6);
+      final slots = CardRowLayout.positions(width, count, 400);
+      final nudged = slots[2].translate(6, 4);
+      expect(CardRowLayout.indexAt(nudged, width, count, 400), 2);
     });
   });
 }

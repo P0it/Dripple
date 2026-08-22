@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:dripple/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../character/emote_bar.dart';
 import '../core/game_feedback.dart';
 import '../core/game_icons.dart';
 import '../core/theme/app_theme.dart';
@@ -13,6 +12,7 @@ import '../models/game_state.dart';
 import '../models/player.dart';
 import '../providers/game_provider.dart';
 import 'judgment_screen.dart';
+import 'widgets/big_action_button.dart';
 import 'widgets/special_card_sheet.dart';
 import '../models/word_card.dart';
 
@@ -34,6 +34,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     with SingleTickerProviderStateMixin {
   late DrippleGame _game;
   bool _initialized = false;
+  bool _discardMode = false;
   late AnimationController _overlayFadeController;
   late Animation<double> _overlayFadeAnimation;
   ProviderSubscription? _gameSubscription;
@@ -47,6 +48,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
         ref.read(gameProvider.notifier).reorderSentence(from, to);
     _game.onSentenceRemove = (index) =>
         ref.read(gameProvider.notifier).removeFromSentence(index);
+    _game.onHandCardTapped = _onHandCardTapped;
     _overlayFadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 350),
@@ -138,34 +140,50 @@ class _GameScreenState extends ConsumerState<GameScreen>
     ref.read(gameFeedbackProvider).onCardDraw();
   }
 
-  Future<void> _onDiscard() async {
+  /// Tapping a hand card either stages it into the sentence, or — while the
+  /// discard picker is open — throws it away. A modal list of card names was
+  /// the earlier design and read as an interruption; picking the actual card
+  /// on the board is the same gesture a child already uses to play one.
+  void _onHandCardTapped(int handIndex) {
+    final notifier = ref.read(gameProvider.notifier);
     final state = ref.read(gameProvider);
-    final hand = state.currentPlayer.hand;
-    final blockedId = state.drawnFromDiscardCardId;
+    if (state.phase != GamePhase.playing || state.currentPlayer.isAI) return;
 
-    final index = await showDialog<int>(
-      context: context,
-      builder: (dialogContext) => SimpleDialog(
-        title: const Text('버릴 카드를 고르세요'),
-        children: [
-          for (int i = 0; i < hand.length; i++)
-            SimpleDialogOption(
-              onPressed: hand[i].id == blockedId
-                  ? null
-                  : () => Navigator.of(dialogContext).pop(i),
-              child: Text(
-                hand[i].id == blockedId
-                    ? '${hand[i].word} (이번 턴에 가져온 카드)'
-                    : hand[i].word,
-              ),
-            ),
-        ],
+    if (_discardMode) {
+      final card = state.currentPlayer.hand[handIndex];
+      if (card.id == state.drawnFromDiscardCardId) {
+        _showHint('이 카드는 방금 가져와서 지금은 버릴 수 없어요');
+        return;
+      }
+      if (notifier.discardCard(handIndex)) {
+        ref.read(gameFeedbackProvider).onCardPlace();
+        _setDiscardMode(false);
+      }
+      return;
+    }
+
+    if (state.turnPhase != TurnPhase.action) return;
+    notifier.placeCard(handIndex);
+    ref.read(gameFeedbackProvider).onCardPlace();
+  }
+
+  void _setDiscardMode(bool value) {
+    if (_discardMode == value) return;
+    setState(() => _discardMode = value);
+    _game.discardMode = value;
+    ref.read(gameFeedbackProvider).onButtonTap();
+  }
+
+  void _showHint(String message) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(
+      SnackBar(
+        content: Text(message, textAlign: TextAlign.center),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
       ),
     );
-
-    if (index == null || !mounted) return;
-    ref.read(gameProvider.notifier).discardCard(index);
-    ref.read(gameFeedbackProvider).onButtonTap();
   }
 
   @override
@@ -199,12 +217,6 @@ class _GameScreenState extends ConsumerState<GameScreen>
                 Expanded(
                   child: GameWidget(game: _game),
                 ),
-                // Emote bar
-                EmoteBar(
-                  playerId: gameState.players.isNotEmpty
-                      ? gameState.players[0].id
-                      : 'human_0',
-                ),
                 // Special card actions (JUMP / STEAL)
                 if (gameState.phase == GamePhase.playing &&
                     gameState.players.isNotEmpty &&
@@ -222,10 +234,11 @@ class _GameScreenState extends ConsumerState<GameScreen>
                 // Action bar
                 _ActionBar(
                   gameState: gameState,
+                  discardMode: _discardMode,
                   onDrawFromDeck: _onDrawFromDeck,
                   onDrawFromDiscard: _onDrawFromDiscard,
                   onSubmit: _onSubmit,
-                  onDiscard: _onDiscard,
+                  onToggleDiscard: () => _setDiscardMode(!_discardMode),
                 ),
               ],
             ),
@@ -439,6 +452,8 @@ class _ScoreboardBar extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(width: 8),
+          const _MuteButton(),
           const Spacer(),
           // Turn timer - only shown during a human turn
           if (gameState.turnTimeRemaining >= 0 &&
@@ -632,17 +647,19 @@ class _OpponentsBar extends StatelessWidget {
 
 class _ActionBar extends StatelessWidget {
   final GameState gameState;
+  final bool discardMode;
   final VoidCallback onDrawFromDeck;
   final VoidCallback onDrawFromDiscard;
   final VoidCallback onSubmit;
-  final VoidCallback onDiscard;
+  final VoidCallback onToggleDiscard;
 
   const _ActionBar({
     required this.gameState,
+    required this.discardMode,
     required this.onDrawFromDeck,
     required this.onDrawFromDiscard,
     required this.onSubmit,
-    required this.onDiscard,
+    required this.onToggleDiscard,
   });
 
   @override
@@ -652,11 +669,44 @@ class _ActionBar extends StatelessWidget {
         !gameState.currentPlayer.isAI;
 
     if (!isHumanTurn) {
-      return Padding(
-        padding: const EdgeInsets.all(16),
+      return Container(
+        height: 76,
+        alignment: Alignment.center,
         child: Text(
-          '상대의 차례입니다...',
-          style: TextStyle(color: AppColors.textSecondary),
+          '상대가 생각하고 있어요...',
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
+
+    if (discardMode) {
+      return Container(
+        height: 76,
+        color: const Color(0xFFFEF2F2),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Expanded(
+              child: Text(
+                '버릴 카드를 골라 톡 눌러요',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFFB91C1C),
+                ),
+              ),
+            ),
+            BigActionButton(
+              label: '취소',
+              color: const Color(0xFF9CA3AF),
+              onPressed: onToggleDiscard,
+            ),
+          ],
         ),
       );
     }
@@ -665,19 +715,23 @@ class _ActionBar extends StatelessWidget {
     if (gameState.turnPhase == TurnPhase.draw) {
       final top = gameState.discardTop;
       return Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            FilledButton.icon(
+            BigActionButton(
+              label: '새 카드',
+              sublabel: '${gameState.deck.length}장 남음',
+              icon: GameIcon.deck,
+              color: AppColors.primary,
               onPressed: onDrawFromDeck,
-              icon: const Icon(Icons.layers),
-              label: Text('덱에서 뽑기 (${gameState.deck.length})'),
             ),
-            FilledButton.icon(
+            BigActionButton(
+              label: top == null ? '버린 카드' : top.word,
+              sublabel: top == null ? '없어요' : '가져오기',
+              icon: GameIcon.discard,
+              color: const Color(0xFF3B82F6),
               onPressed: top == null ? null : onDrawFromDiscard,
-              icon: const Icon(Icons.download),
-              label: Text(top == null ? '버린 더미 없음' : '"${top.word}" 가져오기'),
             ),
           ],
         ),
@@ -685,22 +739,68 @@ class _ActionBar extends StatelessWidget {
     }
 
     // Turn step 2: exactly one action.
+    final canSubmit = gameState.currentPlayer.sentenceZone.length >= 2;
     return Padding(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          FilledButton(
-            onPressed: gameState.currentPlayer.sentenceZone.length >= 2
-                ? onSubmit
-                : null,
-            child: const Text('문장 완성'),
+          BigActionButton(
+            label: '문장 완성',
+            sublabel: canSubmit ? null : '카드를 2장 이상 놓아요',
+            icon: GameIcon.check,
+            color: AppColors.primary,
+            onPressed: canSubmit ? onSubmit : null,
           ),
-          OutlinedButton(
-            onPressed: onDiscard,
-            child: const Text('카드 버리기'),
+          BigActionButton(
+            label: '카드 버리기',
+            icon: GameIcon.discard,
+            color: const Color(0xFFF97316),
+            onPressed: onToggleDiscard,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Sound toggle, kept on the board rather than buried in settings — a child
+/// playing next to someone else needs to silence it without leaving the game.
+class _MuteButton extends ConsumerStatefulWidget {
+  const _MuteButton();
+
+  @override
+  ConsumerState<_MuteButton> createState() => _MuteButtonState();
+}
+
+class _MuteButtonState extends ConsumerState<_MuteButton> {
+  @override
+  Widget build(BuildContext context) {
+    final sound = ref.read(gameFeedbackProvider).sound;
+    final on = sound.sfxEnabled || sound.musicEnabled;
+
+    return Semantics(
+      button: true,
+      label: on ? '소리 끄기' : '소리 켜기',
+      child: GestureDetector(
+        onTap: () {
+          final next = !on;
+          sound.sfxEnabled = next;
+          sound.musicEnabled = next;
+          setState(() {});
+        },
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.white24,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: GameIconView(
+            on ? GameIcon.soundOn : GameIcon.soundOff,
+            size: 18,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }
