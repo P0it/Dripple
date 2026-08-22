@@ -41,13 +41,19 @@ class SentenceParser {
       out.add(i + 1);
     }
 
-    final starts = <int>[i];
-    if (_is(c, i, PartOfSpeech.article)) starts.add(i + 1);
+    // Two branches: with a leading article, and without one.
+    final hasArticle = _is(c, i, PartOfSpeech.article);
+    final starts = <int, bool>{i: false};
+    if (hasArticle) starts[i + 1] = true;
 
-    for (final s in starts) {
-      var k = s;
+    for (final entry in starts.entries) {
+      var k = entry.key;
+      final articleSeen = entry.value;
       while (true) {
-        if (_is(c, k, PartOfSpeech.noun)) out.add(k + 1);
+        if (_is(c, k, PartOfSpeech.noun) &&
+            (articleSeen || !_needsDeterminer(c, k))) {
+          out.add(k + 1);
+        }
         if (_is(c, k, PartOfSpeech.adjective)) {
           k++;
         } else {
@@ -56,6 +62,17 @@ class SentenceParser {
       }
     }
     return out.toList();
+  }
+
+  /// A singular countable noun cannot stand bare in English — "tree wants"
+  /// is wrong, "the tree wants" is right. Plurals ("cats run") and
+  /// uncountables ("water is cold") are fine without one.
+  ///
+  /// JOKER cards carry no grammar metadata, so they are never forced.
+  bool _needsDeterminer(List<WordCard> c, int i) {
+    final card = c[i];
+    if (card.type == CardType.joker) return false;
+    return card.isSingular && card.countable == true;
   }
 
   /// AdjP := (Adv)* Adj+
@@ -79,6 +96,15 @@ class SentenceParser {
     return out.toList();
   }
 
+  /// Only a linking verb can take an adjective complement.
+  /// JOKER carries no word, so it is allowed either reading.
+  bool _isLinkingVerb(List<WordCard> c, int i) {
+    if (i < 0 || i >= c.length) return false;
+    final card = c[i];
+    if (card.type == CardType.joker) return true;
+    return const {'is', 'am', 'are', 'was', 'were', 'be'}.contains(card.word);
+  }
+
   /// PP := Prep NP
   List<int> _parsePP(List<WordCard> c, int i) {
     if (!_is(c, i, PartOfSpeech.preposition)) return const [];
@@ -92,11 +118,13 @@ class SentenceParser {
     // Verb consumed.
     final afterVerb = <int>{i + 1};
 
-    // Optional complement: NP or AdjP.
+    // Optional complement: an object NP, or — only after a linking verb —
+    // an adjective phrase. "I am happy" is fine; "they read small" is not.
+    final linking = _isLinkingVerb(c, i);
     final afterComplement = <int>{...afterVerb};
     for (final e in afterVerb) {
       afterComplement.addAll(_parseNP(c, e, object: true));
-      afterComplement.addAll(_parseAdjP(c, e));
+      if (linking) afterComplement.addAll(_parseAdjP(c, e));
     }
 
     // Optional trailing adverb.

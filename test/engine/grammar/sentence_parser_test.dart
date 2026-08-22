@@ -133,6 +133,52 @@ void main() {
       ]), true);
     });
 
+    test('rejects a bare singular countable noun: "tree wants"', () {
+      expect(parser.parse([
+        WordCard(
+            id: 'n', word: 'tree', pos: PartOfSpeech.noun,
+            number: 'singular', countable: true),
+        _c('wants', PartOfSpeech.verb),
+      ]), false);
+    });
+
+    test('accepts the same noun with an article: "the tree grows"', () {
+      expect(parser.parse([
+        _c('the', PartOfSpeech.article),
+        WordCard(
+            id: 'n', word: 'tree', pos: PartOfSpeech.noun,
+            number: 'singular', countable: true),
+        _c('grows', PartOfSpeech.verb),
+      ]), true);
+    });
+
+    test('accepts a bare plural: "cats run"', () {
+      expect(parser.parse([
+        WordCard(
+            id: 'n', word: 'cats', pos: PartOfSpeech.noun,
+            number: 'plural', countable: true),
+        _c('run', PartOfSpeech.verb),
+      ]), true);
+    });
+
+    test('accepts a bare uncountable: "water is cold"', () {
+      expect(parser.parse([
+        WordCard(
+            id: 'n', word: 'water', pos: PartOfSpeech.noun,
+            number: 'singular', countable: false),
+        _c('is', PartOfSpeech.verb),
+        _c('cold', PartOfSpeech.adjective),
+      ]), true);
+    });
+
+    test('rejects an adjective complement after a non-linking verb', () {
+      expect(parser.parse([
+        _c('they', PartOfSpeech.pronoun),
+        _c('read', PartOfSpeech.verb),
+        _c('small', PartOfSpeech.adjective),
+      ]), false);
+    });
+
     test('rejects single card', () {
       expect(parser.parse([_c('I', PartOfSpeech.pronoun)]), false);
     });
