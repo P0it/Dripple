@@ -340,6 +340,80 @@ class GameNotifier extends StateNotifier<GameState> {
     return true;
   }
 
+  /// JUMP: skip the next player's turn. Costs the turn's single action.
+  bool playJump(int handIndex) {
+    if (state.phase != GamePhase.playing) return false;
+    if (state.turnPhase != TurnPhase.action) return false;
+
+    final me = state.currentPlayer;
+    if (handIndex < 0 || handIndex >= me.hand.length) return false;
+    if (me.hand[handIndex].type != CardType.jump) return false;
+
+    final hand = List<WordCard>.from(me.hand)..removeAt(handIndex);
+    _updateCurrentPlayer(me.copyWith(hand: hand));
+
+    if (hand.isEmpty) {
+      _endGame(winnerIndex: state.currentPlayerIndex);
+      return true;
+    }
+    endTurn(skip: 1);
+    return true;
+  }
+
+  /// STEAL: take one random card from [targetPlayerIndex] and give them one
+  /// card of your choosing. Opponent hands are hidden, so the player picks
+  /// the victim, not the card.
+  ///
+  /// [giveCardIndex] indexes the hand *after* the STEAL card is removed.
+  bool playSteal(
+    int handIndex, {
+    required int targetPlayerIndex,
+    required int giveCardIndex,
+  }) {
+    if (state.phase != GamePhase.playing) return false;
+    if (state.turnPhase != TurnPhase.action) return false;
+    if (targetPlayerIndex == state.currentPlayerIndex) return false;
+    if (targetPlayerIndex < 0 || targetPlayerIndex >= state.players.length) {
+      return false;
+    }
+
+    final me = state.currentPlayer;
+    if (handIndex < 0 || handIndex >= me.hand.length) return false;
+    if (me.hand[handIndex].type != CardType.steal) return false;
+
+    final target = state.players[targetPlayerIndex];
+    if (target.hand.isEmpty) return false;
+
+    final handAfterSteal = List<WordCard>.from(me.hand)..removeAt(handIndex);
+    if (giveCardIndex < 0 || giveCardIndex >= handAfterSteal.length) {
+      return false;
+    }
+
+    final stolenIndex = _random.nextInt(target.hand.length);
+    final stolen = target.hand[stolenIndex];
+    final given = handAfterSteal[giveCardIndex];
+
+    final myHand = List<WordCard>.from(handAfterSteal)
+      ..removeAt(giveCardIndex)
+      ..add(stolen);
+    final targetHand = List<WordCard>.from(target.hand)
+      ..removeAt(stolenIndex)
+      ..add(given);
+
+    final players = List<Player>.from(state.players);
+    players[state.currentPlayerIndex] = me.copyWith(hand: myHand);
+    players[targetPlayerIndex] = target.copyWith(hand: targetHand);
+
+    state = state.copyWith(players: players);
+
+    if (myHand.isEmpty) {
+      _endGame(winnerIndex: state.currentPlayerIndex);
+      return true;
+    }
+    endTurn();
+    return true;
+  }
+
   // -------------------------------------------------------------------------
   // Turn advance / game end
   // -------------------------------------------------------------------------
