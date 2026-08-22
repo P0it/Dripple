@@ -2,9 +2,15 @@
 
 ## Project Overview
 
-Dripple is a multiplayer English word card battle game built with Flutter. Players compete by arranging word cards into grammatically correct sentences. Entertainment-first board game inspired by Duolingo's visual style.
+Dripple is an English word card battle game built with Flutter, aimed at
+children aged 6-10 who are learning English for the first time. Players race
+to empty their hand by arranging word cards into grammatically correct
+sentences. **Learning is the purpose; a real card game is the form** — not a
+drill app.
 
 **Design Spec:** `docs/superpowers/specs/2026-04-05-dripple-design.md`
+**Current Redesign Spec:** `docs/superpowers/specs/2026-08-22-dripple-card-battle-redesign.md`
+**Implementation Plan:** `docs/superpowers/plans/2026-08-22-card-battle-redesign.md`
 
 ## Tech Stack
 
@@ -26,6 +32,32 @@ Dripple is a multiplayer English word card battle game built with Flutter. Playe
 - Server only for online multiplayer (Firebase Realtime DB)
 - Grammar validation is rule-based (no LLM dependency)
 - Character animations via Rive State Machine
+
+## Game Rules
+
+4 players (1 human + 3 AI), 7 cards each, single game. First to empty their
+hand wins.
+
+```
+Your turn
+ (1) Draw exactly one card — deck top OR discard pile top (face up)
+ (2) Take exactly one action
+       - complete a sentence  (cards leave your hand for good)
+       - play JUMP or STEAL
+       - discard one card face up
+```
+
+- No minimum or maximum sentence length. The grammar engine's 2-card floor is
+  the only bound; longer sentences empty the hand faster, so the structure
+  rewards them without a rule.
+- A failed submission does **not** cost the action. Cards return to hand.
+- A card taken from the discard pile cannot be discarded on the same turn
+  (Gin Rummy rule — otherwise two players trade one card forever).
+- Deck empty: shuffle the discard pile back in. After two recycles, the player
+  holding the fewest cards wins (anti-stalling).
+- Opening hands are guaranteed at least one verb and one subject-capable card.
+- Special cards: **JOKER** (wildcard word) / **JUMP** (skip the next player) /
+  **STEAL** (forced card exchange with a chosen player).
 
 ## Project Structure
 
@@ -51,12 +83,17 @@ lib/
 
 ## Current Status
 
-### Completed (Phase 1-8)
+### Completed (Phase 1-8, then the 2026-08-22 card battle redesign)
 - [x] Flutter project + all dependencies
 - [x] Data models (WordCard, Player, GameState)
 - [x] Card deck (60+ curated cards with multilingual meanings)
 - [x] Grammar engine (5 rules: article, number, SV agreement, adj order, structure)
-- [x] 21 unit tests passing
+- [x] Recursive chunk parser with prepositional phrases and pronoun case
+- [x] Rummy turn structure (draw → one action), discard pile, deck recycling
+- [x] AI rewritten — searches with the grammar engine, actually plays sentences
+- [x] Special card UI for the human player (JUMP / STEAL)
+- [x] Free sentence-zone reordering inside Flame
+- [x] 90 unit tests passing
 - [x] Game logic + turn management + scoring with combo
 - [x] AI player (rule-based, strategic special card usage)
 - [x] Flame game board (drag & drop cards, sentence zone)
@@ -70,12 +107,7 @@ lib/
 - [x] Ad service interface (abstract)
 
 ### Next Steps (Planned)
-- [ ] Game mode presets (Classic / Battle / Learning)
-  - Classic: special cards ON, betting OFF
-  - Battle: special cards ON, betting ON (chip system)
-  - Learning: special cards OFF, betting OFF, no timer
-- [ ] Betting/chip system for Battle mode
-- [ ] Room creation (title, password, mode selection)
+- [ ] Room creation (title, password)
 - [ ] Online multiplayer (Firebase Realtime DB implementation)
 - [ ] Friends list + online presence
 - [ ] Quick messages (preset phrases instead of free chat)
@@ -87,11 +119,21 @@ lib/
 ## Design Decisions
 
 1. **No free-text chat** — Use emotes + quick messages to avoid moderation issues (all-ages audience)
-2. **Preset game modes** instead of complex room options — keeps UX simple
+2. **Single mode** — no Classic/Battle/Learning presets, no betting. Only
+   difficulty and the optional turn timer are configurable.
 3. **1-person development** — Flutter single codebase for iOS + Android
-4. **Entertainment first** — Board game, not a learning app
-5. **$0 operational cost** for core gameplay — grammar engine and AI are fully client-side
-6. **Duolingo-level UX** — Rive animations, haptic feedback, polished audio
+4. **Learning is the purpose, a card game is the form** — a child picks up
+   English word order by playing, not by answering questions. Reversed the
+   earlier "entertainment first, not a learning app" decision (2026-08-22).
+5. **Borrow proven card-game rules** — the turn structure is Rummy, the
+   loophole guards come from Gin Rummy and deck-builders, the part-of-speech
+   colours are the Montessori grammar symbols. All of it is play-tested by
+   decades of use.
+6. **Flame is kept deliberately** — the card-game feel is the point, so the
+   sentence-zone reorder was hand-built inside Flame rather than swapping to
+   Flutter widgets. Known cost: screen readers cannot see the Flame canvas.
+7. **$0 operational cost** for core gameplay — grammar engine and AI are fully client-side
+8. **Duolingo-level UX** — Rive animations, haptic feedback, polished audio
 
 ## Development
 
@@ -112,12 +154,30 @@ FLUTTER_ALLOW_ROOT=true flutter <command>
 
 ## Engineering Review (2026-04-09)
 
-### Critical Bugs (must fix before launch)
-1. **SKIP card double-advance** — `_advanceTurn()` called twice, second call can modify ended game (`game_provider.dart:192`)
-2. **STEAL card stale reference** — state mutation order causes wrong player reference (`game_provider.dart:208`)
-3. **WILD card not implemented** — exists in enum/deck but does nothing (`game_provider.dart:239`)
-4. **No round reset** — next round starts with leftover cards, no re-deal (`game_provider.dart:292`)
-5. **`_processAITurns` race condition** — Draw button fires-and-forgets, rapid taps cause concurrent AI loops (`game_screen.dart:115`)
+### Critical Bugs — all resolved by the 2026-08-22 redesign
+1. ~~**SKIP card double-advance**~~ — SKIP became JUMP and all turn advances
+   go through the single `endTurn({skip})` path.
+2. ~~**STEAL card stale reference**~~ — `playSteal` writes both hands in one
+   atomic state update.
+3. ~~**WILD card not implemented**~~ — renamed JOKER; the parser treats it as
+   a wildcard token that matches any part of speech.
+4. ~~**No round reset**~~ — rounds were removed entirely. Single game, won by
+   emptying your hand.
+5. ~~**`_processAITurns` race condition**~~ — AI driving moved into
+   `GameNotifier` behind an `_isProcessingAI` guard; the UI no longer owns it.
+
+### Additional bugs found and fixed
+- **AI could never submit a sentence.** `_findBestSentence` only built up to 4
+  cards while `minSentenceLength` was 5, so the AI drew every single turn.
+  Replaced with a permutation search that uses the grammar engine as oracle.
+- **Timer expiry froze the game.** The turn advanced to an AI but nothing
+  drove the AI loop, because only the screen called it.
+- **Rounds never ended.** The end condition was deck exhaustion — roughly 93
+  turns.
+- **The human could not play special cards at all.** `playSpecialCard` had
+  zero call sites in the UI.
+- **`flutter_gen` synthetic package removed in Flutter 3.44**, which broke
+  compilation of every screen file.
 
 ### Architecture Issues
 - `GameNotifier` mutates `state` multiple times per action → intermediate widget rebuilds
@@ -138,10 +198,10 @@ FLUTTER_ALLOW_ROOT=true flutter <command>
 - No security model (opponent hands readable in proposed Firebase structure)
 - No conflict resolution for disconnections/stale turns
 
-### Testing Gaps
-- Only grammar engine tested (20 tests)
-- Zero tests for: GameNotifier, AI Player, CardDeck, EmoteNotifier, game flow integration
-- Widget test is trivial (checks text exists)
+### Testing status (90 tests)
+- Grammar engine 20, sentence parser 15, word card 5, card deck 8,
+  game state 7, GameNotifier 26, AI player 8, widget 1
+- Still untested: EmoteNotifier, SoundManager, HapticManager, screen widgets
 
 ### Missing for App Store
 - Audio/Rive assets (placeholder only)
