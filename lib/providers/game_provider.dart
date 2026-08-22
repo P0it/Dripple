@@ -105,10 +105,13 @@ class GameNotifier extends StateNotifier<GameState> {
 
     var working = state;
     if (working.deck.isEmpty) {
+      if (working.deckRecycleCount >= 2) {
+        _endGameOnExhaustion();
+        return;
+      }
       working = _recycleDiscardIntoDeck(working);
       if (working.deck.isEmpty) {
-        // Nothing left to draw: skip straight to the action phase.
-        state = working.copyWith(turnPhase: TurnPhase.action);
+        _endGameOnExhaustion();
         return;
       }
     }
@@ -213,6 +216,181 @@ class GameNotifier extends StateNotifier<GameState> {
   }
 
   // -------------------------------------------------------------------------
+  // Sentence zone editing (free-form — a child who gets stuck must be able
+  // to back out of any arrangement, not just undo the last card)
+  // -------------------------------------------------------------------------
+
+  void placeCard(int handIndex) {
+    if (state.phase != GamePhase.playing) return;
+    final me = state.currentPlayer;
+    if (handIndex < 0 || handIndex >= me.hand.length) return;
+
+    final card = me.hand[handIndex];
+    // JUMP and STEAL are actions, not words.
+    if (card.type == CardType.jump || card.type == CardType.steal) return;
+
+    final hand = List<WordCard>.from(me.hand)..removeAt(handIndex);
+    _updateCurrentPlayer(
+      me.copyWith(hand: hand, sentenceZone: [...me.sentenceZone, card]),
+    );
+  }
+
+  void removeFromSentence(int sentenceIndex) {
+    if (state.phase != GamePhase.playing) return;
+    final me = state.currentPlayer;
+    if (sentenceIndex < 0 || sentenceIndex >= me.sentenceZone.length) return;
+
+    final zone = List<WordCard>.from(me.sentenceZone);
+    final card = zone.removeAt(sentenceIndex);
+    _updateCurrentPlayer(
+      me.copyWith(hand: [...me.hand, card], sentenceZone: zone),
+    );
+  }
+
+  void reorderSentence(int from, int to) {
+    if (state.phase != GamePhase.playing) return;
+    final me = state.currentPlayer;
+    final zone = List<WordCard>.from(me.sentenceZone);
+    if (from < 0 || from >= zone.length) return;
+    if (to < 0 || to >= zone.length) return;
+    if (from == to) return;
+
+    final card = zone.removeAt(from);
+    zone.insert(to, card);
+    _updateCurrentPlayer(me.copyWith(sentenceZone: zone));
+  }
+
+  // -------------------------------------------------------------------------
+  // Action phase
+  // -------------------------------------------------------------------------
+
+  /// Validate the sentence zone. On success the cards leave the hand for
+  /// good and the turn ends. On failure the cards return to hand and the
+  /// turn continues — failure must not cost a child their turn.
+  JudgmentResult submitSentence() {
+    final me = state.currentPlayer;
+    final submitted = List<WordCard>.from(me.sentenceZone);
+
+    if (state.phase != GamePhase.playing ||
+        state.turnPhase != TurnPhase.action) {
+      return JudgmentResult(
+        isCorrect: false,
+        playerName: me.name,
+        sentence: submitted,
+      );
+    }
+
+    final result = _grammarEngine.validate(submitted);
+
+    if (!result.isValid) {
+      _updateCurrentPlayer(me.copyWith(
+        hand: [...me.hand, ...submitted],
+        sentenceZone: const [],
+      ));
+      return JudgmentResult(
+        isCorrect: false,
+        errors: result.errors,
+        playerName: me.name,
+        sentence: submitted,
+      );
+    }
+
+    _updateCurrentPlayer(me.copyWith(sentenceZone: const []));
+
+    final judgment = JudgmentResult(
+      isCorrect: true,
+      playerName: me.name,
+      sentence: submitted,
+    );
+
+    if (state.currentPlayer.hand.isEmpty) {
+      _endGame(winnerIndex: state.currentPlayerIndex);
+    } else {
+      endTurn();
+    }
+    return judgment;
+  }
+
+  /// Discard one card face up. Returns false if the discard is illegal.
+  bool discardCard(int handIndex) {
+    if (state.phase != GamePhase.playing) return false;
+    if (state.turnPhase != TurnPhase.action) return false;
+
+    final me = state.currentPlayer;
+    if (handIndex < 0 || handIndex >= me.hand.length) return false;
+
+    final card = me.hand[handIndex];
+    // Rummy: the card you just took from the pile cannot go straight back.
+    if (card.id == state.drawnFromDiscardCardId) return false;
+
+    final hand = List<WordCard>.from(me.hand)..removeAt(handIndex);
+    final players = List<Player>.from(state.players);
+    players[state.currentPlayerIndex] = me.copyWith(hand: hand);
+
+    state = state.copyWith(
+      players: players,
+      discardPile: [...state.discardPile, card],
+    );
+
+    if (hand.isEmpty) {
+      _endGame(winnerIndex: state.currentPlayerIndex);
+    } else {
+      endTurn();
+    }
+    return true;
+  }
+
+  // -------------------------------------------------------------------------
+  // Turn advance / game end
+  // -------------------------------------------------------------------------
+
+  /// Advance to [skip]+1 players ahead. JUMP passes skip: 1.
+  void endTurn({int skip = 0}) {
+    if (state.phase != GamePhase.playing) return;
+    _cancelTurnTimer();
+
+    // Any cards left staged in the sentence zone go back to hand.
+    final me = state.currentPlayer;
+    var working = state;
+    if (me.sentenceZone.isNotEmpty) {
+      final players = List<Player>.from(working.players);
+      players[working.currentPlayerIndex] = me.copyWith(
+        hand: [...me.hand, ...me.sentenceZone],
+        sentenceZone: const [],
+      );
+      working = working.copyWith(players: players);
+    }
+
+    final next =
+        (working.currentPlayerIndex + 1 + skip) % working.players.length;
+
+    state = working
+        .clearDrawnFromDiscard()
+        .copyWith(currentPlayerIndex: next, turnPhase: TurnPhase.draw);
+
+    _startTurnTimer();
+    if (autoRunAI) unawaited(_runAITurnsIfNeeded());
+  }
+
+  void _endGame({required int winnerIndex}) {
+    _cancelTurnTimer();
+    state = state.copyWith(
+      phase: GamePhase.gameEnd,
+      winnerIndex: winnerIndex,
+    );
+  }
+
+  /// Anti-stalling: after two recycles the deck running dry ends the game,
+  /// and the player holding the fewest cards wins.
+  void _endGameOnExhaustion() {
+    final winnerId = state.ranking.first.id;
+    _endGame(winnerIndex: state.players.indexWhere((p) => p.id == winnerId));
+  }
+
+  /// Implemented in the AI-ownership task.
+  Future<void> _runAITurnsIfNeeded() async {}
+
+  // -------------------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------------------
 
@@ -222,8 +400,6 @@ class GameNotifier extends StateNotifier<GameState> {
     state = state.copyWith(players: players);
   }
 
-  /// Implemented in the action-phase task.
-  void endTurn({int skip = 0}) {}
 }
 
 final gameProvider = StateNotifierProvider<GameNotifier, GameState>((ref) {
