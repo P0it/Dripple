@@ -15,6 +15,7 @@ class CardComponent extends PositionComponent with DragCallbacks {
 
   bool isDragging = false;
   Vector2 _originalPosition = Vector2.zero();
+  int _restingPriority = 0;
 
   static const double cardWidth = 80;
   static const double cardHeight = 110;
@@ -169,7 +170,8 @@ class CardComponent extends PositionComponent with DragCallbacks {
     super.onDragStart(event);
     isDragging = true;
     _originalPosition = position.clone();
-    priority = 100;
+    _restingPriority = priority;
+    priority = 1000; // lift above the fan while dragging
   }
 
   @override
@@ -181,7 +183,7 @@ class CardComponent extends PositionComponent with DragCallbacks {
   void onDragEnd(DragEndEvent event) {
     super.onDragEnd(event);
     isDragging = false;
-    priority = 0;
+    priority = _restingPriority;
 
     final dropPosition = position.clone();
     onDragEnded?.call(this, dropPosition);

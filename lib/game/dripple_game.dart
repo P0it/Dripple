@@ -71,20 +71,25 @@ class DrippleGame extends FlameGame {
     };
 
     // Add new components and reposition all
-    final totalWidth = newCards.length * (CardComponent.cardWidth + 8) - 8;
+    final step = _stepFor(newCards.length);
+    final totalWidth = newCards.isEmpty
+        ? 0.0
+        : (newCards.length - 1) * step + CardComponent.cardWidth;
     final startX = newCards.isEmpty ? 0.0 : (size.x - totalWidth) / 2;
 
     final updatedComponents = <CardComponent>[];
 
     for (int i = 0; i < newCards.length; i++) {
       final card = newCards[i];
-      final targetX = startX + i * (CardComponent.cardWidth + 8);
+      final targetX = startX + i * step;
       final targetPos = Vector2(targetX, yPosition);
 
       if (existingMap.containsKey(card.id)) {
         // Existing card — just reposition
         final comp = existingMap[card.id]!;
         comp.position = targetPos;
+        // Overlapping cards must stack left-to-right, like a fanned hand.
+        comp.priority = i;
         updatedComponents.add(comp);
       } else {
         // New card — create component. Resolve the index by card id at drag
@@ -114,6 +119,7 @@ class DrippleGame extends FlameGame {
             }
           },
         );
+        comp.priority = i;
         updatedComponents.add(comp);
         add(comp);
       }
@@ -124,11 +130,30 @@ class DrippleGame extends FlameGame {
       ..addAll(updatedComponents);
   }
 
+  /// Horizontal distance between adjacent cards.
+  ///
+  /// A full hand at full spacing is wider than a phone screen, so cards
+  /// overlap once they would run off the edge — the way a real hand of
+  /// cards fans. Always leaves [_edgePadding] on both sides so the first
+  /// and last card stay reachable.
+  double _stepFor(int count) {
+    const preferred = CardComponent.cardWidth + 8;
+    if (count <= 1) return preferred;
+
+    final available = size.x - _edgePadding * 2 - CardComponent.cardWidth;
+    if (available <= 0) return preferred;
+
+    final fitted = available / (count - 1);
+    return fitted < preferred ? fitted : preferred;
+  }
+
+  static const double _edgePadding = 12;
+
   /// Which slot an x-coordinate lands in, for a row of [count] cards.
   int _indexAtX(double x, int count) {
     if (count <= 1) return 0;
-    const step = CardComponent.cardWidth + 8;
-    final totalWidth = count * step - 8;
+    final step = _stepFor(count);
+    final totalWidth = (count - 1) * step + CardComponent.cardWidth;
     final startX = (size.x - totalWidth) / 2;
     final raw = ((x - startX) / step).round();
     return raw.clamp(0, count - 1);
