@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flame/game.dart';
+import 'package:flutter/material.dart' as material;
 import '../models/word_card.dart';
 import 'card_row_layout.dart';
 import 'components/card_component.dart';
@@ -39,6 +40,76 @@ class DrippleGame extends FlameGame {
 
   @override
   ui.Color backgroundColor() => const ui.Color(0xFFF0FDF4);
+
+  /// An empty sentence zone used to be blank space with no affordance — a
+  /// child had no way to know cards belonged there. Draw the target.
+  @override
+  void render(ui.Canvas canvas) {
+    if (_sentenceZone.isEmpty) _renderDropZone(canvas);
+    super.render(canvas);
+  }
+
+  void _renderDropZone(ui.Canvas canvas) {
+    const height = CardRowLayout.cardHeight;
+    final width = ui.Size(size.x, size.y).width - CardRowLayout.edgePadding * 4;
+    final rect = ui.Rect.fromCenter(
+      center: ui.Offset(size.x / 2, _sentenceZoneY + height / 2),
+      width: width,
+      height: height,
+    );
+    final rrect =
+        ui.RRect.fromRectAndRadius(rect, const ui.Radius.circular(16));
+
+    canvas.drawRRect(
+      rrect,
+      ui.Paint()..color = const ui.Color(0x14059669),
+    );
+    _drawDashedRRect(canvas, rrect, const ui.Color(0x5510B981));
+
+    _dropHint.paint(
+      canvas,
+      ui.Offset(
+        rect.center.dx - _dropHint.width / 2,
+        rect.center.dy - _dropHint.height / 2,
+      ),
+    );
+  }
+
+  late final material.TextPainter _dropHint = material.TextPainter(
+    text: const material.TextSpan(
+      text: '여기에 카드를 올려\n문장을 만들어요',
+      style: material.TextStyle(
+        color: ui.Color(0xFF10B981),
+        fontSize: 15,
+        fontWeight: material.FontWeight.w700,
+        height: 1.4,
+      ),
+    ),
+    textDirection: ui.TextDirection.ltr,
+    textAlign: ui.TextAlign.center,
+  )..layout();
+
+  /// Flutter has no dashed-border primitive, so walk the path manually.
+  void _drawDashedRRect(ui.Canvas canvas, ui.RRect rrect, ui.Color color) {
+    final paint = ui.Paint()
+      ..color = color
+      ..style = ui.PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeCap = ui.StrokeCap.round;
+
+    final path = ui.Path()..addRRect(rrect);
+    const dash = 9.0;
+    const space = 7.0;
+
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final next = (distance + dash).clamp(0.0, metric.length);
+        canvas.drawPath(metric.extractPath(distance, next), paint);
+        distance = next + space;
+      }
+    }
+  }
 
   /// Update hand cards using diff — only add/remove changed cards
   void updateHand(List<WordCard> hand) {
