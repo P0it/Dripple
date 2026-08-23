@@ -96,15 +96,6 @@ class SentenceParser {
     return out.toList();
   }
 
-  /// Only a linking verb can take an adjective complement.
-  /// JOKER carries no word, so it is allowed either reading.
-  bool _isLinkingVerb(List<WordCard> c, int i) {
-    if (i < 0 || i >= c.length) return false;
-    final card = c[i];
-    if (card.type == CardType.joker) return true;
-    return const {'is', 'am', 'are', 'was', 'were', 'be'}.contains(card.word);
-  }
-
   /// PP := Prep NP
   List<int> _parsePP(List<WordCard> c, int i) {
     if (!_is(c, i, PartOfSpeech.preposition)) return const [];
@@ -118,13 +109,24 @@ class SentenceParser {
     // Verb consumed.
     final afterVerb = <int>{i + 1};
 
-    // Optional complement: an object NP, or — only after a linking verb —
-    // an adjective phrase. "I am happy" is fine; "they read small" is not.
-    final linking = _isLinkingVerb(c, i);
-    final afterComplement = <int>{...afterVerb};
+    // The verb's own valency decides which complements are legal, so
+    // "apples run a friend" and "they read small" both fail while
+    // "I read books" and "I am happy" pass.
+    final verb = c[i];
+    final joker = verb.type == CardType.joker;
+    final allowsBare = joker || verb.allowsFrame(VerbFrame.intransitive);
+    final allowsObject = joker || verb.allowsFrame(VerbFrame.transitive);
+    final allowsAdjective = joker || verb.allowsFrame(VerbFrame.linking);
+
+    final afterComplement = <int>{};
+    if (allowsBare) afterComplement.addAll(afterVerb);
     for (final e in afterVerb) {
-      afterComplement.addAll(_parseNP(c, e, object: true));
-      if (linking) afterComplement.addAll(_parseAdjP(c, e));
+      if (allowsObject) {
+        afterComplement.addAll(_parseNP(c, e, object: true));
+      }
+      if (allowsAdjective) {
+        afterComplement.addAll(_parseAdjP(c, e));
+      }
     }
 
     // Optional trailing adverb.

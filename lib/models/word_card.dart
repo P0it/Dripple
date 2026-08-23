@@ -12,6 +12,22 @@ enum PartOfSpeech {
   preposition,
 }
 
+/// What a verb can take after it.
+///
+/// A single `transitive` flag is not enough: "read", "eat" and "play" work
+/// both with and without an object, so a card carries the set of frames it
+/// allows and the parser checks the complement against it.
+enum VerbFrame {
+  /// No complement — "I run".
+  intransitive,
+
+  /// A noun phrase object — "I read books".
+  transitive,
+
+  /// An adjective complement — "I am happy".
+  linking,
+}
+
 /// Montessori grammar symbol shapes. A child who cannot yet read the word
 /// can still see the shape of the sentence.
 enum PosShape {
@@ -35,6 +51,9 @@ class WordCard extends Equatable {
   final bool? countable;
   final bool? vowelStart;
   final int? adjOrder; // 1-8 for adjective ordering
+  /// Verb cards only. Null means unconstrained, which keeps fixtures that
+  /// predate valency data parsing.
+  final Set<VerbFrame>? frames;
   final Map<String, String> meanings; // {"ko": "...", "ja": "...", "en": "..."}
 
   const WordCard({
@@ -47,6 +66,7 @@ class WordCard extends Equatable {
     this.countable,
     this.vowelStart,
     this.adjOrder,
+    this.frames,
     this.meanings = const {},
   });
 
@@ -59,6 +79,10 @@ class WordCard extends Equatable {
   bool get isSingular => number == 'singular';
   bool get isPlural => number == 'plural';
   bool get isThirdPersonSingular => person == 3 && isSingular;
+
+  /// Whether this verb allows [frame]. A card with no valency data allows
+  /// everything, so missing data never blocks a play.
+  bool allowsFrame(VerbFrame frame) => frames == null || frames!.contains(frame);
 
   /// Whether this card can act as a subject (pronoun or noun)
   bool get canBeSubject => isPronoun || isNoun;
@@ -131,7 +155,8 @@ class WordCard extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, word, type, pos, person, number];
+  List<Object?> get props =>
+      [id, word, type, pos, person, number, frames];
 
   @override
   String toString() => 'WordCard($word, ${type == CardType.word ? pos?.name : type.name})';

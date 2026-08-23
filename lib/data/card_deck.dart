@@ -63,6 +63,47 @@ class CardDeck {
     return (hands, pool);
   }
 
+  /// What each verb can take after it.
+  ///
+  /// Keyed by surface form because the deck carries both "eat" and "eats".
+  /// A verb missing from this table would parse unconstrained, so
+  /// card_deck_test asserts every verb card ends up with frames.
+  static const Map<String, Set<VerbFrame>> _verbFrames = {
+    // Transitive only — these need something to act on.
+    'like': {VerbFrame.transitive},
+    'likes': {VerbFrame.transitive},
+    'have': {VerbFrame.transitive},
+    'has': {VerbFrame.transitive},
+    'want': {VerbFrame.transitive},
+    'wants': {VerbFrame.transitive},
+    'make': {VerbFrame.transitive},
+    'makes': {VerbFrame.transitive},
+    'need': {VerbFrame.transitive},
+    'needs': {VerbFrame.transitive},
+    'love': {VerbFrame.transitive},
+    'loves': {VerbFrame.transitive},
+
+    // Intransitive only — "apples run a friend" must not parse.
+    'run': {VerbFrame.intransitive},
+    'runs': {VerbFrame.intransitive},
+    'go': {VerbFrame.intransitive},
+
+    // Both — "I read" and "I read books" are each fine.
+    'eat': {VerbFrame.intransitive, VerbFrame.transitive},
+    'eats': {VerbFrame.intransitive, VerbFrame.transitive},
+    'read': {VerbFrame.intransitive, VerbFrame.transitive},
+    'reads': {VerbFrame.intransitive, VerbFrame.transitive},
+    'see': {VerbFrame.intransitive, VerbFrame.transitive},
+    'sees': {VerbFrame.intransitive, VerbFrame.transitive},
+    'play': {VerbFrame.intransitive, VerbFrame.transitive},
+    'plays': {VerbFrame.intransitive, VerbFrame.transitive},
+
+    // Be-verbs take an adjective ("I am happy") or a noun ("I am a boy").
+    'is': {VerbFrame.linking, VerbFrame.transitive},
+    'am': {VerbFrame.linking, VerbFrame.transitive},
+    'are': {VerbFrame.linking, VerbFrame.transitive},
+  };
+
   // === PRONOUNS (12 cards) ===
   List<WordCard> _pronouns() => [
         WordCard(
@@ -321,142 +362,194 @@ class CardDeck {
         // like / likes
         WordCard(
           id: _nextId(), word: 'like', pos: PartOfSpeech.verb,
+          frames: _verbFrames['like'],
+         
           person: 1, number: 'plural',
           meanings: {'ko': '좋아하다', 'ja': '好き', 'en': 'like'},
         ),
         WordCard(
           id: _nextId(), word: 'likes', pos: PartOfSpeech.verb,
+          frames: _verbFrames['likes'],
+         
           person: 3, number: 'singular',
           meanings: {'ko': '좋아하다', 'ja': '好き', 'en': 'likes'},
         ),
         // eat / eats
         WordCard(
           id: _nextId(), word: 'eat', pos: PartOfSpeech.verb,
+          frames: _verbFrames['eat'],
+         
           person: 1, number: 'plural',
           meanings: {'ko': '먹다', 'ja': '食べる', 'en': 'eat'},
         ),
         WordCard(
           id: _nextId(), word: 'eats', pos: PartOfSpeech.verb,
+          frames: _verbFrames['eats'],
+         
           person: 3, number: 'singular',
           meanings: {'ko': '먹다', 'ja': '食べる', 'en': 'eats'},
         ),
         // run / runs
         WordCard(
           id: _nextId(), word: 'run', pos: PartOfSpeech.verb,
+          frames: _verbFrames['run'],
+         
           person: 1, number: 'plural',
           meanings: {'ko': '달리다', 'ja': '走る', 'en': 'run'},
         ),
         WordCard(
           id: _nextId(), word: 'runs', pos: PartOfSpeech.verb,
+          frames: _verbFrames['runs'],
+         
           person: 3, number: 'singular',
           meanings: {'ko': '달리다', 'ja': '走る', 'en': 'runs'},
         ),
         // have / has
         WordCard(
           id: _nextId(), word: 'have', pos: PartOfSpeech.verb,
+          frames: _verbFrames['have'],
+         
           person: 1, number: 'plural',
           meanings: {'ko': '가지다', 'ja': '持つ', 'en': 'have'},
         ),
         WordCard(
           id: _nextId(), word: 'has', pos: PartOfSpeech.verb,
+          frames: _verbFrames['has'],
+         
           person: 3, number: 'singular',
           meanings: {'ko': '가지다', 'ja': '持つ', 'en': 'has'},
         ),
         // read / reads
         WordCard(
           id: _nextId(), word: 'read', pos: PartOfSpeech.verb,
+          frames: _verbFrames['read'],
+         
           person: 1, number: 'plural',
           meanings: {'ko': '읽다', 'ja': '読む', 'en': 'read'},
         ),
         WordCard(
           id: _nextId(), word: 'reads', pos: PartOfSpeech.verb,
+          frames: _verbFrames['reads'],
+         
           person: 3, number: 'singular',
           meanings: {'ko': '읽다', 'ja': '読む', 'en': 'reads'},
         ),
         // want / wants
         WordCard(
           id: _nextId(), word: 'want', pos: PartOfSpeech.verb,
+          frames: _verbFrames['want'],
+         
           person: 1, number: 'plural',
           meanings: {'ko': '원하다', 'ja': '欲しい', 'en': 'want'},
         ),
         WordCard(
           id: _nextId(), word: 'wants', pos: PartOfSpeech.verb,
+          frames: _verbFrames['wants'],
+         
           person: 3, number: 'singular',
           meanings: {'ko': '원하다', 'ja': '欲しい', 'en': 'wants'},
         ),
         // see / sees
         WordCard(
           id: _nextId(), word: 'see', pos: PartOfSpeech.verb,
+          frames: _verbFrames['see'],
+         
           person: 1, number: 'plural',
           meanings: {'ko': '보다', 'ja': '見る', 'en': 'see'},
         ),
         WordCard(
           id: _nextId(), word: 'sees', pos: PartOfSpeech.verb,
+          frames: _verbFrames['sees'],
+         
           person: 3, number: 'singular',
           meanings: {'ko': '보다', 'ja': '見る', 'en': 'sees'},
         ),
         // make / makes
         WordCard(
           id: _nextId(), word: 'make', pos: PartOfSpeech.verb,
+          frames: _verbFrames['make'],
+         
           person: 1, number: 'plural',
           meanings: {'ko': '만들다', 'ja': '作る', 'en': 'make'},
         ),
         WordCard(
           id: _nextId(), word: 'makes', pos: PartOfSpeech.verb,
+          frames: _verbFrames['makes'],
+         
           person: 3, number: 'singular',
           meanings: {'ko': '만들다', 'ja': '作る', 'en': 'makes'},
         ),
         // play / plays
         WordCard(
           id: _nextId(), word: 'play', pos: PartOfSpeech.verb,
+          frames: _verbFrames['play'],
+         
           person: 1, number: 'plural',
           meanings: {'ko': '놀다', 'ja': '遊ぶ', 'en': 'play'},
         ),
         WordCard(
           id: _nextId(), word: 'plays', pos: PartOfSpeech.verb,
+          frames: _verbFrames['plays'],
+         
           person: 3, number: 'singular',
           meanings: {'ko': '놀다', 'ja': '遊ぶ', 'en': 'plays'},
         ),
         // is / are / am (linking verbs)
         WordCard(
           id: _nextId(), word: 'is', pos: PartOfSpeech.verb,
+          frames: _verbFrames['is'],
+         
           person: 3, number: 'singular',
           meanings: {'ko': '~이다', 'ja': 'です', 'en': 'is'},
         ),
         WordCard(
           id: _nextId(), word: 'are', pos: PartOfSpeech.verb,
+          frames: _verbFrames['are'],
+         
           person: 2, number: 'plural',
           meanings: {'ko': '~이다', 'ja': 'です', 'en': 'are'},
         ),
         WordCard(
           id: _nextId(), word: 'am', pos: PartOfSpeech.verb,
+          frames: _verbFrames['am'],
+         
           person: 1, number: 'singular',
           meanings: {'ko': '~이다', 'ja': 'です', 'en': 'am'},
         ),
         // love / loves
         WordCard(
           id: _nextId(), word: 'love', pos: PartOfSpeech.verb,
+          frames: _verbFrames['love'],
+         
           person: 1, number: 'plural',
           meanings: {'ko': '사랑하다', 'ja': '愛する', 'en': 'love'},
         ),
         WordCard(
           id: _nextId(), word: 'loves', pos: PartOfSpeech.verb,
+          frames: _verbFrames['loves'],
+         
           person: 3, number: 'singular',
           meanings: {'ko': '사랑하다', 'ja': '愛する', 'en': 'loves'},
         ),
         // need / needs
         WordCard(
           id: _nextId(), word: 'need', pos: PartOfSpeech.verb,
+          frames: _verbFrames['need'],
+         
           person: 1, number: 'plural',
           meanings: {'ko': '필요하다', 'ja': '必要', 'en': 'need'},
         ),
         WordCard(
           id: _nextId(), word: 'needs', pos: PartOfSpeech.verb,
+          frames: _verbFrames['needs'],
+         
           person: 3, number: 'singular',
           meanings: {'ko': '필요하다', 'ja': '必要', 'en': 'needs'},
         ),
         WordCard(
           id: _nextId(), word: 'go', pos: PartOfSpeech.verb,
+          frames: _verbFrames['go'],
+         
           person: 1, number: 'plural',
           meanings: {'ko': '가다', 'ja': '行く', 'en': 'go'},
         ),

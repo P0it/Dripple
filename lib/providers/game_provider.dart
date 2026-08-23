@@ -488,11 +488,15 @@ class GameNotifier extends StateNotifier<GameState> {
 
     final results = <JudgmentResult>[];
     try {
-      // The bound is a safety net against a rule bug spinning forever.
+      // Runaway backstop only. It must sit well above any turn count the
+      // rules can legitimately produce: with four players drawing and
+      // discarding, the deck takes ~80 turns to empty and the anti-stalling
+      // rule needs two recycles before it fires, so a real game can run past
+      // 240 turns. A tighter bound here silently left the game hung.
       var guard = 0;
       while (state.phase == GamePhase.playing &&
           state.currentPlayer.isAI &&
-          guard++ < 200) {
+          guard++ < 5000) {
         if (aiTurnDelay > Duration.zero) {
           await Future<void>.delayed(aiTurnDelay);
         }

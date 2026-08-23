@@ -59,6 +59,32 @@ Your turn
 - Special cards: **JOKER** (wildcard word) / **JUMP** (skip the next player) /
   **STEAL** (forced card exchange with a chosen player).
 
+### Grammar scope
+
+A recursive chunk parser (`lib/engine/grammar/sentence_parser.dart`) accepts:
+
+```
+NP   := Pronoun | (Art)? (Adj)* Noun
+AdjP := (Adv)* Adj+
+PP   := Prep NP
+VP   := Verb (NP | AdjP)? (Adv)? (PP)*
+S    := NP VP
+```
+
+Beyond structure it enforces four things a template table could not:
+
+- **Verb valency** — every verb card carries a `Set<VerbFrame>`
+  (`intransitive` / `transitive` / `linking`), so "apples run a friend" and
+  "they read small" are rejected while "I read" and "I read books" both pass.
+- **Pronoun case** — the deck has no object pronouns, so "cats like I" fails
+  while "cats like you" passes.
+- **Determiners** — a singular countable noun cannot stand bare: "tree wants"
+  fails, "the tree wants" passes.
+- **JOKER** — matches any part of speech and any verb frame.
+
+Out of scope: conjunctions, tense, questions, negation, and semantics (the
+parser has no opinion on "the flower reads").
+
 ## Project Structure
 
 ```

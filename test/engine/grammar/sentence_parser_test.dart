@@ -171,10 +171,16 @@ void main() {
       ]), true);
     });
 
+    // Valency now comes from the card, so the verb has to declare it.
     test('rejects an adjective complement after a non-linking verb', () {
       expect(parser.parse([
         _c('they', PartOfSpeech.pronoun),
-        _c('read', PartOfSpeech.verb),
+        const WordCard(
+          id: 'v_read',
+          word: 'read',
+          pos: PartOfSpeech.verb,
+          frames: {VerbFrame.intransitive, VerbFrame.transitive},
+        ),
         _c('small', PartOfSpeech.adjective),
       ]), false);
     });
