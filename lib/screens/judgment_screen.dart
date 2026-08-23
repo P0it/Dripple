@@ -12,7 +12,7 @@ class JudgmentDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isCorrect = result.isCorrect;
-    final bgColor = isCorrect ? AppColors.correctGreen : AppColors.incorrectRed;
+    final bgColor = isCorrect ? AppColors.success : AppColors.danger;
 
     return AlertDialog(
       backgroundColor: bgColor,

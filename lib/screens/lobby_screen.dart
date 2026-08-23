@@ -25,11 +25,11 @@ class LobbyScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(isOnline ? l10n.onlineBattle : l10n.friendBattle),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textOnPrimary,
+        backgroundColor: AppColors.point,
+        foregroundColor: Colors.white,
       ),
       body: Container(
-        decoration: const BoxDecoration(gradient: AppTheme.greenGradient),
+        color: AppColors.background,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -63,7 +63,7 @@ class LobbyScreen extends StatelessWidget {
                                 fontSize: 32,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 4,
-                                color: AppColors.primary,
+                                color: AppColors.point,
                               ),
                             ),
                           ),
@@ -72,7 +72,7 @@ class LobbyScreen extends StatelessWidget {
                             height: 40,
                             width: 40,
                             child: CircularProgressIndicator(
-                              color: AppColors.primary,
+                              color: AppColors.point,
                             ),
                           ),
                       ],
@@ -91,7 +91,7 @@ class LobbyScreen extends StatelessWidget {
                         child: ListTile(
                           leading: CircleAvatar(
                             backgroundColor: isJoined
-                                ? AppColors.primary
+                                ? AppColors.point
                                 : Colors.grey.shade300,
                             child: Icon(
                               isJoined ? Icons.person : Icons.person_outline,
@@ -111,7 +111,7 @@ class LobbyScreen extends StatelessWidget {
                           ),
                           trailing: isJoined
                               ? const Icon(Icons.check_circle,
-                                  color: AppColors.primary)
+                                  color: AppColors.point)
                               : const SizedBox(
                                   width: 20,
                                   height: 20,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:dripple/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
-import 'core/theme/app_theme.dart';
+import 'core/design/app_theme.dart';
 import 'engine/ai/ai_player.dart';
 import 'screens/home_screen.dart';
 import 'screens/mode_selection_screen.dart';
@@ -84,7 +84,7 @@ class DrippleApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Dripple',
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.light,
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [

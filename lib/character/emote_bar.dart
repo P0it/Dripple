@@ -77,7 +77,7 @@ class _EmoteButton extends StatelessWidget {
           ),
           child: Center(
             child: GameIconView(emote.icon,
-                size: 24, color: AppColors.primary),
+                size: 24, color: AppColors.point),
           ),
         ),
       ),
@@ -115,7 +115,7 @@ class EmoteBubble extends StatelessWidget {
             ),
           ],
         ),
-        child: GameIconView(emote.icon, size: 30, color: AppColors.primary),
+        child: GameIconView(emote.icon, size: 30, color: AppColors.point),
       ),
     );
   }

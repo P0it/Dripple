@@ -29,7 +29,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppTheme.greenGradient),
+        color: AppColors.background,
         child: SafeArea(
           child: Center(
             child: Column(
@@ -45,7 +45,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Text(
                   l10n.appTitle.toUpperCase(),
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        color: AppColors.textOnPrimary,
+                        color: Colors.white,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 4,
                       ),
@@ -68,7 +68,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
-                      foregroundColor: AppColors.primary,
+                      foregroundColor: AppColors.point,
                     ),
                     child: Text(
                       l10n.play,

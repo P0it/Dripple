@@ -17,7 +17,7 @@ class ResultScreen extends ConsumerWidget {
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppTheme.greenGradient),
+        color: AppColors.background,
         child: SafeArea(
           child: Column(
             children: [
@@ -57,7 +57,7 @@ class ResultScreen extends ConsumerWidget {
                         onPressed: () => context.go('/mode-select'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
-                          foregroundColor: AppColors.primary,
+                          foregroundColor: AppColors.point,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         child: Text(AppLocalizations.of(context)!.playAgain),
@@ -163,7 +163,7 @@ class _Podium extends StatelessWidget {
                 style: TextStyle(
                   fontSize: isWinner ? 28 : 22,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+                  color: AppColors.point,
                 ),
               ),
               const SizedBox(width: 4),

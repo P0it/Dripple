@@ -325,8 +325,8 @@ class _GameEndOverlayState extends State<_GameEndOverlay> {
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: isHumanWinner
-                            ? AppColors.correctGreen
-                            : AppColors.incorrectRed,
+                            ? AppColors.success
+                            : AppColors.danger,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -380,7 +380,7 @@ class _ScoreRow extends StatelessWidget {
               CircleAvatar(
                 radius: 14,
                 backgroundColor:
-                    player.isAI ? AppColors.textSecondary : AppColors.primary,
+                    player.isAI ? AppColors.textSecondary : AppColors.point,
                 child: Text(
                   player.name[0],
                   style: const TextStyle(
@@ -406,7 +406,7 @@ class _ScoreRow extends StatelessWidget {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
-              color: AppColors.primary,
+              color: AppColors.point,
             ),
           ),
         ],
@@ -425,7 +425,7 @@ class _ScoreboardBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: AppColors.point,
         boxShadow: [
           BoxShadow(
             color: Colors.black12,
@@ -477,7 +477,7 @@ class _ScoreboardBar extends StatelessWidget {
                         p.name[0],
                         style: TextStyle(
                           fontSize: 12,
-                          color: p.isAI ? Colors.white : AppColors.primary,
+                          color: p.isAI ? Colors.white : AppColors.point,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -515,7 +515,7 @@ class _TurnTimerWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUrgent = secondsRemaining <= 5;
-    final arcColor = isUrgent ? AppColors.incorrectRed : Colors.white;
+    final arcColor = isUrgent ? AppColors.danger : Colors.white;
     final fraction = totalSeconds > 0
         ? (secondsRemaining / totalSeconds).clamp(0.0, 1.0)
         : 0.0;
@@ -614,7 +614,7 @@ class _OpponentsBar extends StatelessWidget {
               CircleAvatar(
                 radius: 20,
                 backgroundColor:
-                    isCurrentTurn ? AppColors.primary : Colors.grey.shade300,
+                    isCurrentTurn ? AppColors.point : Colors.grey.shade300,
                 child: Icon(
                   Icons.smart_toy,
                   color: isCurrentTurn ? Colors.white : Colors.grey,
@@ -723,7 +723,7 @@ class _ActionBar extends StatelessWidget {
               label: '새 카드',
               sublabel: '${gameState.deck.length}장 남음',
               icon: GameIcon.deck,
-              color: AppColors.primary,
+              color: AppColors.point,
               onPressed: onDrawFromDeck,
             ),
             BigActionButton(
@@ -749,7 +749,7 @@ class _ActionBar extends StatelessWidget {
             label: '문장 완성',
             sublabel: canSubmit ? null : '카드를 2장 이상 놓아요',
             icon: GameIcon.check,
-            color: AppColors.primary,
+            color: AppColors.point,
             onPressed: canSubmit ? onSubmit : null,
           ),
           BigActionButton(
@@ -836,7 +836,7 @@ class _SpecialCardRow extends StatelessWidget {
                     ? GameIcon.jump
                     : GameIcon.steal,
                 size: 18,
-                color: AppColors.primary,
+                color: AppColors.point,
               ),
               label: Text(hand[i].type == CardType.jump ? 'JUMP' : 'STEAL'),
               onPressed: () => onTap(i),

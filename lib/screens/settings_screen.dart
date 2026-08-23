@@ -23,8 +23,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.settings),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textOnPrimary,
+        backgroundColor: AppColors.point,
+        foregroundColor: Colors.white,
       ),
       body: ListView(
         children: [
@@ -35,10 +35,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: Text(l10n.soundEffects),
             subtitle: Text(l10n.soundEffectsDesc),
             value: sound.sfxEnabled,
-            activeThumbColor: AppColors.primary,
+            activeThumbColor: AppColors.point,
             secondary: Icon(
               sound.sfxEnabled ? Icons.volume_up : Icons.volume_off,
-              color: AppColors.primary,
+              color: AppColors.point,
             ),
             onChanged: (value) {
               setState(() => sound.sfxEnabled = value);
@@ -46,10 +46,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           ListTile(
             title: Text(l10n.sfxVolume),
-            leading: const Icon(Icons.graphic_eq, color: AppColors.primary),
+            leading: const Icon(Icons.graphic_eq, color: AppColors.point),
             subtitle: Slider(
               value: sound.sfxVolume,
-              activeColor: AppColors.primary,
+              activeColor: AppColors.point,
               onChanged: sound.sfxEnabled
                   ? (value) {
                       setState(() => sound.sfxVolume = value);
@@ -62,10 +62,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: Text(l10n.backgroundMusic),
             subtitle: Text(l10n.backgroundMusicDesc),
             value: sound.musicEnabled,
-            activeThumbColor: AppColors.primary,
+            activeThumbColor: AppColors.point,
             secondary: Icon(
               sound.musicEnabled ? Icons.music_note : Icons.music_off,
-              color: AppColors.primary,
+              color: AppColors.point,
             ),
             onChanged: (value) {
               setState(() => sound.musicEnabled = value);
@@ -73,10 +73,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           ListTile(
             title: Text(l10n.musicVolume),
-            leading: const Icon(Icons.queue_music, color: AppColors.primary),
+            leading: const Icon(Icons.queue_music, color: AppColors.point),
             subtitle: Slider(
               value: sound.musicVolume,
-              activeColor: AppColors.primary,
+              activeColor: AppColors.point,
               onChanged: sound.musicEnabled
                   ? (value) {
                       setState(() => sound.musicVolume = value);
@@ -92,10 +92,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: Text(l10n.vibration),
             subtitle: Text(l10n.vibrationDesc),
             value: haptic.enabled,
-            activeThumbColor: AppColors.primary,
+            activeThumbColor: AppColors.point,
             secondary: Icon(
               haptic.enabled ? Icons.vibration : Icons.phonelink_erase,
-              color: AppColors.primary,
+              color: AppColors.point,
             ),
             onChanged: (value) {
               setState(() => haptic.enabled = value);
@@ -122,7 +122,7 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         title,
         style: TextStyle(
-          color: AppColors.primary,
+          color: AppColors.point,
           fontWeight: FontWeight.bold,
           fontSize: 14,
         ),

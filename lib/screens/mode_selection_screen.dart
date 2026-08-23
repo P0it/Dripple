@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dripple/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../core/theme/app_theme.dart';
+import '../models/word_card.dart';
 import '../engine/ai/ai_player.dart';
 
 class ModeSelectionScreen extends StatelessWidget {
@@ -14,11 +15,11 @@ class ModeSelectionScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.selectMode),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textOnPrimary,
+        backgroundColor: AppColors.point,
+        foregroundColor: Colors.white,
       ),
       body: Container(
-        decoration: const BoxDecoration(gradient: AppTheme.greenGradient),
+        color: AppColors.background,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -170,7 +171,7 @@ class _ModeCard extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                Icon(icon, size: 40, color: AppColors.primary),
+                Icon(icon, size: 40, color: AppColors.point),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -195,7 +196,7 @@ class _ModeCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.cardSkip,
+                      color: AppColors.specialCard(CardType.jump),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -205,7 +206,7 @@ class _ModeCard extends StatelessWidget {
                     ),
                   ),
                 if (enabled)
-                  const Icon(Icons.chevron_right, color: AppColors.primary),
+                  const Icon(Icons.chevron_right, color: AppColors.point),
               ],
             ),
           ),
