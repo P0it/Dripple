@@ -3,6 +3,7 @@ import 'rules/article_rule.dart';
 import 'rules/number_rule.dart';
 import 'rules/sv_agreement_rule.dart';
 import 'rules/adj_order_rule.dart';
+import 'rules/animacy_rule.dart';
 import 'rules/structure_rule.dart';
 
 class ValidationError {
@@ -56,6 +57,7 @@ class GrammarEngine {
               SubjectVerbAgreementRule(),
               AdjectiveOrderRule(),
               StructureRule(),
+              AnimacyRule(),
             ];
 
   ValidationResult validate(List<WordCard> sentence) {

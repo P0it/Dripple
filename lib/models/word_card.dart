@@ -28,6 +28,27 @@ enum VerbFrame {
   linking,
 }
 
+/// Where an adverb belongs in the sentence.
+///
+/// English puts these in three different places, and a single "adverb" part
+/// of speech would let "they read always" and "they slowly read" through.
+enum AdverbKind {
+  /// Before the verb — "they always read".
+  frequency,
+
+  /// After the verb and its object — "they read slowly".
+  manner,
+
+  /// Before an adjective — "we are very happy".
+  degree,
+}
+
+/// Whether a noun names something that can act.
+///
+/// Lets the engine reject "the flower reads" — grammatical, but the kind of
+/// sentence that teaches a child the wrong thing.
+enum Animacy { animate, inanimate }
+
 /// Montessori grammar symbol shapes. A child who cannot yet read the word
 /// can still see the shape of the sentence.
 enum PosShape {
@@ -54,6 +75,17 @@ class WordCard extends Equatable {
   /// Verb cards only. Null means unconstrained, which keeps fixtures that
   /// predate valency data parsing.
   final Set<VerbFrame>? frames;
+
+  /// Nouns and pronouns. Null means unconstrained.
+  final Animacy? animacy;
+
+  /// Adverb cards only. Null means the adverb may sit in any of the three
+  /// positions, which keeps older fixtures parsing.
+  final AdverbKind? adverbKind;
+
+  /// Verb cards only. When true the subject must be [Animacy.animate], so
+  /// "the star eats" fails while "the girl eats" passes.
+  final bool requiresAnimateSubject;
   final Map<String, String> meanings; // {"ko": "...", "ja": "...", "en": "..."}
 
   const WordCard({
@@ -67,6 +99,9 @@ class WordCard extends Equatable {
     this.vowelStart,
     this.adjOrder,
     this.frames,
+    this.animacy,
+    this.adverbKind,
+    this.requiresAnimateSubject = false,
     this.meanings = const {},
   });
 
@@ -79,6 +114,22 @@ class WordCard extends Equatable {
   bool get isSingular => number == 'singular';
   bool get isPlural => number == 'plural';
   bool get isThirdPersonSingular => person == 3 && isSingular;
+
+  /// Whether the word begins with a vowel sound, for "a" versus "an".
+  ///
+  /// [vowelStart] is the authority when set, so exceptions like "hour" can be
+  /// declared. Otherwise it is derived from the spelling — adjectives carry no
+  /// explicit flag, and without this "an green friend" slipped through.
+  bool get startsWithVowelSound {
+    if (vowelStart != null) return vowelStart!;
+    if (word.isEmpty) return false;
+    return const {'a', 'e', 'i', 'o', 'u'}.contains(word[0].toLowerCase());
+  }
+
+  /// Whether this adverb may sit in [kind]'s position. An adverb with no
+  /// kind is unconstrained.
+  bool allowsAdverbKind(AdverbKind kind) =>
+      adverbKind == null || adverbKind == kind;
 
   /// Whether this verb allows [frame]. A card with no valency data allows
   /// everything, so missing data never blocks a play.
@@ -156,7 +207,7 @@ class WordCard extends Equatable {
 
   @override
   List<Object?> get props =>
-      [id, word, type, pos, person, number, frames];
+      [id, word, type, pos, person, number, frames, animacy];
 
   @override
   String toString() => 'WordCard($word, ${type == CardType.word ? pos?.name : type.name})';

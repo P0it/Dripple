@@ -17,7 +17,7 @@ class ArticleRule extends GrammarRule {
       final nextWord = _findNextRelevantWord(sentence, i + 1);
       if (nextWord == null) continue;
 
-      if (card.word == 'a' && nextWord.vowelStart == true) {
+      if (card.word == 'a' && nextWord.startsWithVowelSound) {
         errors.add(ValidationError(
           code: 'article_a_vowel',
           message: 'Use "an" before words starting with a vowel sound: "${nextWord.word}"',
@@ -26,7 +26,7 @@ class ArticleRule extends GrammarRule {
             'ja': '母音で始まる単語「${nextWord.word}」の前には「an」を使います',
           },
         ));
-      } else if (card.word == 'an' && nextWord.vowelStart == false) {
+      } else if (card.word == 'an' && !nextWord.startsWithVowelSound) {
         errors.add(ValidationError(
           code: 'article_an_consonant',
           message: 'Use "a" before words starting with a consonant sound: "${nextWord.word}"',

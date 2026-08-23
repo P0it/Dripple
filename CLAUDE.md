@@ -65,13 +65,13 @@ A recursive chunk parser (`lib/engine/grammar/sentence_parser.dart`) accepts:
 
 ```
 NP   := Pronoun | (Art)? (Adj)* Noun
-AdjP := (Adv)* Adj+
+AdjP := (AdvDegree)* Adj+
 PP   := Prep NP
-VP   := Verb (NP | AdjP)? (Adv)? (PP)*
-S    := NP VP
+VP   := Verb (NP | AdjP)? (AdvManner)? (PP)*
+S    := NP (AdvFreq)? VP
 ```
 
-Beyond structure it enforces four things a template table could not:
+Beyond structure it enforces six things a template table could not:
 
 - **Verb valency** — every verb card carries a `Set<VerbFrame>`
   (`intransitive` / `transitive` / `linking`), so "apples run a friend" and
@@ -80,10 +80,21 @@ Beyond structure it enforces four things a template table could not:
   while "cats like you" passes.
 - **Determiners** — a singular countable noun cannot stand bare: "tree wants"
   fails, "the tree wants" passes.
-- **JOKER** — matches any part of speech and any verb frame.
+- **Adverb position** — adverbs carry an `AdverbKind`. Frequency adverbs go
+  before the verb ("they always read"), manner adverbs after it ("they read
+  slowly"), degree adverbs before an adjective ("very happy"). Put one in the
+  wrong slot and it fails.
+- **Animacy** — nouns declare `Animacy`, verbs declare whether they need an
+  actor, so "the flower reads" and "a star eats" are rejected while "the girl
+  reads" passes. `AnimacyRule` reports it in the player's own language.
+- **JOKER** — matches any part of speech, any verb frame, any adverb slot.
 
-Out of scope: conjunctions, tense, questions, negation, and semantics (the
-parser has no opinion on "the flower reads").
+Article agreement looks at the word directly after the article, adjectives
+included, and falls back to spelling when a card carries no explicit
+`vowelStart` — otherwise "an green friend" slips through.
+
+Out of scope: conjunctions, tense, questions, and negation. Semantics is
+checked only for animacy; the engine has no opinion on "water has apples".
 
 ## Project Structure
 

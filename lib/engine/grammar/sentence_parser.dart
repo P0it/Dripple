@@ -2,11 +2,11 @@ import '../../models/word_card.dart';
 
 /// Recursive-descent parser for the sentence grammar.
 ///
-///   S     := NP VP
+///   S     := NP (AdvFreq)? VP
 ///   NP    := Pronoun | (Art)? (Adj)* Noun
-///   AdjP  := (Adv)* Adj+
+///   AdjP  := (AdvDegree)* Adj+
 ///   PP    := Prep NP
-///   VP    := Verb (NP | AdjP)? (Adv)? (PP)*
+///   VP    := Verb (NP | AdjP)? (AdvManner)? (PP)*
 ///
 /// Every `_parseX` returns the set of positions the parse could end at,
 /// which is how optional and repeated elements are explored without
@@ -17,11 +17,27 @@ class SentenceParser {
     if (cards.length < 2) return false;
 
     for (final npEnd in _parseNP(cards, 0)) {
-      for (final vpEnd in _parseVP(cards, npEnd)) {
-        if (vpEnd == cards.length) return true;
+      // A frequency adverb goes between the subject and the verb.
+      final verbStarts = <int>{npEnd};
+      if (_isAdverb(cards, npEnd, AdverbKind.frequency)) {
+        verbStarts.add(npEnd + 1);
+      }
+      for (final start in verbStarts) {
+        for (final vpEnd in _parseVP(cards, start)) {
+          if (vpEnd == cards.length) return true;
+        }
       }
     }
     return false;
+  }
+
+  /// True when position [i] holds an adverb allowed in [kind]'s slot.
+  bool _isAdverb(List<WordCard> c, int i, AdverbKind kind) {
+    if (i < 0 || i >= c.length) return false;
+    final card = c[i];
+    if (card.type == CardType.joker) return true;
+    if (card.pos != PartOfSpeech.adverb) return false;
+    return card.allowsAdverbKind(kind);
   }
 
   bool _is(List<WordCard> c, int i, PartOfSpeech pos) {
@@ -81,7 +97,7 @@ class SentenceParser {
 
     final starts = <int>{i};
     var k = i;
-    while (_is(c, k, PartOfSpeech.adverb)) {
+    while (_isAdverb(c, k, AdverbKind.degree)) {
       k++;
       starts.add(k);
     }
@@ -129,10 +145,11 @@ class SentenceParser {
       }
     }
 
-    // Optional trailing adverb.
+    // Optional trailing adverb — manner only, so "read slowly" parses and
+    // "read always" does not.
     final afterAdverb = <int>{...afterComplement};
     for (final e in afterComplement) {
-      if (_is(c, e, PartOfSpeech.adverb)) afterAdverb.add(e + 1);
+      if (_isAdverb(c, e, AdverbKind.manner)) afterAdverb.add(e + 1);
     }
 
     // Zero or more prepositional phrases. Positions strictly increase,

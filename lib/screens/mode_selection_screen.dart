@@ -95,40 +95,14 @@ class ModeSelectionScreen extends StatelessWidget {
       ),
     ).then((difficulty) {
       if (difficulty != null && context.mounted) {
-        _showPlayerCountDialog(context, l10n, difficulty);
+        // Player count is fixed at four: JUMP and STEAL only matter with
+        // opponents to point them at, and asking a child two questions
+        // before the game starts is one too many.
+        context.push('/game?players=4&difficulty=${difficulty.name}');
       }
     });
   }
 
-  /// Step 2: pick number of players, then navigate.
-  void _showPlayerCountDialog(
-    BuildContext context,
-    AppLocalizations l10n,
-    AIDifficulty difficulty,
-  ) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.playerCount),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final count in [2, 3, 4])
-              ListTile(
-                leading: Icon(Icons.people, color: AppColors.primary),
-                title: Text(l10n.nPlayers(count)),
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  context.push(
-                    '/game?players=$count&difficulty=${difficulty.name}',
-                  );
-                },
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 // ---------------------------------------------------------------------------

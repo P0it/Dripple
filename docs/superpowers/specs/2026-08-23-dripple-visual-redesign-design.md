@@ -299,7 +299,9 @@ and catch nothing that looking at the screen would not.
   leaving state logic alone is the riskiest edit in this spec. Mitigated
   by moving widgets only — no provider or lifecycle changes — and by the
   existing game-logic tests.
-- **Pretendard bundle size.** Two weights subset for Korean adds roughly
-  1-2 MB. Acceptable; the alternative is a first-frame font swap.
+- **Pretendard bundle size.** Three unsubsetted weights (Regular, SemiBold,
+  Bold) add roughly 8 MB — measured, not estimated. Acceptable next to the
+  existing audio assets; the alternative is a first-frame font swap.
+  Subsetting to the used glyph range is possible later.
 - **Blue point colour resembles Toss's own.** Any blue would. This is the
   requested aesthetic, and the mark, typography, and layout are original.
