@@ -42,7 +42,7 @@ class ResultScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => context.go('/'),
+                        onPressed: () => context.go('/home'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.white,
                           side: const BorderSide(color: Colors.white),

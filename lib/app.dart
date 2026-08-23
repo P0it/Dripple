@@ -10,6 +10,7 @@ import 'screens/game_screen.dart';
 import 'screens/lobby_screen.dart';
 import 'screens/result_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/splash_screen.dart';
 
 CustomTransitionPage _fadeTransition(Widget child, GoRouterState state) {
   return CustomTransitionPage(
@@ -27,6 +28,13 @@ final _router = GoRouter(
   routes: [
     GoRoute(
       path: '/',
+      pageBuilder: (context, state) => _fadeTransition(
+        SplashScreen(onFinished: () => context.go('/home')),
+        state,
+      ),
+    ),
+    GoRoute(
+      path: '/home',
       pageBuilder: (context, state) =>
           _fadeTransition(const HomeScreen(), state),
     ),

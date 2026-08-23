@@ -1,0 +1,7 @@
+# The bake tag writes PNG assets rather than asserting behaviour, so it is
+# excluded from the normal suite and run deliberately with `--tags bake`.
+tags:
+  bake:
+    skip: "run with --tags bake"
+  preview:
+    skip: "run with --tags preview"
