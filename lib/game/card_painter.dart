@@ -1,74 +1,71 @@
 import 'dart:ui';
 
-import 'package:flutter/material.dart' show Colors, FontWeight, TextAlign,
-    TextPainter, TextSpan, TextStyle;
+import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/material.dart'
+    show FontWeight, TextAlign, TextPainter, TextSpan, TextStyle;
 
+import '../core/design/app_colors.dart';
 import '../core/game_icons.dart';
 import '../models/word_card.dart';
 
-/// Visual treatments for a word card.
-enum CardStyle {
-  /// Coloured header band carrying the part-of-speech symbol, word below,
-  /// Korean meaning at the foot.
-  band,
-
-  /// Whole card tinted, white panel holding the word.
-  tinted,
-
-  /// Playing-card layout: corner pips, large centred word.
-  playingCard,
-}
-
 /// Draws a word card.
 ///
-/// Lives outside the Flame component so the same painting can be previewed
-/// in a plain Flutter canvas and so the layout is readable on its own.
+/// Lives outside the Flame component so the same painting can be previewed in
+/// a plain Flutter canvas and so the layout is readable on its own.
+///
+/// The drop shadow here is the only shadow left in the app. On a card it
+/// reads as physical stock rather than as UI chrome, which is the point of
+/// the board.
 class CardPainter {
   const CardPainter._();
 
+  /// Card width is capped by the board, not by taste: 84 is the widest card
+  /// that still fits four across a 390pt phone, and four across is what keeps
+  /// a seven-card hand down to two rows. Going to 96 forces three rows on
+  /// every phone and eats half the screen.
+  ///
+  /// Legibility for a six-year-old is bought with type size instead — see
+  /// the font ratio in [_band] — which is the lever that actually matters.
   static const double defaultWidth = 84;
-  static const double defaultHeight = 116;
+  static const double defaultHeight = 122;
 
   static void paint(
     Canvas canvas,
     WordCard card,
     Size size, {
-    CardStyle style = CardStyle.band,
     bool highlighted = false,
     bool warned = false,
     String locale = 'ko',
   }) {
-    final accent = Color(card.posColor);
+    final accent = card.isSpecial
+        ? AppColors.specialCard(card.type)
+        : AppColors.forPartOfSpeech(card.pos);
+
     final rrect = RRect.fromRectAndRadius(
       Offset.zero & size,
       Radius.circular(size.width * 0.14),
     );
 
-    // Drop shadow, softer than a UI shadow so cards feel physical.
     canvas.drawRRect(
       rrect.shift(const Offset(0, 3)),
       Paint()
-        ..color = const Color(0x22000000)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+        ..color = const Color(0x1A000000)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
     );
 
-    switch (style) {
-      case CardStyle.band:
-        _band(canvas, card, size, rrect, accent, locale);
-      case CardStyle.tinted:
-        _tinted(canvas, card, size, rrect, accent, locale);
-      case CardStyle.playingCard:
-        _playingCard(canvas, card, size, rrect, accent, locale);
-    }
+    _band(canvas, card, size, rrect, accent, locale);
 
     if (warned) {
-      // Discard candidate: a red wash plus ring, so a child can see which
-      // card the next tap would throw away.
-      canvas.drawRRect(rrect, Paint()..color = const Color(0x33EF4444));
+      // Discard candidate: a wash plus ring, so a child can see which card
+      // the next tap would throw away.
+      canvas.drawRRect(
+        rrect,
+        Paint()..color = AppColors.danger.withValues(alpha: 0.16),
+      );
       canvas.drawRRect(
         rrect.deflate(1.5),
         Paint()
-          ..color = const Color(0xFFEF4444)
+          ..color = AppColors.danger
           ..style = PaintingStyle.stroke
           ..strokeWidth = 3,
       );
@@ -76,7 +73,7 @@ class CardPainter {
       canvas.drawRRect(
         rrect.deflate(1.5),
         Paint()
-          ..color = const Color(0xFF22C55E)
+          ..color = AppColors.point
           ..style = PaintingStyle.stroke
           ..strokeWidth = 3,
       );
@@ -87,7 +84,7 @@ class CardPainter {
 
   static void _band(Canvas canvas, WordCard card, Size size, RRect rrect,
       Color accent, String locale) {
-    canvas.drawRRect(rrect, Paint()..color = Colors.white);
+    canvas.drawRRect(rrect, Paint()..color = AppColors.surface);
 
     final bandHeight = size.height * 0.30;
     canvas.save();
@@ -99,75 +96,22 @@ class CardPainter {
     canvas.restore();
 
     _symbol(canvas, card,
-        Rect.fromLTWH(0, 0, size.width, bandHeight), Colors.white);
+        Rect.fromLTWH(0, 0, size.width, bandHeight), AppColors.surface);
 
     _word(canvas, card, size,
         top: bandHeight + size.height * 0.06,
-        color: const Color(0xFF111827),
-        maxFontSize: size.width * 0.21);
+        color: AppColors.textPrimary,
+        maxFontSize: size.width * 0.26);
 
     _meaning(canvas, card, size, locale, accent);
 
     canvas.drawRRect(
       rrect.deflate(0.5),
       Paint()
-        ..color = const Color(0x14000000)
+        ..color = AppColors.divider
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1,
     );
-  }
-
-  static void _tinted(Canvas canvas, WordCard card, Size size, RRect rrect,
-      Color accent, String locale) {
-    canvas.drawRRect(rrect, Paint()..color = _soften(accent, 0.86));
-
-    final inner = RRect.fromRectAndRadius(
-      Rect.fromLTWH(size.width * 0.08, size.height * 0.26,
-          size.width * 0.84, size.height * 0.50),
-      Radius.circular(size.width * 0.08),
-    );
-    canvas.drawRRect(inner, Paint()..color = Colors.white);
-
-    _symbol(canvas, card,
-        Rect.fromLTWH(0, size.height * 0.02, size.width, size.height * 0.22),
-        accent);
-
-    _word(canvas, card, size,
-        top: size.height * 0.36,
-        color: const Color(0xFF111827),
-        maxFontSize: size.width * 0.20);
-
-    _meaning(canvas, card, size, locale, _darken(accent));
-  }
-
-  static void _playingCard(Canvas canvas, WordCard card, Size size, RRect rrect,
-      Color accent, String locale) {
-    canvas.drawRRect(rrect, Paint()..color = Colors.white);
-    canvas.drawRRect(
-      rrect.deflate(2),
-      Paint()
-        ..color = accent
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5,
-    );
-
-    final pip = size.width * 0.20;
-    _symbol(canvas, card,
-        Rect.fromLTWH(size.width * 0.07, size.height * 0.05, pip, pip), accent);
-
-    canvas.save();
-    canvas.translate(size.width, size.height);
-    canvas.rotate(3.14159265);
-    _symbol(canvas, card,
-        Rect.fromLTWH(size.width * 0.07, size.height * 0.05, pip, pip), accent);
-    canvas.restore();
-
-    _word(canvas, card, size,
-        top: size.height * 0.36,
-        color: const Color(0xFF111827),
-        maxFontSize: size.width * 0.22);
-
-    _meaning(canvas, card, size, locale, accent);
   }
 
   // ---------------------------------------------------------------------------
@@ -243,27 +187,48 @@ class CardPainter {
       required Color color,
       required double maxFontSize}) {
     final label = card.isSpecial ? card.type.name.toUpperCase() : card.word;
-    final fontSize = label.length > 7
-        ? maxFontSize * 0.72
-        : label.length > 5
-            ? maxFontSize * 0.86
-            : maxFontSize;
+    final maxWidth = size.width * 0.88;
 
-    final tp = TextPainter(
-      text: TextSpan(
-        text: label,
-        style: TextStyle(
-          color: color,
-          fontSize: fontSize,
-          fontWeight: FontWeight.w800,
-          height: 1.05,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-      textAlign: TextAlign.center,
-    )..layout(maxWidth: size.width * 0.88);
+    TextPainter build(double fontSize) => TextPainter(
+          text: TextSpan(
+            text: label,
+            style: TextStyle(
+              color: color,
+              fontFamily: 'Pretendard',
+              fontSize: fontSize,
+              fontWeight: FontWeight.w700,
+              height: 1.05,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+          textAlign: TextAlign.center,
+        )..layout();
 
+    final tp = build(fitFontSize(build, maxWidth, maxFontSize));
     tp.paint(canvas, Offset((size.width - tp.width) / 2, top));
+  }
+
+  /// Largest font size at which [build] lays out no wider than [maxWidth].
+  ///
+  /// Measure and shrink rather than guessing from the character count: a
+  /// single word cannot be broken, so a wide glyph set overflows the card
+  /// even at a length a threshold would treat as short. "quickly" and
+  /// "happy" both did.
+  ///
+  /// The floor stops a pathological word from shrinking to nothing — it will
+  /// clip instead, which at least stays legible.
+  @visibleForTesting
+  static double fitFontSize(
+    TextPainter Function(double fontSize) build,
+    double maxWidth,
+    double maxFontSize,
+  ) {
+    final floor = maxFontSize * 0.5;
+    var fontSize = maxFontSize;
+    while (fontSize > floor && build(fontSize).width > maxWidth) {
+      fontSize -= 0.5;
+    }
+    return fontSize;
   }
 
   /// The child's own language, so a card teaches meaning as well as order.
@@ -277,7 +242,8 @@ class CardPainter {
         text: meaning,
         style: TextStyle(
           color: color.withValues(alpha: 0.85),
-          fontSize: size.width * 0.125,
+          fontFamily: 'Pretendard',
+          fontSize: size.width * 0.135,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -293,6 +259,4 @@ class CardPainter {
     );
   }
 
-  static Color _soften(Color c, double t) => Color.lerp(c, Colors.white, t)!;
-  static Color _darken(Color c) => Color.lerp(c, Colors.black, 0.25)!;
 }

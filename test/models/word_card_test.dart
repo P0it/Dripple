@@ -14,19 +14,16 @@ void main() {
   group('Montessori part-of-speech symbols', () {
     WordCard c(PartOfSpeech pos) => WordCard(id: 'x', word: 'w', pos: pos);
 
-    test('noun is black large triangle', () {
+    test('noun is a large triangle', () {
       expect(c(PartOfSpeech.noun).posShape, PosShape.triangleLarge);
-      expect(c(PartOfSpeech.noun).posColor, 0xFF1F2937);
     });
 
-    test('verb is red circle', () {
+    test('verb is a circle', () {
       expect(c(PartOfSpeech.verb).posShape, PosShape.circle);
-      expect(c(PartOfSpeech.verb).posColor, 0xFFDC2626);
     });
 
-    test('preposition is green crescent', () {
+    test('preposition is a crescent', () {
       expect(c(PartOfSpeech.preposition).posShape, PosShape.crescent);
-      expect(c(PartOfSpeech.preposition).posColor, 0xFF16A34A);
     });
 
     test('special cards have no part-of-speech shape', () {

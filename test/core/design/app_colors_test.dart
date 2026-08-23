@@ -22,6 +22,25 @@ void main() {
       }
     });
 
+    /// The Montessori palette is not decoration: a child comes to expect
+    /// verbs red and prepositions green. Desaturating the hues is fine;
+    /// swapping which family a part of speech belongs to is not.
+    test('keeps the Montessori hue families', () {
+      double hue(PartOfSpeech pos) =>
+          HSLColor.fromColor(AppColors.forPartOfSpeech(pos)).hue;
+
+      expect(hue(PartOfSpeech.verb), anyOf(greaterThan(340), lessThan(20)),
+          reason: 'verb should read as red');
+      expect(hue(PartOfSpeech.preposition), inInclusiveRange(90, 170),
+          reason: 'preposition should read as green');
+      expect(hue(PartOfSpeech.adverb), inInclusiveRange(20, 50),
+          reason: 'adverb should read as orange');
+      expect(hue(PartOfSpeech.pronoun), inInclusiveRange(240, 290),
+          reason: 'pronoun should read as purple');
+      expect(hue(PartOfSpeech.adjective), inInclusiveRange(200, 250),
+          reason: 'adjective should read as blue');
+    });
+
     test('is stable across calls', () {
       expect(
         AppColors.forPartOfSpeech(PartOfSpeech.noun),
