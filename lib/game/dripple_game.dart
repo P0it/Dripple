@@ -35,6 +35,17 @@ class DrippleGame extends FlameGame {
 
   bool get discardMode => _discardMode;
 
+  @material.visibleForTesting
+  List<WordCard> get debugSentenceZone => List.unmodifiable(_sentenceZone);
+
+  @material.visibleForTesting
+  List<CardComponent> get debugSentenceComponents =>
+      List.unmodifiable(_sentenceComponents);
+
+  @material.visibleForTesting
+  List<CardComponent> get debugHandComponents =>
+      List.unmodifiable(_handComponents);
+
   double get _sentenceZoneY => size.y * 0.30;
   double get _handY => size.y * 0.74;
 
@@ -169,10 +180,11 @@ class DrippleGame extends FlameGame {
       final targetPos = Vector2(slot.dx, slot.dy);
 
       if (existingMap.containsKey(card.id)) {
-        // Existing card — just reposition
+        // Existing card — glide to its new slot. Assigning `position`
+        // directly would lose a race with any effect still running on the
+        // component, so every move goes through the one settle path.
         final comp = existingMap[card.id]!;
-        comp.position = targetPos;
-        // Overlapping cards must stack left-to-right, like a fanned hand.
+        if (!comp.isDragging) comp.settleTo(targetPos);
         comp.priority = i;
         comp.markedForDiscard = !isSentenceZone && _discardMode;
         updatedComponents.add(comp);
@@ -195,15 +207,14 @@ class DrippleGame extends FlameGame {
           onDragEnded: (component, dropPosition) {
             if (isSentenceZone) {
               final from = _sentenceZone.indexWhere((c) => c.id == cardId);
-              if (from < 0) return;
+              if (from < 0) return false;
               // Dragged clear of the zone — send it back to hand.
-              final zoneReach = CardRowLayout.blockHeight(
-                      size.x, _sentenceZone.length) /
-                  2 +
-                  CardComponent.cardHeight * 0.6;
+              final zoneReach =
+                  CardRowLayout.blockHeight(size.x, _sentenceZone.length) / 2 +
+                      CardComponent.cardHeight * 0.6;
               if ((dropPosition.y - _sentenceZoneY).abs() > zoneReach) {
                 onSentenceRemove?.call(from);
-                return;
+                return true;
               }
               final to = CardRowLayout.indexAt(
                 ui.Offset(dropPosition.x, dropPosition.y),
@@ -211,16 +222,21 @@ class DrippleGame extends FlameGame {
                 _sentenceZone.length,
                 _sentenceZoneY,
               );
-              if (to != from) onSentenceReorder?.call(from, to);
-            } else {
-              // Hand card lifted toward the sentence zone.
-              final handReach =
-                  CardRowLayout.blockHeight(size.x, _hand.length) / 2;
-              if (dropPosition.y < _handY - handReach) {
-                final idx = _hand.indexWhere((c) => c.id == cardId);
-                if (idx >= 0) onCardPlaced?.call(idx);
+              if (to == from) return false;
+              onSentenceReorder?.call(from, to);
+              return true;
+            }
+            // Hand card lifted toward the sentence zone.
+            final handReach =
+                CardRowLayout.blockHeight(size.x, _hand.length) / 2;
+            if (dropPosition.y < _handY - handReach) {
+              final idx = _hand.indexWhere((c) => c.id == cardId);
+              if (idx >= 0) {
+                onCardPlaced?.call(idx);
+                return true;
               }
             }
+            return false;
           },
         );
         comp.priority = i;

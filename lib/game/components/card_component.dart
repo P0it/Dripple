@@ -17,14 +17,21 @@ class CardComponent extends PositionComponent
   final WordCard card;
 
   /// Fires when a drag finishes, with the component's dropped position.
-  /// The parent decides what the drop meant.
-  final void Function(CardComponent component, Vector2 dropPosition)?
+  ///
+  /// The parent decides what the drop meant and returns true if it acted on
+  /// it. A handled drop must not snap back: the parent is about to move this
+  /// card somewhere new, and a snap-back effect would keep overwriting
+  /// `position` for the length of its run and win.
+  final bool Function(CardComponent component, Vector2 dropPosition)?
       onDragEnded;
 
   /// Fires on a plain tap. Used for card selection, e.g. choosing a discard.
   final void Function(CardComponent component)? onTapped;
 
   bool isDragging = false;
+
+  /// True while a settle animation owns [position].
+  bool isSettling = false;
 
   /// Draws the card as a discard candidate.
   bool markedForDiscard = false;
@@ -79,13 +86,28 @@ class CardComponent extends PositionComponent
     isDragging = false;
     priority = _restingPriority;
 
-    onDragEnded?.call(this, position.clone());
+    final handled = onDragEnded?.call(this, position.clone()) ?? false;
+    if (handled) return; // the parent settles us into the new slot
 
-    // Snap back; the parent repositions us on the next state update if the
-    // drop actually changed anything.
-    add(MoveEffect.to(
-      _originalPosition,
-      EffectController(duration: 0.15, curve: material.Curves.easeOut),
-    ));
+    settleTo(_originalPosition);
+  }
+
+  /// Animates the card into [target], cancelling any settle already running so
+  /// two effects never fight over [position].
+  void settleTo(Vector2 target) {
+    for (final effect in children.whereType<MoveEffect>().toList()) {
+      effect.removeFromParent();
+    }
+    isSettling = true;
+    add(
+      MoveEffect.to(
+        target,
+        EffectController(
+          duration: 0.18,
+          curve: material.Curves.easeOutCubic,
+        ),
+        onComplete: () => isSettling = false,
+      ),
+    );
   }
 }
