@@ -74,22 +74,6 @@ class CardDeck {
     'slowly': AdverbKind.manner,
   };
 
-  /// Which nouns name something that can act.
-  ///
-  /// Drives AnimacyRule, which is what stops "the flower reads".
-  static const Set<String> _animateNouns = {
-    'cat', 'cats', 'dog', 'dogs', 'bird', 'fish',
-    'friend', 'friends', 'boy', 'girl', 'teacher',
-  };
-
-  /// Verbs that need an actor as their subject. Left out: the be-verbs and
-  /// "have/has", which an object can legitimately do ("the house has books").
-  static const Set<String> _animateSubjectVerbs = {
-    'like', 'likes', 'want', 'wants', 'love', 'loves', 'need', 'needs',
-    'read', 'reads', 'see', 'sees', 'play', 'plays', 'eat', 'eats',
-    'make', 'makes', 'go', 'run', 'runs',
-  };
-
   /// What each verb can take after it.
   ///
   /// Keyed by surface form because the deck carries both "eat" and "eats".
@@ -135,37 +119,31 @@ class CardDeck {
   List<WordCard> _pronouns() => [
         WordCard(
           id: _nextId(), word: 'I', pos: PartOfSpeech.pronoun,
-          animacy: Animacy.animate,
           person: 1, number: 'singular',
           meanings: {'ko': '나', 'ja': '私', 'en': 'I'},
         ),
         WordCard(
           id: _nextId(), word: 'you', pos: PartOfSpeech.pronoun,
-          animacy: Animacy.animate,
           person: 2, number: 'singular',
           meanings: {'ko': '너', 'ja': 'あなた', 'en': 'you'},
         ),
         WordCard(
           id: _nextId(), word: 'he', pos: PartOfSpeech.pronoun,
-          animacy: Animacy.animate,
           person: 3, number: 'singular',
           meanings: {'ko': '그', 'ja': '彼', 'en': 'he'},
         ),
         WordCard(
           id: _nextId(), word: 'she', pos: PartOfSpeech.pronoun,
-          animacy: Animacy.animate,
           person: 3, number: 'singular',
           meanings: {'ko': '그녀', 'ja': '彼女', 'en': 'she'},
         ),
         WordCard(
           id: _nextId(), word: 'we', pos: PartOfSpeech.pronoun,
-          animacy: Animacy.animate,
           person: 1, number: 'plural',
           meanings: {'ko': '우리', 'ja': '私たち', 'en': 'we'},
         ),
         WordCard(
           id: _nextId(), word: 'they', pos: PartOfSpeech.pronoun,
-          animacy: Animacy.animate,
           person: 3, number: 'plural',
           meanings: {'ko': '그들', 'ja': '彼ら', 'en': 'they'},
         ),
@@ -176,31 +154,26 @@ class CardDeck {
         ),
         WordCard(
           id: _nextId(), word: 'you', pos: PartOfSpeech.pronoun,
-          animacy: Animacy.animate,
           person: 2, number: 'plural',
           meanings: {'ko': '너희', 'ja': 'あなたたち', 'en': 'you'},
         ),
         WordCard(
           id: _nextId(), word: 'I', pos: PartOfSpeech.pronoun,
-          animacy: Animacy.animate,
           person: 1, number: 'singular',
           meanings: {'ko': '나', 'ja': '私', 'en': 'I'},
         ),
         WordCard(
           id: _nextId(), word: 'you', pos: PartOfSpeech.pronoun,
-          animacy: Animacy.animate,
           person: 2, number: 'singular',
           meanings: {'ko': '너', 'ja': 'あなた', 'en': 'you'},
         ),
         WordCard(
           id: _nextId(), word: 'he', pos: PartOfSpeech.pronoun,
-          animacy: Animacy.animate,
           person: 3, number: 'singular',
           meanings: {'ko': '그', 'ja': '彼', 'en': 'he'},
         ),
         WordCard(
           id: _nextId(), word: 'we', pos: PartOfSpeech.pronoun,
-          animacy: Animacy.animate,
           person: 1, number: 'plural',
           meanings: {'ko': '우리', 'ja': '私たち', 'en': 'we'},
         ),
@@ -261,213 +234,135 @@ class CardDeck {
         // Animals
         WordCard(
           id: _nextId(), word: 'cat', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('cat')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '고양이', 'ja': '猫', 'en': 'cat'},
         ),
         WordCard(
           id: _nextId(), word: 'cats', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('cats')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'plural', countable: true, vowelStart: false,
           meanings: {'ko': '고양이들', 'ja': '猫たち', 'en': 'cats'},
         ),
         WordCard(
           id: _nextId(), word: 'dog', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('dog')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '개', 'ja': '犬', 'en': 'dog'},
         ),
         WordCard(
           id: _nextId(), word: 'dogs', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('dogs')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'plural', countable: true, vowelStart: false,
           meanings: {'ko': '개들', 'ja': '犬たち', 'en': 'dogs'},
         ),
         WordCard(
           id: _nextId(), word: 'bird', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('bird')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '새', 'ja': '鳥', 'en': 'bird'},
         ),
         WordCard(
           id: _nextId(), word: 'fish', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('fish')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '물고기', 'ja': '魚', 'en': 'fish'},
         ),
         // Food
         WordCard(
           id: _nextId(), word: 'apple', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('apple')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: true, vowelStart: true,
           meanings: {'ko': '사과', 'ja': 'りんご', 'en': 'apple'},
         ),
         WordCard(
           id: _nextId(), word: 'apples', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('apples')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'plural', countable: true, vowelStart: true,
           meanings: {'ko': '사과들', 'ja': 'りんご', 'en': 'apples'},
         ),
         WordCard(
           id: _nextId(), word: 'cake', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('cake')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '케이크', 'ja': 'ケーキ', 'en': 'cake'},
         ),
         WordCard(
           id: _nextId(), word: 'water', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('water')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: false, vowelStart: false,
           meanings: {'ko': '물', 'ja': '水', 'en': 'water'},
         ),
         WordCard(
           id: _nextId(), word: 'egg', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('egg')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: true, vowelStart: true,
           meanings: {'ko': '달걀', 'ja': '卵', 'en': 'egg'},
         ),
         WordCard(
           id: _nextId(), word: 'milk', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('milk')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: false, vowelStart: false,
           meanings: {'ko': '우유', 'ja': '牛乳', 'en': 'milk'},
         ),
         // Objects
         WordCard(
           id: _nextId(), word: 'ball', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('ball')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '공', 'ja': 'ボール', 'en': 'ball'},
         ),
         WordCard(
           id: _nextId(), word: 'book', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('book')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '책', 'ja': '本', 'en': 'book'},
         ),
         WordCard(
           id: _nextId(), word: 'books', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('books')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'plural', countable: true, vowelStart: false,
           meanings: {'ko': '책들', 'ja': '本', 'en': 'books'},
         ),
         WordCard(
           id: _nextId(), word: 'car', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('car')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '자동차', 'ja': '車', 'en': 'car'},
         ),
         WordCard(
           id: _nextId(), word: 'house', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('house')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '집', 'ja': '家', 'en': 'house'},
         ),
         WordCard(
           id: _nextId(), word: 'star', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('star')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '별', 'ja': '星', 'en': 'star'},
         ),
         WordCard(
           id: _nextId(), word: 'stars', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('stars')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'plural', countable: true, vowelStart: false,
           meanings: {'ko': '별들', 'ja': '星たち', 'en': 'stars'},
         ),
         // People
         WordCard(
           id: _nextId(), word: 'friend', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('friend')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '친구', 'ja': '友達', 'en': 'friend'},
         ),
         WordCard(
           id: _nextId(), word: 'friends', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('friends')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'plural', countable: true, vowelStart: false,
           meanings: {'ko': '친구들', 'ja': '友達', 'en': 'friends'},
         ),
         WordCard(
           id: _nextId(), word: 'boy', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('boy')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '소년', 'ja': '男の子', 'en': 'boy'},
         ),
         WordCard(
           id: _nextId(), word: 'girl', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('girl')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '소녀', 'ja': '女の子', 'en': 'girl'},
         ),
         WordCard(
           id: _nextId(), word: 'teacher', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('teacher')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '선생님', 'ja': '先生', 'en': 'teacher'},
         ),
         // Places / Nature
         WordCard(
           id: _nextId(), word: 'tree', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('tree')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '나무', 'ja': '木', 'en': 'tree'},
         ),
         WordCard(
           id: _nextId(), word: 'flower', pos: PartOfSpeech.noun,
-          animacy: _animateNouns.contains('flower')
-              ? Animacy.animate
-              : Animacy.inanimate,
           person: 3, number: 'singular', countable: true, vowelStart: false,
           meanings: {'ko': '꽃', 'ja': '花', 'en': 'flower'},
         ),
@@ -478,8 +373,6 @@ class CardDeck {
         // like / likes
         WordCard(
           id: _nextId(), word: 'like', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('like'),
           frames: _verbFrames['like'],
          
           person: 1, number: 'plural',
@@ -487,8 +380,6 @@ class CardDeck {
         ),
         WordCard(
           id: _nextId(), word: 'likes', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('likes'),
           frames: _verbFrames['likes'],
          
           person: 3, number: 'singular',
@@ -497,8 +388,6 @@ class CardDeck {
         // eat / eats
         WordCard(
           id: _nextId(), word: 'eat', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('eat'),
           frames: _verbFrames['eat'],
          
           person: 1, number: 'plural',
@@ -506,8 +395,6 @@ class CardDeck {
         ),
         WordCard(
           id: _nextId(), word: 'eats', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('eats'),
           frames: _verbFrames['eats'],
          
           person: 3, number: 'singular',
@@ -516,8 +403,6 @@ class CardDeck {
         // run / runs
         WordCard(
           id: _nextId(), word: 'run', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('run'),
           frames: _verbFrames['run'],
          
           person: 1, number: 'plural',
@@ -525,8 +410,6 @@ class CardDeck {
         ),
         WordCard(
           id: _nextId(), word: 'runs', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('runs'),
           frames: _verbFrames['runs'],
          
           person: 3, number: 'singular',
@@ -535,8 +418,6 @@ class CardDeck {
         // have / has
         WordCard(
           id: _nextId(), word: 'have', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('have'),
           frames: _verbFrames['have'],
          
           person: 1, number: 'plural',
@@ -544,8 +425,6 @@ class CardDeck {
         ),
         WordCard(
           id: _nextId(), word: 'has', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('has'),
           frames: _verbFrames['has'],
          
           person: 3, number: 'singular',
@@ -554,8 +433,6 @@ class CardDeck {
         // read / reads
         WordCard(
           id: _nextId(), word: 'read', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('read'),
           frames: _verbFrames['read'],
          
           person: 1, number: 'plural',
@@ -563,8 +440,6 @@ class CardDeck {
         ),
         WordCard(
           id: _nextId(), word: 'reads', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('reads'),
           frames: _verbFrames['reads'],
          
           person: 3, number: 'singular',
@@ -573,8 +448,6 @@ class CardDeck {
         // want / wants
         WordCard(
           id: _nextId(), word: 'want', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('want'),
           frames: _verbFrames['want'],
          
           person: 1, number: 'plural',
@@ -582,8 +455,6 @@ class CardDeck {
         ),
         WordCard(
           id: _nextId(), word: 'wants', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('wants'),
           frames: _verbFrames['wants'],
          
           person: 3, number: 'singular',
@@ -592,8 +463,6 @@ class CardDeck {
         // see / sees
         WordCard(
           id: _nextId(), word: 'see', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('see'),
           frames: _verbFrames['see'],
          
           person: 1, number: 'plural',
@@ -601,8 +470,6 @@ class CardDeck {
         ),
         WordCard(
           id: _nextId(), word: 'sees', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('sees'),
           frames: _verbFrames['sees'],
          
           person: 3, number: 'singular',
@@ -611,8 +478,6 @@ class CardDeck {
         // make / makes
         WordCard(
           id: _nextId(), word: 'make', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('make'),
           frames: _verbFrames['make'],
          
           person: 1, number: 'plural',
@@ -620,8 +485,6 @@ class CardDeck {
         ),
         WordCard(
           id: _nextId(), word: 'makes', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('makes'),
           frames: _verbFrames['makes'],
          
           person: 3, number: 'singular',
@@ -630,8 +493,6 @@ class CardDeck {
         // play / plays
         WordCard(
           id: _nextId(), word: 'play', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('play'),
           frames: _verbFrames['play'],
          
           person: 1, number: 'plural',
@@ -639,8 +500,6 @@ class CardDeck {
         ),
         WordCard(
           id: _nextId(), word: 'plays', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('plays'),
           frames: _verbFrames['plays'],
          
           person: 3, number: 'singular',
@@ -649,8 +508,6 @@ class CardDeck {
         // is / are / am (linking verbs)
         WordCard(
           id: _nextId(), word: 'is', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('is'),
           frames: _verbFrames['is'],
          
           person: 3, number: 'singular',
@@ -658,8 +515,6 @@ class CardDeck {
         ),
         WordCard(
           id: _nextId(), word: 'are', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('are'),
           frames: _verbFrames['are'],
          
           person: 2, number: 'plural',
@@ -667,8 +522,6 @@ class CardDeck {
         ),
         WordCard(
           id: _nextId(), word: 'am', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('am'),
           frames: _verbFrames['am'],
          
           person: 1, number: 'singular',
@@ -677,8 +530,6 @@ class CardDeck {
         // love / loves
         WordCard(
           id: _nextId(), word: 'love', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('love'),
           frames: _verbFrames['love'],
          
           person: 1, number: 'plural',
@@ -686,8 +537,6 @@ class CardDeck {
         ),
         WordCard(
           id: _nextId(), word: 'loves', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('loves'),
           frames: _verbFrames['loves'],
          
           person: 3, number: 'singular',
@@ -696,8 +545,6 @@ class CardDeck {
         // need / needs
         WordCard(
           id: _nextId(), word: 'need', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('need'),
           frames: _verbFrames['need'],
          
           person: 1, number: 'plural',
@@ -705,8 +552,6 @@ class CardDeck {
         ),
         WordCard(
           id: _nextId(), word: 'needs', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('needs'),
           frames: _verbFrames['needs'],
          
           person: 3, number: 'singular',
@@ -714,8 +559,6 @@ class CardDeck {
         ),
         WordCard(
           id: _nextId(), word: 'go', pos: PartOfSpeech.verb,
-          requiresAnimateSubject:
-              _animateSubjectVerbs.contains('go'),
           frames: _verbFrames['go'],
          
           person: 1, number: 'plural',

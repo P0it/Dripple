@@ -60,9 +60,25 @@ Your turn
 - Special cards: **JOKER** (wildcard word) / **JUMP** (skip the next player) /
   **STEAL** (forced card exchange with a chosen player).
 
-### Grammar scope
+### What counts as a correct sentence
 
-A recursive chunk parser (`lib/engine/grammar/sentence_parser.dart`) accepts:
+**The standard: a sentence is correct when its construction is correct.
+Meaning is not judged.**
+
+This line is deliberate and load-bearing. Cards are dealt at random, so
+requiring sentences to also *make sense* would leave a player almost nothing
+to play, and the game would stop being a game. `the flower reads` and
+`water has apples` are therefore **accepted**.
+
+`apples run a friend` is still **rejected** — not because apples cannot run,
+but because `run` cannot take an object at all. That is a fact about English
+grammar, not about meaning.
+
+Everything the engine checks falls into two layers, both of which come
+straight out of an English grammar book:
+
+**1. Structure** — a recursive chunk parser
+(`lib/engine/grammar/sentence_parser.dart`):
 
 ```
 NP   := Pronoun | (Art)? (Adj)* Noun
@@ -72,30 +88,29 @@ VP   := Verb (NP | AdjP)? (AdvManner)? (PP)*
 S    := NP (AdvFreq)? VP
 ```
 
-Beyond structure it enforces six things a template table could not:
+**2. Form and agreement** — five rules in `lib/engine/grammar/rules/`:
 
-- **Verb valency** — every verb card carries a `Set<VerbFrame>`
-  (`intransitive` / `transitive` / `linking`), so "apples run a friend" and
-  "they read small" are rejected while "I read" and "I read books" both pass.
-- **Pronoun case** — the deck has no object pronouns, so "cats like I" fails
-  while "cats like you" passes.
-- **Determiners** — a singular countable noun cannot stand bare: "tree wants"
-  fails, "the tree wants" passes.
-- **Adverb position** — adverbs carry an `AdverbKind`. Frequency adverbs go
-  before the verb ("they always read"), manner adverbs after it ("they read
-  slowly"), degree adverbs before an adjective ("very happy"). Put one in the
-  wrong slot and it fails.
-- **Animacy** — nouns declare `Animacy`, verbs declare whether they need an
-  actor, so "the flower reads" and "a star eats" are rejected while "the girl
-  reads" passes. `AnimacyRule` reports it in the player's own language.
-- **JOKER** — matches any part of speech, any verb frame, any adverb slot.
+| Check | Rejected | Accepted |
+|---|---|---|
+| Article agreement | `an green friend` | `a green friend` |
+| Number | `a cats` | `the cats` |
+| Subject-verb agreement | `he like cats` | `he likes cats` |
+| Adjective order | `red big ball` | `big red ball` |
+| Verb valency (`VerbFrame`) | `apples run a friend`, `they read small` | `I read`, `I read books`, `I am happy` |
+| Pronoun case | `cats like I` | `cats like you` |
+| Determiners | `tree wants` | `the tree wants` |
+| Adverb position (`AdverbKind`) | `they read always` | `they always read` |
+
+JOKER matches any part of speech, any verb frame, any adverb slot.
 
 Article agreement looks at the word directly after the article, adjectives
 included, and falls back to spelling when a card carries no explicit
-`vowelStart` — otherwise "an green friend" slips through.
+`vowelStart` — otherwise `an green friend` slips through.
 
-Out of scope: conjunctions, tense, questions, and negation. Semantics is
-checked only for animacy; the engine has no opinion on "water has apples".
+**Out of scope, by decision:** semantics of every kind, plus conjunctions,
+tense, questions and negation. An earlier build checked subject animacy so
+that `the flower reads` would fail; it was removed because the standard has
+to be one statable line, and half a semantic check is worse than none.
 
 ## Project Structure
 

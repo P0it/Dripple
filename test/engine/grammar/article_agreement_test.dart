@@ -8,8 +8,7 @@ WordCard _adj(String w) =>
     WordCard(id: 'j_$w', word: w, pos: PartOfSpeech.adjective);
 WordCard _noun(String w, {bool vowelStart = false}) => WordCard(
     id: 'n_$w', word: w, pos: PartOfSpeech.noun, person: 3,
-    number: 'singular', countable: true, vowelStart: vowelStart,
-    animacy: Animacy.animate);
+    number: 'singular', countable: true, vowelStart: vowelStart);
 WordCard _verb(String w) => WordCard(
     id: 'v_$w', word: w, pos: PartOfSpeech.verb, person: 3,
     number: 'singular', frames: {VerbFrame.intransitive});
