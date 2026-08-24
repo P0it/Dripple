@@ -1,21 +1,26 @@
-import 'package:flutter/material.dart';
 import 'package:dripple/l10n/app_localizations.dart';
-import '../core/theme/app_theme.dart';
+import 'package:flutter/material.dart';
 
-/// Lobby screen for online/friend battles.
-/// Shows room state, player list, and start button.
+import '../core/design/app_colors.dart';
+import '../core/design/app_spacing.dart';
+import '../core/design/app_typography.dart';
+import 'widgets/settings_tile.dart';
+
+/// Room state and player list for online and friend battles.
 ///
-/// This screen requires a MultiplayerService implementation (Firebase)
-/// to be functional. Currently shows the UI structure as a preview.
+/// Not reachable yet — both modes are marked "coming soon" on the mode
+/// screen — so this is the shape the screen will take once a
+/// MultiplayerService exists behind it.
 class LobbyScreen extends StatelessWidget {
-  final String mode; // 'online' or 'friend'
-  final int playerCount;
-
   const LobbyScreen({
     super.key,
     required this.mode,
     required this.playerCount,
   });
+
+  /// 'online' or 'friend'.
+  final String mode;
+  final int playerCount;
 
   @override
   Widget build(BuildContext context) {
@@ -23,132 +28,107 @@ class LobbyScreen extends StatelessWidget {
     final isOnline = mode == 'online';
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(isOnline ? l10n.onlineBattle : l10n.friendBattle),
-        backgroundColor: AppColors.point,
-        foregroundColor: Colors.white,
       ),
-      body: Container(
-        color: AppColors.background,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                // Room info card
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        Text(
-                          isOnline ? l10n.searchingPlayers : l10n.roomCode,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        if (!isOnline)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: AppColors.background,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              'ABC-123',
-                              style: TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 4,
-                                color: AppColors.point,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _RoomHeader(isOnline: isOnline, l10n: l10n),
+              const SizedBox(height: AppSpacing.lg),
+              Expanded(
+                child: SettingsSection(
+                  title: l10n.playerCount,
+                  tiles: [
+                    for (var i = 0; i < playerCount; i++)
+                      SettingsTile(
+                        title: i == 0 ? l10n.you : l10n.waiting,
+                        showDivider: i < playerCount - 1,
+                        trailing: i == 0
+                            ? const Icon(Icons.check_circle,
+                                color: AppColors.point, size: 20)
+                            : const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2),
                               ),
-                            ),
-                          ),
-                        if (isOnline)
-                          const SizedBox(
-                            height: 40,
-                            width: 40,
-                            child: CircularProgressIndicator(
-                              color: AppColors.point,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Player slots
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: playerCount,
-                    itemBuilder: (context, index) {
-                      final isJoined = index == 0;
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: isJoined
-                                ? AppColors.point
-                                : Colors.grey.shade300,
-                            child: Icon(
-                              isJoined ? Icons.person : Icons.person_outline,
-                              color: isJoined ? Colors.white : Colors.grey,
-                            ),
-                          ),
-                          title: Text(
-                            isJoined ? l10n.you : l10n.waiting,
-                            style: TextStyle(
-                              fontWeight: isJoined
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                              color: isJoined
-                                  ? AppColors.textPrimary
-                                  : AppColors.textSecondary,
-                            ),
-                          ),
-                          trailing: isJoined
-                              ? const Icon(Icons.check_circle,
-                                  color: AppColors.point)
-                              : const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2),
-                                ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                // Info text
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.white.withAlpha(220)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          isOnline
-                              ? l10n.waitingForPlayers(playerCount)
-                              : l10n.shareRoomCode,
-                          style: TextStyle(color: Colors.white.withAlpha(220)),
-                        ),
                       ),
-                    ],
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.pointTint,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline,
+                        color: AppColors.point, size: 20),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        isOnline
+                            ? l10n.waitingForPlayers(playerCount)
+                            : l10n.shareRoomCode,
+                        style: AppTypography.caption
+                            .copyWith(color: AppColors.point),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _RoomHeader extends StatelessWidget {
+  const _RoomHeader({required this.isOnline, required this.l10n});
+
+  final bool isOnline;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        children: [
+          Text(
+            isOnline ? l10n.searchingPlayers : l10n.roomCode,
+            style: AppTypography.label,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (isOnline)
+            const SizedBox(
+              height: 28,
+              width: 28,
+              child: CircularProgressIndicator(strokeWidth: 3),
+            )
+          else
+            Text(
+              'ABC-123',
+              style: AppTypography.display.copyWith(
+                letterSpacing: 4,
+                color: AppColors.point,
+              ),
+            ),
+        ],
       ),
     );
   }
