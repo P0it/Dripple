@@ -202,7 +202,7 @@ class CardPainter {
       text: TextSpan(
         text: meaning,
         style: TextStyle(
-          color: color.withValues(alpha: 0.85),
+          color: _readable(color),
           fontFamily: 'Pretendard',
           fontSize: size.width * 0.135,
           fontWeight: FontWeight.w600,
@@ -220,4 +220,16 @@ class CardPainter {
     );
   }
 
+  /// Darkens an accent until it is readable as text on a white card.
+  ///
+  /// The part-of-speech palette includes deliberately pale colours — the
+  /// article blue is nearly white — and painting a child's own-language
+  /// meaning in one of those makes it unreadable.
+  static Color _readable(Color accent) {
+    var out = accent;
+    while (out.computeLuminance() > 0.30) {
+      out = Color.lerp(out, const Color(0xFF17181C), 0.15)!;
+    }
+    return out;
+  }
 }

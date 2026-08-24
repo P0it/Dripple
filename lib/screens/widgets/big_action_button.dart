@@ -23,6 +23,7 @@ class BigActionButton extends StatefulWidget {
     required this.color,
     this.onPressed,
     this.selected = false,
+    this.filled = true,
   });
 
   final String label;
@@ -31,6 +32,11 @@ class BigActionButton extends StatefulWidget {
   final Color color;
   final VoidCallback? onPressed;
   final bool selected;
+
+  /// Filled is the primary action. An outlined button is still enabled — a
+  /// grey fill reads as disabled, which is the wrong signal for a choice the
+  /// player is free to make.
+  final bool filled;
 
   @override
   State<BigActionButton> createState() => _BigActionButtonState();
@@ -42,12 +48,21 @@ class _BigActionButtonState extends State<BigActionButton> {
   @override
   Widget build(BuildContext context) {
     final enabled = widget.onPressed != null;
-    final fill = !enabled
-        ? AppColors.divider
-        : _down
-            ? Color.lerp(widget.color, Colors.black, 0.14)!
-            : widget.color;
-    final foreground = enabled ? Colors.white : AppColors.textDisabled;
+
+    late final Color fill;
+    late final Color foreground;
+    if (!enabled) {
+      fill = AppColors.divider;
+      foreground = AppColors.textDisabled;
+    } else if (widget.filled) {
+      fill = _down
+          ? Color.lerp(widget.color, Colors.black, 0.14)!
+          : widget.color;
+      foreground = Colors.white;
+    } else {
+      fill = _down ? AppColors.background : AppColors.surface;
+      foreground = widget.color;
+    }
 
     return Semantics(
       button: true,
@@ -69,7 +84,9 @@ class _BigActionButtonState extends State<BigActionButton> {
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             border: widget.selected
                 ? Border.all(color: AppColors.textPrimary, width: 2)
-                : null,
+                : (enabled && !widget.filled)
+                    ? Border.all(color: AppColors.border)
+                    : null,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
