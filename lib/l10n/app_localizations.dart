@@ -615,6 +615,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Which card do you give?'**
   String get stealGiveWhat;
+
+  /// No description provided for @sentenceZoneHand.
+  ///
+  /// In en, this message translates to:
+  /// **'My cards'**
+  String get sentenceZoneHand;
+
+  /// No description provided for @sentenceZoneMake.
+  ///
+  /// In en, this message translates to:
+  /// **'Build your sentence here'**
+  String get sentenceZoneMake;
+
+  /// No description provided for @sentenceZoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop cards here\nto build a sentence'**
+  String get sentenceZoneHint;
 }
 
 class _AppLocalizationsDelegate

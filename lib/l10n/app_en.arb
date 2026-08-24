@@ -178,5 +178,8 @@
   "use": "Use it",
   "stealDesc": "Pick someone, then pick a card to give them.",
   "stealFromWho": "Who do you take from?",
-  "stealGiveWhat": "Which card do you give?"
+  "stealGiveWhat": "Which card do you give?",
+  "sentenceZoneHand": "My cards",
+  "sentenceZoneMake": "Build your sentence here",
+  "sentenceZoneHint": "Drop cards here\nto build a sentence"
 }

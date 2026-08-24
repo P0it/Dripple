@@ -66,12 +66,30 @@ class CardRowLayout {
     return out;
   }
 
+  /// Where a card dragged in from outside should be inserted.
+  ///
+  /// Distinct from [indexAt]: an arriving card makes the row one longer, so
+  /// the slots it can land on are the *post-insert* ones — [currentCount] + 1
+  /// of them. Measuring against the pre-insert layout is what made every
+  /// dropped card land at the tail.
+  static int insertionIndexAt(
+      Offset position, double screenWidth, int currentCount, double centerY) {
+    if (currentCount <= 0) return 0;
+    return _nearestSlot(
+      positions(screenWidth, currentCount + 1, centerY),
+      position,
+    );
+  }
+
   /// Which slot a dropped card's top-left corner falls into.
   static int indexAt(
       Offset position, double screenWidth, int count, double centerY) {
     if (count <= 1) return 0;
 
-    final slots = positions(screenWidth, count, centerY);
+    return _nearestSlot(positions(screenWidth, count, centerY), position);
+  }
+
+  static int _nearestSlot(List<Offset> slots, Offset position) {
     var best = 0;
     var bestDistance = double.infinity;
     for (int i = 0; i < slots.length; i++) {

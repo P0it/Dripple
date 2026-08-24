@@ -4,7 +4,6 @@ import 'package:dripple/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../core/game_feedback.dart';
-import '../core/design/app_colors.dart';
 import '../engine/ai/ai_player.dart';
 import '../game/dripple_game.dart';
 import '../models/game_state.dart';
@@ -69,6 +68,12 @@ class _GameScreenState extends ConsumerState<GameScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final l10n = AppLocalizations.of(context)!;
+    _game.labels = ZoneLabels(
+      sentence: l10n.sentenceZoneMake,
+      hand: l10n.sentenceZoneHand,
+      hint: l10n.sentenceZoneHint,
+    );
     if (!_initialized) {
       _initialized = true;
       // Listen to game state changes and sync to Flame after frame
@@ -104,8 +109,8 @@ class _GameScreenState extends ConsumerState<GameScreen>
     }
   }
 
-  void _onCardPlaced(int cardIndex) {
-    ref.read(gameProvider.notifier).placeCard(cardIndex);
+  void _onCardPlaced(int cardIndex, int insertAt) {
+    ref.read(gameProvider.notifier).placeCard(cardIndex, insertAt: insertAt);
     ref.read(gameFeedbackProvider).onCardPlace();
   }
 
@@ -197,18 +202,9 @@ class _GameScreenState extends ConsumerState<GameScreen>
                 ScoreboardBar(gameState: gameState),
                 // Opponents area
                 OpponentsBar(gameState: gameState),
-                // Sentence zone label
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Text(
-                    AppLocalizations.of(context)!.sentenceZone,
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+                // The zone labels used to be one line of text above the whole
+                // board, which named neither band it sat over. They are drawn
+                // on the bands themselves now.
                 // Flame game area
                 Expanded(
                   child: GameWidget(game: _game),

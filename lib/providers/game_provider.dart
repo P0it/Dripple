@@ -225,7 +225,11 @@ class GameNotifier extends StateNotifier<GameState> {
   // to back out of any arrangement, not just undo the last card)
   // -------------------------------------------------------------------------
 
-  void placeCard(int handIndex) {
+  /// Stages a hand card into the sentence.
+  ///
+  /// [insertAt] is where in the sentence it lands; omitted (a tap rather than
+  /// a drag) it goes to the tail.
+  void placeCard(int handIndex, {int? insertAt}) {
     if (state.phase != GamePhase.playing) return;
     final me = state.currentPlayer;
     if (handIndex < 0 || handIndex >= me.hand.length) return;
@@ -235,9 +239,9 @@ class GameNotifier extends StateNotifier<GameState> {
     if (card.type == CardType.jump || card.type == CardType.steal) return;
 
     final hand = List<WordCard>.from(me.hand)..removeAt(handIndex);
-    _updateCurrentPlayer(
-      me.copyWith(hand: hand, sentenceZone: [...me.sentenceZone, card]),
-    );
+    final zone = List<WordCard>.from(me.sentenceZone)
+      ..insert((insertAt ?? me.sentenceZone.length).clamp(0, me.sentenceZone.length), card);
+    _updateCurrentPlayer(me.copyWith(hand: hand, sentenceZone: zone));
   }
 
   void removeFromSentence(int sentenceIndex) {

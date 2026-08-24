@@ -79,4 +79,25 @@ void main() {
       expect(CardRowLayout.indexAt(nudged, width, count, 400), 2);
     });
   });
+
+  group('insertionIndexAt', () {
+    test('maps the post-insert slots back to their own index', () {
+      const width = 390.0;
+      const existing = 4;
+      final after = CardRowLayout.positions(width, existing + 1, 400);
+      for (int i = 0; i <= existing; i++) {
+        expect(
+          CardRowLayout.insertionIndexAt(after[i], width, existing, 400),
+          i,
+        );
+      }
+    });
+
+    test('an empty zone only has slot zero', () {
+      expect(
+        CardRowLayout.insertionIndexAt(const Offset(999, 999), 390, 0, 400),
+        0,
+      );
+    });
+  });
 }

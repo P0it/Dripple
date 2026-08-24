@@ -1,14 +1,33 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart' as material;
+import '../core/design/app_colors.dart';
 import '../models/word_card.dart';
 import 'card_row_layout.dart';
 import 'components/card_component.dart';
 
-typedef OnCardPlaced = void Function(int handIndex);
+typedef OnCardPlaced = void Function(int handIndex, int insertAt);
 typedef OnSentenceReorder = void Function(int from, int to);
 typedef OnSentenceRemove = void Function(int index);
 typedef OnHandCardTapped = void Function(int handIndex);
+
+/// The words printed on the two bands of the board.
+///
+/// Localised strings live in the widget tree and Flame's canvas has no
+/// `BuildContext`, so the screen hands them down. The defaults keep the
+/// board readable in tests and previews.
+class ZoneLabels {
+  const ZoneLabels({
+    this.sentence = '문장 만드는 곳',
+    this.hand = '내 카드',
+    this.hint = '여기에 카드를 올려\n문장을 만들어요',
+  });
+
+  final String sentence;
+  final String hand;
+  final String hint;
+}
 
 class DrippleGame extends FlameGame {
   List<WordCard> _hand = [];
@@ -49,63 +68,141 @@ class DrippleGame extends FlameGame {
   double get _sentenceZoneY => size.y * 0.30;
   double get _handY => size.y * 0.74;
 
-  // Flame's backgroundColor and the raw ui.Paint calls below take dart:ui
-  // colours, so the tokens cannot be imported here. These mirror
-  // AppColors.background and AppColors.point — change them together.
-  static const _background = ui.Color(0xFFF7F8FA);
-  static const _point = ui.Color(0xFF1D74F5);
-
   @override
-  ui.Color backgroundColor() => _background;
+  ui.Color backgroundColor() => AppColors.background;
 
-  /// An empty sentence zone used to be blank space with no affordance — a
-  /// child had no way to know cards belonged there. Draw the target.
+  /// The hand and the sentence zone used to be two rows of identical cards on
+  /// one flat ground, and a child could not tell which was which. Each now
+  /// sits on its own band: the sentence is a dashed blue target you put cards
+  /// *into*, the hand is a solid white tray the cards come *from*. The
+  /// contrast is the point — give both the same fill and the distinction is
+  /// gone again.
   @override
   void render(ui.Canvas canvas) {
-    if (_sentenceZone.isEmpty) _renderDropZone(canvas);
+    _renderSentenceBand(canvas);
+    _renderHandTray(canvas);
     super.render(canvas);
   }
 
-  void _renderDropZone(ui.Canvas canvas) {
-    const height = CardRowLayout.cardHeight;
-    final width = ui.Size(size.x, size.y).width - CardRowLayout.edgePadding * 4;
-    final rect = ui.Rect.fromCenter(
-      center: ui.Offset(size.x / 2, _sentenceZoneY + height / 2),
-      width: width,
-      height: height,
-    );
-    final rrect =
-        ui.RRect.fromRectAndRadius(rect, const ui.Radius.circular(16));
+  /// Padding between a band's edge and the cards inside it.
+  static const double _bandInset = 10;
 
-    canvas.drawRRect(
-      rrect,
-      ui.Paint()..color = _point.withValues(alpha: 0.05),
+  ui.RRect _band(double centerY, int cardCount, {double minHeight = 0}) {
+    final content = math.max(
+      CardRowLayout.blockHeight(size.x, cardCount),
+      minHeight,
     );
-    _drawDashedRRect(canvas, rrect, _point.withValues(alpha: 0.35));
-
-    _dropHint.paint(
-      canvas,
-      ui.Offset(
-        rect.center.dx - _dropHint.width / 2,
-        rect.center.dy - _dropHint.height / 2,
+    return ui.RRect.fromRectAndRadius(
+      ui.Rect.fromCenter(
+        center: ui.Offset(size.x / 2, centerY),
+        width: size.x - CardRowLayout.edgePadding * 2,
+        height: content + _bandInset * 2,
       ),
+      const ui.Radius.circular(18),
     );
   }
 
-  late final material.TextPainter _dropHint = material.TextPainter(
-    text: const material.TextSpan(
-      text: '여기에 카드를 올려\n문장을 만들어요',
-      style: material.TextStyle(
-        fontFamily: 'Pretendard',
-        color: _point,
-        fontSize: 15,
-        fontWeight: material.FontWeight.w600,
-        height: 1.4,
-      ),
-    ),
-    textDirection: ui.TextDirection.ltr,
-    textAlign: ui.TextAlign.center,
-  )..layout();
+  void _renderSentenceBand(ui.Canvas canvas) {
+    final band = _band(
+      _sentenceZoneY,
+      _sentenceZone.length,
+      minHeight: CardRowLayout.cardHeight,
+    );
+
+    canvas.drawRRect(band, ui.Paint()..color = AppColors.pointTint);
+    _drawDashedRRect(canvas, band, AppColors.point.withValues(alpha: 0.45));
+    _drawBandLabel(canvas, _sentenceLabel, band);
+
+    // The hint would sit under the cards once there are any; it is only there
+    // to explain an empty target.
+    if (_sentenceZone.isEmpty) {
+      _dropHint.paint(
+        canvas,
+        ui.Offset(
+          band.center.dx - _dropHint.width / 2,
+          band.center.dy - _dropHint.height / 2,
+        ),
+      );
+    }
+  }
+
+  void _renderHandTray(ui.Canvas canvas) {
+    if (_hand.isEmpty) return;
+    final band = _band(_handY, _hand.length);
+
+    canvas.drawRRect(band, ui.Paint()..color = AppColors.surface);
+    canvas.drawRRect(
+      band.deflate(0.75),
+      ui.Paint()
+        ..color = AppColors.border
+        ..style = ui.PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+    _drawBandLabel(canvas, _handLabel, band);
+  }
+
+  /// Labels ride just above their band, or just below it when the band sits
+  /// close enough to the top edge that there is no room.
+  void _drawBandLabel(
+    ui.Canvas canvas,
+    material.TextPainter painter,
+    ui.RRect band,
+  ) {
+    const gap = 6.0;
+    final above = band.top - gap - painter.height;
+    painter.paint(
+      canvas,
+      ui.Offset(band.left + 4, above >= 0 ? above : band.bottom + gap),
+    );
+  }
+
+  ZoneLabels _labels = const ZoneLabels();
+
+  set labels(ZoneLabels value) {
+    _labels = value;
+    _sentenceLabelPainter = null;
+    _handLabelPainter = null;
+    _dropHintPainter = null;
+  }
+
+  static const _labelStyle = material.TextStyle(
+    fontFamily: 'Pretendard',
+    fontSize: 13,
+    fontWeight: material.FontWeight.w700,
+    letterSpacing: 0.2,
+  );
+
+  material.TextPainter? _sentenceLabelPainter;
+  material.TextPainter? _handLabelPainter;
+  material.TextPainter? _dropHintPainter;
+
+  material.TextPainter get _sentenceLabel => _sentenceLabelPainter ??= _text(
+        _labels.sentence,
+        _labelStyle.copyWith(color: AppColors.point),
+      );
+
+  material.TextPainter get _handLabel => _handLabelPainter ??= _text(
+        _labels.hand,
+        _labelStyle.copyWith(color: AppColors.textSecondary),
+      );
+
+  material.TextPainter get _dropHint => _dropHintPainter ??= _text(
+        _labels.hint,
+        const material.TextStyle(
+          fontFamily: 'Pretendard',
+          color: AppColors.point,
+          fontSize: 15,
+          fontWeight: material.FontWeight.w600,
+          height: 1.4,
+        ),
+      );
+
+  static material.TextPainter _text(String value, material.TextStyle style) =>
+      material.TextPainter(
+        text: material.TextSpan(text: value, style: style),
+        textDirection: ui.TextDirection.ltr,
+        textAlign: ui.TextAlign.center,
+      )..layout();
 
   /// Flutter has no dashed-border primitive, so walk the path manually.
   void _drawDashedRRect(ui.Canvas canvas, ui.RRect rrect, ui.Color color) {
@@ -233,13 +330,23 @@ class DrippleGame extends FlameGame {
               onSentenceReorder?.call(from, to);
               return true;
             }
-            // Hand card lifted toward the sentence zone.
+            // Hand card lifted toward the sentence zone. Where it landed
+            // decides where in the sentence it goes — a child who drops a
+            // card in front of `cats` means it to read before `cats`.
             final handReach =
                 CardRowLayout.blockHeight(size.x, _hand.length) / 2;
             if (dropPosition.y < _handY - handReach) {
               final idx = _hand.indexWhere((c) => c.id == cardId);
               if (idx >= 0) {
-                onCardPlaced?.call(idx);
+                onCardPlaced?.call(
+                  idx,
+                  CardRowLayout.insertionIndexAt(
+                    ui.Offset(dropPosition.x, dropPosition.y),
+                    size.x,
+                    _sentenceZone.length,
+                    _sentenceZoneY,
+                  ),
+                );
                 return true;
               }
             }

@@ -289,4 +289,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get stealGiveWhat => '어떤 카드를 줄까요?';
+
+  @override
+  String get sentenceZoneHand => '내 카드';
+
+  @override
+  String get sentenceZoneMake => '문장 만드는 곳';
+
+  @override
+  String get sentenceZoneHint => '여기에 카드를 올려\n문장을 만들어요';
 }

@@ -289,4 +289,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stealGiveWhat => 'Which card do you give?';
+
+  @override
+  String get sentenceZoneHand => 'My cards';
+
+  @override
+  String get sentenceZoneMake => 'Build your sentence here';
+
+  @override
+  String get sentenceZoneHint => 'Drop cards here\nto build a sentence';
 }

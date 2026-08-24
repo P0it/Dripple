@@ -85,5 +85,8 @@
   "use": "つかう",
   "stealDesc": "あいてをえらんで、かわりにわたすカードをえらんでね。",
   "stealFromWho": "だれからとる？",
-  "stealGiveWhat": "どのカードをわたす？"
+  "stealGiveWhat": "どのカードをわたす？",
+  "sentenceZoneHand": "てふだ",
+  "sentenceZoneMake": "ぶんを つくる ところ",
+  "sentenceZoneHint": "ここに カードを おいて\nぶんを つくろう"
 }

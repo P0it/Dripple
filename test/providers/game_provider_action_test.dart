@@ -47,6 +47,22 @@ void main() {
       expect(n.state.players[0].sentenceZone.single.id, 'c1');
     });
 
+    test('placeCard honours the index the card was dropped on', () {
+      final n = _board();
+      n.placeCard(0); // c1
+      n.placeCard(0, insertAt: 0); // c2 in front of it
+      expect(n.state.players[0].sentenceZone.map((c) => c.id).toList(),
+          ['c2', 'c1']);
+    });
+
+    test('placeCard clamps an index past the end of the sentence', () {
+      final n = _board();
+      n.placeCard(0, insertAt: 99);
+      n.placeCard(0, insertAt: -3);
+      expect(n.state.players[0].sentenceZone.map((c) => c.id).toList(),
+          ['c2', 'c1']);
+    });
+
     test('removeFromSentence returns any card, not just the last', () {
       final n = _board();
       n.placeCard(0);

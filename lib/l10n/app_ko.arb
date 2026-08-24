@@ -85,5 +85,8 @@
   "use": "사용하기",
   "stealDesc": "상대를 고르고, 대신 줄 카드를 고르세요.",
   "stealFromWho": "누구에게서 가져올까요?",
-  "stealGiveWhat": "어떤 카드를 줄까요?"
+  "stealGiveWhat": "어떤 카드를 줄까요?",
+  "sentenceZoneHand": "내 카드",
+  "sentenceZoneMake": "문장 만드는 곳",
+  "sentenceZoneHint": "여기에 카드를 올려\n문장을 만들어요"
 }

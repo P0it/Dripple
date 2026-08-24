@@ -289,4 +289,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get stealGiveWhat => 'どのカードをわたす？';
+
+  @override
+  String get sentenceZoneHand => 'てふだ';
+
+  @override
+  String get sentenceZoneMake => 'ぶんを つくる ところ';
+
+  @override
+  String get sentenceZoneHint => 'ここに カードを おいて\nぶんを つくろう';
 }
