@@ -1,196 +1,143 @@
-import 'package:flutter/material.dart';
-import '../core/game_icons.dart';
 import 'package:dripple/l10n/app_localizations.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../core/theme/app_theme.dart';
+
+import '../core/brand/dripple_mark.dart';
+import '../core/design/app_colors.dart';
+import '../core/design/app_spacing.dart';
+import '../core/design/app_typography.dart';
+import '../core/game_icons.dart';
 import '../models/player.dart';
 import '../providers/game_provider.dart';
 
+/// Final standings.
+///
+/// The old screen showed "pts" for every player, but Player.score is never
+/// written anywhere in the game — it always read 0. Ranking is by cards left,
+/// so that is the number shown.
 class ResultScreen extends ConsumerWidget {
   const ResultScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final gameState = ref.watch(gameProvider);
-    final ranking = gameState.ranking;
+    final l10n = AppLocalizations.of(context)!;
+    final ranking = ref.watch(gameProvider).ranking;
 
     return Scaffold(
-      body: Container(
-        color: AppColors.background,
-        child: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 32),
+      backgroundColor: AppColors.surface,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: AppSpacing.xl),
+            const Center(child: DrippleMark(size: 56)),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              l10n.gameOver,
+              textAlign: TextAlign.center,
+              style: AppTypography.display,
+            ),
+            if (ranking.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.xs),
               Text(
-                AppLocalizations.of(context)!.gameOver,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 40),
-              // Podium
-              Expanded(
-                child: _Podium(ranking: ranking),
-              ),
-              // Action buttons
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => context.go('/home'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: const BorderSide(color: Colors.white),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        child: Text(AppLocalizations.of(context)!.home),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => context.go('/mode-select'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppColors.point,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        child: Text(AppLocalizations.of(context)!.playAgain),
-                      ),
-                    ),
-                  ],
-                ),
+                ranking.first.name,
+                textAlign: TextAlign.center,
+                style: AppTypography.body
+                    .copyWith(color: AppColors.textSecondary),
               ),
             ],
-          ),
+            const SizedBox(height: AppSpacing.xl),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg),
+                itemCount: ranking.length,
+                itemBuilder: (context, index) => _StandingRow(
+                  player: ranking[index],
+                  rank: index + 1,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ElevatedButton(
+                    onPressed: () => context.go('/mode-select'),
+                    child: Text(l10n.playAgain),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextButton(
+                    onPressed: () => context.go('/home'),
+                    child: Text(l10n.home),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _Podium extends StatelessWidget {
-  final List<Player> ranking;
+class _StandingRow extends StatelessWidget {
+  const _StandingRow({required this.player, required this.rank});
 
-  const _Podium({required this.ranking});
+  final Player player;
+  final int rank;
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      itemCount: ranking.length,
-      itemBuilder: (context, index) {
-        final player = ranking[index];
-        final isWinner = index == 0;
+    final l10n = AppLocalizations.of(context)!;
+    final won = rank == 1;
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isWinner ? Colors.white : Colors.white.withAlpha(179),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: isWinner
-                ? [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
+    return Container(
+      constraints: const BoxConstraints(minHeight: AppSpacing.minTouch),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.divider)),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 28,
+            child: Text(
+              '$rank',
+              style: AppTypography.label.copyWith(
+                color: won ? AppColors.point : AppColors.textDisabled,
+              ),
+            ),
           ),
-          child: Row(
-            children: [
-              // Rank
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: _rankColor(index),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
+          Expanded(
+            child: Row(
+              children: [
+                Flexible(
                   child: Text(
-                    '${index + 1}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
+                    player.name,
+                    style: won
+                        ? AppTypography.body
+                            .copyWith(fontWeight: FontWeight.w700)
+                        : AppTypography.body,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              // Player info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          player.name,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: isWinner ? 18 : 16,
-                          ),
-                        ),
-                        if (isWinner) ...[
-                          const SizedBox(width: 8),
-                          const GameIconView(GameIcon.crown,
-                              size: 20, color: Color(0xFFF59E0B)),
-                        ],
-                      ],
-                    ),
-                    Text(
-                      '${player.score} pts',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Score
-              Text(
-                '${player.score}',
-                style: TextStyle(
-                  fontSize: isWinner ? 28 : 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.point,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                AppLocalizations.of(context)!.pts,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
+                if (won) ...[
+                  const SizedBox(width: AppSpacing.sm),
+                  const GameIconView(GameIcon.crown,
+                      size: 18, color: AppColors.point),
+                ],
+              ],
+            ),
           ),
-        );
-      },
+          Text(
+            l10n.cardsLeftLabel(player.hand.length),
+            style: AppTypography.caption,
+          ),
+        ],
+      ),
     );
-  }
-
-  Color _rankColor(int index) {
-    switch (index) {
-      case 0:
-        return const Color(0xFFFFD700); // Gold
-      case 1:
-        return const Color(0xFFC0C0C0); // Silver
-      case 2:
-        return const Color(0xFFCD7F32); // Bronze
-      default:
-        return Colors.grey;
-    }
   }
 }

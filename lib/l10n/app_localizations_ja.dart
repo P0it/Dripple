@@ -266,4 +266,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get discardACard => 'カードをすてる';
+
+  @override
+  String get winner => 'ゆうしょう';
+
+  @override
+  String cardsLeftLabel(int count) {
+    return 'のこり$countまい';
+  }
 }

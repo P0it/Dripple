@@ -266,4 +266,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get discardACard => '카드 버리기';
+
+  @override
+  String get winner => '우승';
+
+  @override
+  String cardsLeftLabel(int count) {
+    return '$count장 남음';
+  }
 }

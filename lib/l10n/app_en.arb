@@ -164,5 +164,14 @@
         "type": "int"
       }
     }
+  },
+  "winner": "Winner",
+  "cardsLeftLabel": "{count} cards left",
+  "@cardsLeftLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

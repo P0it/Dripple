@@ -573,6 +573,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Throw a card away'**
   String get discardACard;
+
+  /// No description provided for @winner.
+  ///
+  /// In en, this message translates to:
+  /// **'Winner'**
+  String get winner;
+
+  /// No description provided for @cardsLeftLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} cards left'**
+  String cardsLeftLabel(int count);
 }
 
 class _AppLocalizationsDelegate

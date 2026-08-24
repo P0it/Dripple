@@ -123,11 +123,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     }
     if (!mounted) return;
 
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => JudgmentDialog(result: result),
-    );
+    await showJudgmentSheet(context, result);
   }
 
   void _onDrawFromDeck() {

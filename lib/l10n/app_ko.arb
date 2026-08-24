@@ -78,5 +78,7 @@
   "takeIt": "가져오기",
   "completeSentence": "문장 완성",
   "needTwoCards": "카드를 2장 이상 놓아요",
-  "discardACard": "카드 버리기"
+  "discardACard": "카드 버리기",
+  "winner": "우승",
+  "cardsLeftLabel": "{count}장 남음"
 }

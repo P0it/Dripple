@@ -1,103 +1,98 @@
-import 'package:flutter/material.dart';
 import 'package:dripple/l10n/app_localizations.dart';
-import '../core/theme/app_theme.dart';
+import 'package:flutter/material.dart';
+
+import '../core/design/app_colors.dart';
+import '../core/design/app_spacing.dart';
+import '../core/design/app_typography.dart';
 import '../providers/game_provider.dart';
 
-class JudgmentDialog extends StatelessWidget {
-  final JudgmentResult result;
+/// Shows the verdict on a submitted sentence.
+///
+/// A dialog interrupts; a sheet arrives from the same edge as the cards. A
+/// failed sentence costs a child nothing but a retry, so the verdict must not
+/// land like an error box — colour and one line carry it, not a big red cross.
+Future<void> showJudgmentSheet(BuildContext context, JudgmentResult result) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isDismissible: false,
+    enableDrag: false,
+    builder: (_) => JudgmentSheet(result: result),
+  );
+}
 
-  const JudgmentDialog({super.key, required this.result});
+class JudgmentSheet extends StatelessWidget {
+  const JudgmentSheet({super.key, required this.result});
+
+  final JudgmentResult result;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isCorrect = result.isCorrect;
-    final bgColor = isCorrect ? AppColors.success : AppColors.danger;
+    final accent = result.isCorrect ? AppColors.success : AppColors.danger;
 
-    return AlertDialog(
-      backgroundColor: bgColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      content: Column(
+    return SafeArea(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(
-            isCorrect ? Icons.celebration : Icons.close,
-            size: 48,
-            color: Colors.white,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            isCorrect ? l10n.correct : l10n.incorrect,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            result.playerName,
-            style: TextStyle(
-              color: Colors.white.withAlpha(220),
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Show the sentence
-          if (result.sentence.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white24,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                result.sentence.map((c) => c.word).join(' '),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  decoration:
-                      isCorrect ? null : TextDecoration.lineThrough,
+          // The verdict, carried by a bar of colour rather than an icon.
+          Container(height: 4, color: accent),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  result.isCorrect ? l10n.correct : l10n.incorrect,
+                  style: AppTypography.title.copyWith(color: accent),
                 ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          const SizedBox(height: 8),
-          if (isCorrect)
-            Text(
-              // Scoring is gone — emptying your hand is the goal, so the
-              // meaningful number is how many cards just left it.
-              '-${result.sentence.length}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          if (!isCorrect && result.errors.isNotEmpty)
-            ...result.errors.take(2).map((e) => Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    e.message,
-                    style: TextStyle(
-                      color: Colors.white.withAlpha(220),
-                      fontSize: 12,
+                const SizedBox(height: AppSpacing.md),
+                if (result.sentence.isNotEmpty)
+                  Text(
+                    result.sentence.map((c) => c.word).join(' '),
+                    style: AppTypography.heading.copyWith(
+                      decoration:
+                          result.isCorrect ? null : TextDecoration.lineThrough,
+                      decorationColor: AppColors.danger,
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                )),
+                if (!result.isCorrect && result.errors.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  for (final error in result.errors.take(2))
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.xs),
+                      child: Text(
+                        error.message,
+                        style: AppTypography.body
+                            .copyWith(color: AppColors.textSecondary),
+                      ),
+                    ),
+                ],
+                if (result.isCorrect) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    // Scoring is gone — emptying your hand is the goal, so the
+                    // meaningful number is how many cards just left it.
+                    l10n.nCards(result.sentence.length),
+                    style: AppTypography.body
+                        .copyWith(color: AppColors.textSecondary),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l10n.ok),
+            ),
+          ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(
-            l10n.ok,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ],
     );
   }
 }

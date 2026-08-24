@@ -266,4 +266,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get discardACard => 'Throw a card away';
+
+  @override
+  String get winner => 'Winner';
+
+  @override
+  String cardsLeftLabel(int count) {
+    return '$count cards left';
+  }
 }

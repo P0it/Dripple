@@ -78,5 +78,7 @@
   "takeIt": "とる",
   "completeSentence": "ぶんをつくる",
   "needTwoCards": "カードを2まいいじょうおいてね",
-  "discardACard": "カードをすてる"
+  "discardACard": "カードをすてる",
+  "winner": "ゆうしょう",
+  "cardsLeftLabel": "のこり{count}まい"
 }
