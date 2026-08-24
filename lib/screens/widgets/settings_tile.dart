@@ -71,7 +71,8 @@ class SettingsTile extends StatelessWidget {
   }
 }
 
-/// A titled group of [SettingsTile]s on one white block.
+/// A titled group of [SettingsTile]s on one sheet of paper, with its title
+/// set on the felt above it.
 class SettingsSection extends StatelessWidget {
   const SettingsSection({super.key, required this.title, required this.tiles});
 
@@ -88,13 +89,24 @@ class SettingsSection extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm),
-            child: Text(title, style: AppTypography.caption),
+            child: Text(
+              title,
+              style: AppTypography.onFelt(AppTypography.caption)
+                  .copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.6),
+            ),
           ),
           Container(
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: AppColors.paper,
               borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-              border: Border.all(color: AppColors.divider),
+              border: Border.all(color: AppColors.paperEdge),
+              boxShadow: const [
+                BoxShadow(
+                  color: AppColors.feltEdge,
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
             clipBehavior: Clip.antiAlias,
             child: Column(children: tiles),

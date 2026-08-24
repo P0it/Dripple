@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dripple/core/brand/dripple_mark.dart';
-import 'package:dripple/core/design/app_colors.dart';
+import 'package:dripple/core/design/felt_scaffold.dart';
 import 'package:dripple/l10n/app_localizations.dart';
 import 'package:dripple/screens/home_screen.dart';
 
@@ -28,7 +28,10 @@ void main() {
     expect(find.byType(DrippleMark), findsOneWidget);
   });
 
-  testWidgets('has no gradient anywhere', (tester) async {
+  testWidgets('paints no gradient in a widget decoration', (tester) async {
+    // Gradients are not banned any more — the felt is one. They are confined
+    // to painters, so a screen decorating a Container with one is the
+    // regression worth catching.
     await tester.pumpWidget(_host(const HomeScreen()));
     await tester.pump();
 
@@ -43,13 +46,15 @@ void main() {
     expect(decorated, isEmpty);
   });
 
-  testWidgets('sits on a flat app surface', (tester) async {
+  testWidgets('stands on the table', (tester) async {
     await tester.pumpWidget(_host(const HomeScreen()));
     await tester.pump();
 
+    expect(find.byType(FeltGround), findsOneWidget);
+    // Transparent, so the one felt underneath shows through rather than a
+    // second flat ground painting over it.
     final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-    expect(scaffold.backgroundColor,
-        anyOf(AppColors.surface, AppColors.background));
+    expect(scaffold.backgroundColor, Colors.transparent);
   });
 
   testWidgets('offers no dead affordances', (tester) async {

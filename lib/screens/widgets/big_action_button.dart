@@ -60,7 +60,7 @@ class _BigActionButtonState extends State<BigActionButton> {
           : widget.color;
       foreground = Colors.white;
     } else {
-      fill = _down ? AppColors.background : AppColors.surface;
+      fill = _down ? AppColors.paperShade : AppColors.paper;
       foreground = widget.color;
     }
 

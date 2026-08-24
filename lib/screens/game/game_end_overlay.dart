@@ -51,7 +51,7 @@ class GameEndOverlayState extends State<GameEndOverlay> {
         child: Container(
           // A scrim, not a blackout: the board stays faintly visible so the
           // result reads as landing on top of the game rather than replacing it.
-          color: AppColors.textPrimary.withValues(alpha: 0.45),
+          color: AppColors.feltEdge.withValues(alpha: 0.74),
           child: Center(
             child: Card(
               margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),

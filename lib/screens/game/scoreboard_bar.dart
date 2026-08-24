@@ -90,7 +90,7 @@ class _HandCount extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: player.isAI ? AppColors.background : AppColors.pointTint,
+              color: player.isAI ? AppColors.paperShade : AppColors.pointTint,
             ),
             child: Text(
               player.name.characters.first,

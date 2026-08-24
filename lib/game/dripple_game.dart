@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart' as material;
 import '../core/design/app_colors.dart';
+import '../core/design/materials.dart';
 import '../models/word_card.dart';
 import 'card_painter.dart';
 import 'card_row_layout.dart';
@@ -98,19 +99,23 @@ class DrippleGame extends FlameGame {
   double get _sentenceZoneY => size.y * 0.30;
   double get _handY => size.y * 0.74;
 
+  /// Transparent: [FeltScaffold] paints the table under the whole screen, and
+  /// two radials meeting at the widget's edge would show a seam. The board
+  /// draws only what is *on* the table.
   @override
-  ui.Color backgroundColor() => AppColors.background;
+  ui.Color backgroundColor() => const ui.Color(0x00000000);
 
-  /// The hand and the sentence zone used to be two rows of identical cards on
-  /// one flat ground, and a child could not tell which was which. Each now
-  /// sits on its own band: the sentence is a dashed blue target you put cards
-  /// *into*, the hand is a solid white tray the cards come *from*. The
-  /// contrast is the point — give both the same fill and the distinction is
-  /// gone again.
+  /// The board is a table, not two bands on a page.
+  ///
+  /// The sentence zone is a recess cut into the felt and the hand is a raised
+  /// rail — the same distinction a real table makes, and a stronger read than
+  /// the blue-tint-versus-white-tray it replaces. You put cards *into* a hole
+  /// and take them *from* a ledge, and the shading says so before any label
+  /// does. Give both the same treatment and the distinction is gone again.
   @override
   void render(ui.Canvas canvas) {
-    _renderSentenceBand(canvas);
-    _renderHandTray(canvas);
+    _renderSentenceWell(canvas);
+    _renderHandRail(canvas);
     super.render(canvas);
   }
 
@@ -132,15 +137,24 @@ class DrippleGame extends FlameGame {
     );
   }
 
-  void _renderSentenceBand(ui.Canvas canvas) {
+  void _renderSentenceWell(ui.Canvas canvas) {
     final band = _band(
       _sentenceZoneY,
       _sentenceZone.length,
       minHeight: CardRowLayout.cardHeight,
     );
 
-    canvas.drawRRect(band, ui.Paint()..color = AppColors.pointTint);
-    _drawDashedRRect(canvas, band, AppColors.point.withValues(alpha: 0.45));
+    Materials.recess(canvas, band, AppColors.well);
+    // Dashed while empty, so it asks for a card; a solid hairline once it has
+    // one, so it stops asking and just frames what is there.
+    Materials.hairline(
+      canvas,
+      band.deflate(1),
+      color: AppColors.brass,
+      width: _sentenceZone.isEmpty ? 1.5 : 1,
+      dashed: _sentenceZone.isEmpty,
+      opacity: _sentenceZone.isEmpty ? 0.7 : 0.4,
+    );
     _drawBandLabel(canvas, _sentenceLabel, band);
 
     // The hint would sit under the cards once there are any; it is only there
@@ -156,17 +170,16 @@ class DrippleGame extends FlameGame {
     }
   }
 
-  void _renderHandTray(ui.Canvas canvas) {
+  void _renderHandRail(ui.Canvas canvas) {
     if (_hand.isEmpty) return;
     final band = _band(_handY, _hand.length);
 
-    canvas.drawRRect(band, ui.Paint()..color = AppColors.surface);
-    canvas.drawRRect(
-      band.deflate(0.75),
-      ui.Paint()
-        ..color = AppColors.border
-        ..style = ui.PaintingStyle.stroke
-        ..strokeWidth = 1.5,
+    Materials.raised(canvas, band, AppColors.rail);
+    Materials.hairline(
+      canvas,
+      band.deflate(1),
+      color: AppColors.brass,
+      opacity: 0.35,
     );
     _drawBandLabel(canvas, _handLabel, band);
   }
@@ -197,9 +210,9 @@ class DrippleGame extends FlameGame {
 
   static const _labelStyle = material.TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: material.FontWeight.w700,
-    letterSpacing: 0.2,
+    letterSpacing: 1.2,
   );
 
   material.TextPainter? _sentenceLabelPainter;
@@ -208,19 +221,19 @@ class DrippleGame extends FlameGame {
 
   material.TextPainter get _sentenceLabel => _sentenceLabelPainter ??= _text(
         _labels.sentence,
-        _labelStyle.copyWith(color: AppColors.point),
+        _labelStyle.copyWith(color: AppColors.brass),
       );
 
   material.TextPainter get _handLabel => _handLabelPainter ??= _text(
         _labels.hand,
-        _labelStyle.copyWith(color: AppColors.textSecondary),
+        _labelStyle.copyWith(color: AppColors.onFeltSoft),
       );
 
   material.TextPainter get _dropHint => _dropHintPainter ??= _text(
         _labels.hint,
         const material.TextStyle(
           fontFamily: 'Pretendard',
-          color: AppColors.point,
+          color: AppColors.onFeltSoft,
           fontSize: 15,
           fontWeight: material.FontWeight.w600,
           height: 1.4,
@@ -233,28 +246,6 @@ class DrippleGame extends FlameGame {
         textDirection: ui.TextDirection.ltr,
         textAlign: ui.TextAlign.center,
       )..layout();
-
-  /// Flutter has no dashed-border primitive, so walk the path manually.
-  void _drawDashedRRect(ui.Canvas canvas, ui.RRect rrect, ui.Color color) {
-    final paint = ui.Paint()
-      ..color = color
-      ..style = ui.PaintingStyle.stroke
-      ..strokeWidth = 2.5
-      ..strokeCap = ui.StrokeCap.round;
-
-    final path = ui.Path()..addRRect(rrect);
-    const dash = 9.0;
-    const space = 7.0;
-
-    for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        final next = (distance + dash).clamp(0.0, metric.length);
-        canvas.drawPath(metric.extractPath(distance, next), paint);
-        distance = next + space;
-      }
-    }
-  }
 
   /// Update hand cards using diff — only add/remove changed cards
   void updateHand(List<WordCard> hand) {

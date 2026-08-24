@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:dripple/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../core/design/felt_scaffold.dart';
 import '../core/game_feedback.dart';
 import '../engine/ai/ai_player.dart';
 import '../game/dripple_game.dart';
@@ -213,7 +214,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   Widget build(BuildContext context) {
     final gameState = ref.watch(gameProvider);
 
-    return Scaffold(
+    return FeltScaffold(
       body: SafeArea(
         child: Stack(
           children: [

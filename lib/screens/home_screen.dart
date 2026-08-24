@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../core/brand/dripple_mark.dart';
 import '../core/design/app_colors.dart';
+import '../core/design/felt_scaffold.dart';
 import '../core/design/app_spacing.dart';
 import '../core/design/app_typography.dart';
 import '../core/game_feedback.dart';
@@ -36,8 +37,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      backgroundColor: AppColors.surface,
+    return FeltScaffold(
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -50,14 +50,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Text(
                 'Dripple',
                 textAlign: TextAlign.center,
-                style: AppTypography.display.copyWith(letterSpacing: -0.5),
+                style: AppTypography.onFelt(AppTypography.display)
+                    .copyWith(letterSpacing: -0.5),
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 l10n.wordCardBattle,
                 textAlign: TextAlign.center,
                 style: AppTypography.body
-                    .copyWith(color: AppColors.textSecondary),
+                    .copyWith(color: AppColors.onFeltSoft),
               ),
               const Spacer(flex: 4),
               ElevatedButton(

@@ -2,7 +2,7 @@ import 'package:dripple/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../core/design/app_colors.dart';
+import '../core/design/felt_scaffold.dart';
 import '../core/design/app_spacing.dart';
 import '../core/game_feedback.dart';
 import '../core/haptic_manager.dart';
@@ -23,8 +23,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final sound = ref.watch(soundManagerProvider);
     final haptic = ref.watch(hapticManagerProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return FeltScaffold(
       appBar: AppBar(title: Text(l10n.settings)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(

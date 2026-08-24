@@ -58,7 +58,7 @@ class _Opponent extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isTheirTurn ? AppColors.pointTint : AppColors.background,
+            color: isTheirTurn ? AppColors.pointTint : AppColors.paperShade,
             border: Border.all(
               color: isTheirTurn ? AppColors.point : AppColors.divider,
               width: isTheirTurn ? 2 : 1,

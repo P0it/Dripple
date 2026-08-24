@@ -5,6 +5,7 @@ import 'package:flame/events.dart';
 import 'package:flutter/material.dart' as material;
 
 import '../../core/design/app_colors.dart';
+import '../../core/design/materials.dart';
 import '../../models/word_card.dart';
 import '../card_painter.dart';
 
@@ -75,9 +76,9 @@ class PileComponent extends PositionComponent with TapCallbacks {
       _renderStackedEdges(canvas);
       switch (kind) {
         case PileKind.deck:
-          CardPainter.paintBack(canvas, cardSize);
+          CardPainter.paintBack(canvas, cardSize, shadow: false);
         case PileKind.discard:
-          CardPainter.paint(canvas, topCard!, cardSize);
+          CardPainter.paint(canvas, topCard!, cardSize, shadow: false);
       }
     }
 
@@ -85,24 +86,36 @@ class PileComponent extends PositionComponent with TapCallbacks {
     if (kind == PileKind.deck && count > 0) _renderCount(canvas);
   }
 
-  /// A couple of offset edges behind the top card, so a stack reads as deep
-  /// rather than as a single card.
+  /// The cut edges of the cards underneath, each rotated a little, so a pile
+  /// has thickness and is never mistakable for a single card.
+  ///
+  /// The rotation is derived from the layer index rather than drawn at random,
+  /// so a pile does not shuffle itself every frame.
   void _renderStackedEdges(ui.Canvas canvas) {
-    final layers = count >= 10 ? 2 : (count >= 3 ? 1 : 0);
+    final layers = count >= 12 ? 4 : (count >= 6 ? 3 : (count >= 3 ? 2 : 1));
+    final radius = ui.Radius.circular(size.x * CardPainter.radiusRatio);
+
     for (var i = layers; i >= 1; i--) {
-      final inset = i * 3.0;
-      final rect = ui.Rect.fromLTWH(inset, -inset, size.x - inset, size.y);
-      canvas.drawRRect(
-        ui.RRect.fromRectAndRadius(rect, ui.Radius.circular(size.x * 0.14)),
-        ui.Paint()..color = AppColors.border,
+      final angle = (i.isEven ? 1 : -1) * 0.0105 * i;
+      canvas.save();
+      canvas.translate(size.x / 2, size.y / 2);
+      canvas.rotate(angle);
+      canvas.translate(-size.x / 2, -size.y / 2 + i * 0.9);
+
+      final rrect = ui.RRect.fromRectAndRadius(
+        ui.Rect.fromLTWH(0, 0, size.x, size.y),
+        radius,
       );
+      if (i == layers) Materials.cardShadow(canvas, rrect);
+      canvas.drawRRect(rrect, ui.Paint()..color = AppColors.paperEdge);
+      canvas.restore();
     }
   }
 
   void _renderDropHighlight(ui.Canvas canvas) {
     final rrect = ui.RRect.fromRectAndRadius(
       ui.Rect.fromLTWH(0, 0, size.x, size.y),
-      ui.Radius.circular(size.x * 0.14),
+      ui.Radius.circular(size.x * CardPainter.radiusRatio),
     );
     canvas.drawRRect(
       rrect,
@@ -132,17 +145,26 @@ class PileComponent extends PositionComponent with TapCallbacks {
           text: '$count',
           style: const material.TextStyle(
             fontFamily: 'Pretendard',
-            color: material.Colors.white,
-            fontSize: 13,
+            color: AppColors.ink,
+            fontSize: 12,
             fontWeight: material.FontWeight.w700,
           ),
         )
         ..layout();
     }
 
+    // A brass plate under the number. White type straight onto the lattice is
+    // one more thing competing with it; a plate is what a real deck box does.
+    final w = _countPainter.width + 12;
+    final h = _countPainter.height + 5;
+    final rect = ui.Rect.fromLTWH((size.x - w) / 2, size.y - h / 2 - 4, w, h);
+    canvas.drawRRect(
+      ui.RRect.fromRectAndRadius(rect, ui.Radius.circular(h / 2)),
+      ui.Paint()..color = AppColors.brass,
+    );
     _countPainter.paint(
       canvas,
-      ui.Offset((size.x - _countPainter.width) / 2, size.y * 0.06),
+      ui.Offset(rect.left + 6, rect.top + 2.5),
     );
   }
 

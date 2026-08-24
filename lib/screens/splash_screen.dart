@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/brand/dripple_mark.dart';
-import '../core/design/app_colors.dart';
+import '../core/design/felt_scaffold.dart';
 import '../core/design/app_spacing.dart';
 import '../core/design/app_typography.dart';
 
@@ -72,8 +72,7 @@ class _SplashScreenState extends State<SplashScreen>
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _finish,
-      child: Scaffold(
-        backgroundColor: AppColors.surface,
+      child: FeltScaffold(
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -91,7 +90,8 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 child: Text(
                   'Dripple',
-                  style: AppTypography.display.copyWith(letterSpacing: -0.5),
+                  style: AppTypography.onFelt(AppTypography.display)
+                      .copyWith(letterSpacing: -0.5),
                 ),
               ),
             ],

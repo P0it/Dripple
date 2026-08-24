@@ -2,6 +2,7 @@ import 'package:dripple/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import '../core/design/app_colors.dart';
+import '../core/design/felt_scaffold.dart';
 import '../core/design/app_spacing.dart';
 import '../core/design/app_typography.dart';
 import 'widgets/settings_tile.dart';
@@ -27,8 +28,7 @@ class LobbyScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final isOnline = mode == 'online';
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return FeltScaffold(
       appBar: AppBar(
         title: Text(isOnline ? l10n.onlineBattle : l10n.friendBattle),
       ),

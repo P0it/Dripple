@@ -68,7 +68,7 @@ class _EmoteButton extends StatelessWidget {
             width: AppSpacing.minTouch,
             height: AppSpacing.minTouch,
             decoration: const BoxDecoration(
-              color: AppColors.background,
+              color: AppColors.paperShade,
               shape: BoxShape.circle,
             ),
             child: Center(

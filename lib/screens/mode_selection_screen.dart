@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/design/app_colors.dart';
+import '../core/design/felt_scaffold.dart';
 import '../core/design/app_spacing.dart';
 import '../core/design/app_typography.dart';
 import '../engine/ai/ai_player.dart';
@@ -18,8 +19,7 @@ class ModeSelectionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return FeltScaffold(
       appBar: AppBar(title: Text(l10n.selectMode)),
       body: SafeArea(
         child: ListView(
@@ -62,7 +62,8 @@ class ModeSelectionScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(
                   AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.sm),
-              child: Text(l10n.aiDifficulty, style: AppTypography.heading),
+              child: Text(l10n.aiDifficulty,
+                  style: AppTypography.onFelt(AppTypography.heading)),
             ),
             _DifficultyCell(
               label: l10n.difficultyEasy,
@@ -154,7 +155,7 @@ class _ModeCell extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                     decoration: BoxDecoration(
-                      color: AppColors.background,
+                      color: AppColors.paperShade,
                       borderRadius:
                           BorderRadius.circular(AppSpacing.radiusSm),
                     ),

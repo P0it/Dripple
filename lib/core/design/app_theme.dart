@@ -6,22 +6,26 @@ import 'app_typography.dart';
 
 /// Assembles [ThemeData] from the tokens. No colour or size is invented here.
 ///
-/// Every surface is flat: `elevation: 0` throughout, with separation carried
-/// by a hairline divider or a background/surface contrast step instead of a
-/// shadow.
+/// The ground is felt and the surfaces are paper, so the two are separated by
+/// material rather than by a contrast step: a panel is lighter *and* warmer
+/// *and* casts a shadow, because that is what a sheet of paper on a table
+/// does. Buttons are keys — they have a real elevation, which is the one lift
+/// furniture gets.
 abstract final class AppTheme {
   static ThemeData get light => ThemeData(
         useMaterial3: true,
         fontFamily: AppTypography.family,
-        scaffoldBackgroundColor: AppColors.background,
+        scaffoldBackgroundColor: AppColors.feltCore,
         colorScheme: const ColorScheme.light(
           primary: AppColors.point,
           onPrimary: Colors.white,
-          surface: AppColors.surface,
-          onSurface: AppColors.textPrimary,
+          secondary: AppColors.brass,
+          onSecondary: AppColors.ink,
+          surface: AppColors.paper,
+          onSurface: AppColors.ink,
           error: AppColors.danger,
         ),
-        dividerColor: AppColors.divider,
+        dividerColor: AppColors.paperEdge,
         splashFactory: InkSparkle.splashFactory,
         textTheme: const TextTheme(
           displaySmall: AppTypography.display,
@@ -31,13 +35,13 @@ abstract final class AppTheme {
           labelLarge: AppTypography.label,
           bodySmall: AppTypography.caption,
         ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.background,
-          foregroundColor: AppColors.textPrimary,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.transparent,
+          foregroundColor: AppColors.onFelt,
           elevation: 0,
           scrolledUnderElevation: 0,
           centerTitle: false,
-          titleTextStyle: AppTypography.heading,
+          titleTextStyle: AppTypography.onFelt(AppTypography.heading),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
@@ -46,8 +50,9 @@ abstract final class AppTheme {
             disabledBackgroundColor: AppColors.divider,
             disabledForegroundColor: AppColors.textDisabled,
             minimumSize: const Size.fromHeight(AppSpacing.buttonHeight),
-            elevation: 0,
-            shadowColor: Colors.transparent,
+            // A key on a table, not a rectangle on a page.
+            elevation: 4,
+            shadowColor: AppColors.feltEdge,
             textStyle: AppTypography.label.copyWith(fontSize: 17),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
@@ -56,21 +61,21 @@ abstract final class AppTheme {
         ),
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
-            foregroundColor: AppColors.textSecondary,
+            foregroundColor: AppColors.onFeltSoft,
             minimumSize: const Size(AppSpacing.minTouch, AppSpacing.minTouch),
             textStyle: AppTypography.label,
           ),
         ),
         iconButtonTheme: IconButtonThemeData(
           style: IconButton.styleFrom(
-            foregroundColor: AppColors.textSecondary,
+            foregroundColor: AppColors.onFeltSoft,
             minimumSize: const Size(AppSpacing.minTouch, AppSpacing.minTouch),
           ),
         ),
         cardTheme: CardThemeData(
-          color: AppColors.surface,
-          elevation: 0,
-          shadowColor: Colors.transparent,
+          color: AppColors.paper,
+          elevation: 3,
+          shadowColor: AppColors.feltEdge,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
@@ -78,15 +83,17 @@ abstract final class AppTheme {
           ),
         ),
         dialogTheme: DialogThemeData(
-          backgroundColor: AppColors.surface,
-          elevation: 0,
+          backgroundColor: AppColors.paper,
+          elevation: 8,
+          shadowColor: AppColors.feltEdge,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
           ),
         ),
         bottomSheetTheme: const BottomSheetThemeData(
-          backgroundColor: AppColors.surface,
-          elevation: 0,
+          backgroundColor: AppColors.paper,
+          elevation: 12,
+          shadowColor: AppColors.feltEdge,
           showDragHandle: false,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(
