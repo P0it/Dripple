@@ -26,14 +26,19 @@ abstract final class AppColors {
   // ---------------------------------------------------------------------------
 
   /// The lit centre of the table.
-  static const feltCore = Color(0xFF1C4436);
+  static const feltCore = Color(0xFF215442);
 
   /// The rim, where the table's radial lands.
-  static const feltEdge = Color(0xFF0E2820);
+  static const feltEdge = Color(0xFF0A1F19);
 
   /// The hand rail — one step above the felt, so cards read as resting on
   /// something raised.
-  static const rail = Color(0xFF173C2F);
+  ///
+  /// Lighter than [feltCore], not darker. The rail sits at the bottom of the
+  /// screen where the table's radial and vignette are both at their darkest,
+  /// so a rail keyed off the felt's *nominal* colour lands below its
+  /// surroundings and reads as a second recess.
+  static const rail = Color(0xFF2A6350);
 
   /// The sentence recess floor. Darker than the felt because it is a hole cut
   /// into the table, and that is the whole read.
@@ -92,6 +97,14 @@ abstract final class AppColors {
   /// "this card is in your hand right now" signal needs to do.
   static const point = Color(0xFF1D74F5);
   static const pointPressed = Color(0xFF1662D6);
+
+  /// The brand blue lifted until it reads on green.
+  ///
+  /// #1D74F5 is tuned for a near-white page; against deep felt it goes muddy —
+  /// the two are close in luminance and opposed in hue, which is the one
+  /// combination that reads as neither. The mark keeps its identity on the
+  /// table by getting brighter, not by changing hue.
+  static const pointOnFelt = Color(0xFF5AA9FF);
   static const pointTint = Color(0xFFE7EFFC);
 
   /// The card back's field: the point blue taken down until white printing

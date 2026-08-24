@@ -41,7 +41,7 @@ class MuteButtonState extends ConsumerState<MuteButton> {
             child: GameIconView(
               on ? GameIcon.soundOn : GameIcon.soundOff,
               size: 18,
-              color: AppColors.textSecondary,
+              color: AppColors.onFeltSoft,
             ),
           ),
         ),

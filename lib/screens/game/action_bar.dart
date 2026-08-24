@@ -41,7 +41,7 @@ class ActionBar extends StatelessWidget {
           child: Text(
             l10n.opponentThinking,
             style:
-                AppTypography.label.copyWith(color: AppColors.textSecondary),
+                AppTypography.label.copyWith(color: AppColors.onFeltSoft),
           ),
         ),
       );
@@ -54,7 +54,7 @@ class ActionBar extends StatelessWidget {
           child: Text(
             l10n.tapDeckToDraw,
             style:
-                AppTypography.label.copyWith(color: AppColors.textSecondary),
+                AppTypography.label.copyWith(color: AppColors.onFeltSoft),
           ),
         ),
       );
@@ -72,7 +72,7 @@ class ActionBar extends StatelessWidget {
             label: l10n.completeSentence,
             sublabel: canSubmit ? null : l10n.needTwoCards,
             icon: GameIcon.check,
-            color: AppColors.point,
+            color: AppColors.brass,
             onPressed: canSubmit ? onSubmit : null,
           ),
         ),

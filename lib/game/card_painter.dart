@@ -28,8 +28,8 @@ class CardPainter {
   static const double defaultWidth = 84;
 
   /// Poker proportion, 63:88. The height follows from the width; it is not a
-  /// free number. `test/game/card_painter_test.dart` holds it there, because
-  /// the proportion is the thing most likely to drift back.
+  /// free number — `test/core/design/no_legacy_theme_test.dart` pins it,
+  /// because the proportion is the thing most likely to drift back.
   static const double defaultHeight = defaultWidth * 88 / 63;
 
   /// A real poker card's corner is about 5.5% of its width. The old 14% is
@@ -86,7 +86,7 @@ class CardPainter {
       canvas.drawRRect(
         rrect.inflate(1.75),
         Paint()
-          ..color = AppColors.point
+          ..color = AppColors.pointOnFelt
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.5,
       );
@@ -118,7 +118,7 @@ class CardPainter {
     Materials.grainOver(canvas, face.outerRect, 0.05);
     canvas.restore();
 
-    _frame(canvas, size, accent);
+    _frame(canvas, size, accent, printed);
 
     if (card.isSpecial) {
       _specialIcon(
@@ -136,7 +136,7 @@ class CardPainter {
           centerY: size.height * 0.375, maxFontSize: size.width * 0.30);
     }
 
-    _rule(canvas, size, accent);
+    _rule(canvas, size, accent, printed);
     _meaning(canvas, card, size, locale, printed);
   }
 
@@ -144,7 +144,12 @@ class CardPainter {
   /// bar across the top: it outlines the whole face, so it carries more signal
   /// than the old 7.5% band while reading as printing rather than as a UI
   /// element applied over the card.
-  static void _frame(Canvas canvas, Size size, Color accent) {
+  static void _frame(Canvas canvas, Size size, Color accent, Color printed) {
+    // Pulled toward the printed shade. The palette's pale hues — the article
+    // blue especially — render a frame at raw strength as "a lighter card"
+    // rather than as a different part of speech, which is the one thing the
+    // frame exists to say.
+    final line = Color.lerp(accent, printed, 0.35)!;
     final inset = size.width * _frameInset;
     final radius = Radius.circular(size.width * radiusRatio * 0.55);
 
@@ -155,7 +160,7 @@ class CardPainter {
         radius,
       ),
       Paint()
-        ..color = accent.withValues(alpha: 0.55)
+        ..color = line.withValues(alpha: 0.70)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1,
     );
@@ -168,7 +173,7 @@ class CardPainter {
         radius,
       ),
       Paint()
-        ..color = accent.withValues(alpha: 0.18)
+        ..color = line.withValues(alpha: 0.24)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1,
     );
@@ -291,14 +296,15 @@ class CardPainter {
 
   /// The hairline between headword and gloss, the way a dictionary entry sets
   /// it. Short and centred — it separates without dividing the card in two.
-  static void _rule(Canvas canvas, Size size, Color accent) {
+  static void _rule(Canvas canvas, Size size, Color accent, Color printed) {
+    final line = Color.lerp(accent, printed, 0.35)!;
     final half = size.width * 0.11;
     final y = size.height * 0.545;
     canvas.drawLine(
       Offset(size.width / 2 - half, y),
       Offset(size.width / 2 + half, y),
       Paint()
-        ..color = accent.withValues(alpha: 0.35)
+        ..color = line.withValues(alpha: 0.45)
         ..strokeWidth = 1.5
         ..strokeCap = StrokeCap.round,
     );

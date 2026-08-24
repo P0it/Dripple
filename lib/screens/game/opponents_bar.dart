@@ -58,30 +58,32 @@ class _Opponent extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isTheirTurn ? AppColors.pointTint : AppColors.paperShade,
+            color: AppColors.rail,
             border: Border.all(
-              color: isTheirTurn ? AppColors.point : AppColors.divider,
+              color: isTheirTurn
+                  ? AppColors.brass
+                  : AppColors.brass.withValues(alpha: 0.3),
               width: isTheirTurn ? 2 : 1,
             ),
           ),
           child: Icon(
             Icons.smart_toy_outlined,
             size: 20,
-            color:
-                isTheirTurn ? AppColors.point : AppColors.textDisabled,
+            color: isTheirTurn ? AppColors.brass : AppColors.onFeltSoft,
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
           opponent.name,
           style: AppTypography.caption.copyWith(
-            color: isTheirTurn ? AppColors.textPrimary : AppColors.textSecondary,
+            color: isTheirTurn ? AppColors.onFelt : AppColors.onFeltSoft,
             fontWeight: isTheirTurn ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
         Text(
           l10n.nCards(opponent.hand.length),
-          style: AppTypography.caption.copyWith(fontSize: 11),
+          style: AppTypography.caption
+              .copyWith(fontSize: 11, color: AppColors.onFeltSoft),
         ),
       ],
     );

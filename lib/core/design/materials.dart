@@ -194,13 +194,25 @@ abstract final class Materials {
     grainOver(canvas, rrect.outerRect, 0.05);
     canvas.restore();
 
+    // The lit top edge, and the shaded underside that proves it is a ledge.
+    canvas.save();
+    canvas.clipRRect(rrect);
     canvas.drawRRect(
-      rrect.deflate(0.5),
+      rrect.shift(const Offset(0, 1.5)),
       Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.08)
+        ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.13)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1,
+        ..strokeWidth = 2,
     );
+    canvas.drawRRect(
+      rrect.shift(const Offset(0, -4)),
+      Paint()
+        ..color = const Color(0x40000000)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 6,
+    );
+    canvas.restore();
   }
 
   /// A brass hairline along a shape's outline. [dashed] draws it as a run of

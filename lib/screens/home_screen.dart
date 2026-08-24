@@ -45,7 +45,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(flex: 3),
-              const Center(child: DrippleMark(size: 96)),
+              const Center(
+                child: DrippleMark(size: 96, color: AppColors.pointOnFelt),
+              ),
               const SizedBox(height: AppSpacing.xl),
               Text(
                 'Dripple',

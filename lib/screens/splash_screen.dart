@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/brand/dripple_mark.dart';
+import '../core/design/app_colors.dart';
 import '../core/design/felt_scaffold.dart';
 import '../core/design/app_spacing.dart';
 import '../core/design/app_typography.dart';
@@ -77,7 +78,11 @@ class _SplashScreenState extends State<SplashScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              DrippleMark(size: 132, animation: _mark),
+              DrippleMark(
+                size: 132,
+                animation: _mark,
+                color: AppColors.pointOnFelt,
+              ),
               const SizedBox(height: AppSpacing.lg),
               AnimatedBuilder(
                 animation: _wordFade,

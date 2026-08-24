@@ -27,9 +27,14 @@ class ScoreboardBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.divider)),
+      // The status strip used to be a cream slab across the top of the table,
+      // which is the one thing on this screen that still read as a web app.
+      // It is furniture now: nothing but a brass rule separating it from the
+      // felt it stands on.
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: AppColors.brass.withValues(alpha: 0.3)),
+        ),
       ),
       child: Row(
         children: [
@@ -37,14 +42,14 @@ class ScoreboardBar extends StatelessWidget {
             padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
             decoration: BoxDecoration(
-              color: AppColors.pointTint,
+              color: AppColors.brass,
               borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
             ),
             child: Text(
               drawing ? l10n.turnStepDraw : l10n.turnStepAction,
               style: AppTypography.caption.copyWith(
-                color: AppColors.point,
-                fontWeight: FontWeight.w600,
+                color: AppColors.ink,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -90,14 +95,19 @@ class _HandCount extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: player.isAI ? AppColors.paperShade : AppColors.pointTint,
+              color: AppColors.rail,
+              border: Border.all(
+                color: player.isAI
+                    ? AppColors.brass.withValues(alpha: 0.35)
+                    : AppColors.brass,
+                width: player.isAI ? 1 : 1.5,
+              ),
             ),
             child: Text(
               player.name.characters.first,
               style: AppTypography.caption.copyWith(
-                fontWeight: FontWeight.w600,
-                color:
-                    player.isAI ? AppColors.textSecondary : AppColors.point,
+                fontWeight: FontWeight.w700,
+                color: player.isAI ? AppColors.onFeltSoft : AppColors.brass,
               ),
             ),
           ),
@@ -105,7 +115,7 @@ class _HandCount extends StatelessWidget {
           Text(
             '${player.hand.length}',
             style: AppTypography.label.copyWith(
-              color: nearlyOut ? AppColors.danger : AppColors.textPrimary,
+              color: nearlyOut ? AppColors.danger : AppColors.onFelt,
               fontSize: nearlyOut ? 17 : 15,
             ),
           ),
@@ -129,7 +139,7 @@ class TurnTimerWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUrgent = secondsRemaining <= 5;
-    final arcColor = isUrgent ? AppColors.danger : AppColors.point;
+    final arcColor = isUrgent ? AppColors.danger : AppColors.brass;
     final fraction = totalSeconds > 0
         ? (secondsRemaining / totalSeconds).clamp(0.0, 1.0)
         : 0.0;
@@ -141,7 +151,7 @@ class TurnTimerWidget extends StatelessWidget {
         painter: CountdownArcPainter(
           fraction: fraction,
           arcColor: arcColor,
-          trackColor: AppColors.divider,
+          trackColor: AppColors.brassDim,
         ),
         child: Center(
           child: Text(

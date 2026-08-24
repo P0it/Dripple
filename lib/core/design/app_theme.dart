@@ -45,10 +45,14 @@ abstract final class AppTheme {
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.point,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: AppColors.divider,
-            disabledForegroundColor: AppColors.textDisabled,
+            // Brass, not blue. A button is furniture, and the rule says so —
+            // but the reason is plainer than the rule: blue and green sit at
+            // the same luminance in opposite hues, and a blue key on a green
+            // table reads as neither one thing nor the other.
+            backgroundColor: AppColors.brass,
+            foregroundColor: AppColors.ink,
+            disabledBackgroundColor: AppColors.brassDim,
+            disabledForegroundColor: AppColors.onFeltSoft,
             minimumSize: const Size.fromHeight(AppSpacing.buttonHeight),
             // A key on a table, not a rectangle on a page.
             elevation: 4,

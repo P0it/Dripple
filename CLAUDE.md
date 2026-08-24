@@ -2,14 +2,19 @@
 
 ## Project Overview
 
-Dripple is an English word card battle game built with Flutter, aimed at
-children aged 6-10 who are learning English for the first time. Players race
-to empty their hand by arranging word cards into grammatically correct
-sentences. **Learning is the purpose; a real card game is the form** — not a
-drill app.
+Dripple is an English word card battle game built with Flutter, for anyone
+learning English word order for the first time — children aged 6-10, and adult
+learners abroad. Players race to empty their hand by arranging word cards into
+grammatically correct sentences. **Learning is the purpose; a real card game is
+the form** — not a drill app.
+
+The audience widened on 2026-08-25, and it is load-bearing on the look rather
+than incidental to it: an object an adult reads as a well-made card game is one
+a child can also enjoy, while the reverse does not hold.
 
 **Design Spec:** `docs/superpowers/specs/2026-04-05-dripple-design.md`
 **Current Redesign Spec:** `docs/superpowers/specs/2026-08-22-dripple-card-battle-redesign.md`
+**Visual Redesign Spec:** `docs/superpowers/specs/2026-08-25-physical-card-redesign.md`
 **Implementation Plan:** `docs/superpowers/plans/2026-08-22-card-battle-redesign.md`
 
 ## Tech Stack
@@ -23,7 +28,8 @@ drill app.
 - **Haptics:** vibration — 6 intensity patterns for game events
 - **State Management:** Riverpod
 - **Routing:** GoRouter with fade transitions
-- **Design System:** `lib/core/design/` tokens + bundled Pretendard (no `google_fonts`)
+- **Design System:** `lib/core/design/` tokens + materials + bundled Pretendard
+  (no `google_fonts`)
 - **Grammar Engine:** Custom rule-based (Dart) — $0 operational cost
 - **AI Player:** Custom rule-based (Dart) — offline capable
 
@@ -119,8 +125,10 @@ lib/
 ├── main.dart / app.dart          # Entry point + routing
 ├── core/
 │   ├── design/                   # Design system — the only place a colour lives
-│   │   ├── app_colors.dart       #   one accent (#1D74F5), no gradients
-│   │   ├── app_typography.dart   #   Pretendard, three weights
+│   │   ├── app_colors.dart       #   palette by material: paper vs furniture
+│   │   ├── materials.dart        #   grain, felt, recess, rail, card shadows
+│   │   ├── felt_scaffold.dart    #   the table every screen stands on
+│   │   ├── app_typography.dart   #   Pretendard, three weights, ink by default
 │   │   ├── app_spacing.dart      #   4pt grid, three radii, 56px touch floor
 │   │   └── app_theme.dart        #   ThemeData assembled from the tokens
 │   ├── brand/dripple_mark.dart   # The bouncing-dots mark, drawn not bundled
@@ -133,6 +141,9 @@ lib/
 │   └── ai/                       # Rule-based AI player
 ├── data/card_deck.dart           # Curated card deck (60+ cards)
 ├── game/                         # Flame components (card drag, hand fan)
+│   ├── card_painter.dart         #   the card's anatomy, 63:88
+│   ├── pos_pip.dart              #   Montessori suit marks for the indices
+│   └── dripple_game.dart         #   the well and the rail
 ├── character/                    # Character widget, emotions, emote system
 ├── screens/                      # Home, ModeSelect, Game, Judgment, Result, Lobby, Settings
 ├── providers/                    # Riverpod state management
@@ -190,13 +201,37 @@ lib/
 6. **Flame is kept deliberately** — the card-game feel is the point, so the
    sentence-zone reorder was hand-built inside Flame rather than swapping to
    Flutter widgets. Known cost: screen readers cannot see the Flame canvas.
-7. **$0 operational cost** for core gameplay — grammar engine and AI are fully client-side
-8. **Restraint over decoration** — a near-white ground, one accent colour, no
-   gradients, and no shadows outside the card art. Hierarchy comes from weight
-   and whitespace. Ergonomics are scaled up for 6-10 year olds instead: a 56px
-   touch floor, 60px buttons, and card type sized to be read across a table.
-   `test/core/design/no_legacy_theme_test.dart` fails if a hex literal, a
-   gradient, or a BoxShadow reappears in a screen.
+8. **Paper takes the brand, furniture takes brass.** Every surface is one of
+   two materials. *Paper* — the card face, sheets, dialogs — carries warm
+   off-white stock, ink type, the point blue, and the part-of-speech palette;
+   information lives there. *Furniture* — the table, the hand rail, the
+   sentence well, screen grounds — carries deep felt, brass hairlines, and
+   cream type; nothing is read there, only held. Decoration serving neither
+   does not ship: a gradient describing a lit felt surface is furniture, a
+   gradient on a button because it looked flat is not.
+
+   This replaced "restraint over decoration" on 2026-08-25. That rule banned
+   gradients, shadows outside the card, and anything but a near-white ground —
+   and card-game materiality is *made of* those things, so it could not survive
+   the goal. Ergonomics are unchanged: a 56px touch floor, 60px buttons, and
+   card type sized to be read across a table.
+   `test/core/design/no_legacy_theme_test.dart` now guards the new rule — hex
+   literals stay out of screens, gradients and shadows stay inside the design
+   package and `lib/game/`, and the card's 63:88 proportion is pinned.
+
+9. **A card has the anatomy of a card.** Poker proportion, a corner radius of a
+   twentieth of the width rather than a seventh, two shadows so it sits on a
+   surface instead of floating on a page, the cut edge of the stock, grain, a
+   printed frame carrying the part of speech, corner indices, and a rule
+   between headword and gloss. Each is load-bearing; drop any and it slides
+   back toward a rounded rectangle with text in it.
+
+10. **The board is a table.** The sentence zone is recessed into the felt and
+    the hand sits on a raised rail. Recess versus rail is the distinction a
+    real table makes, and it reads before any label does.
+
+11. **$0 operational cost** for core gameplay — grammar engine and AI are fully
+    client-side.
 
 ## Development
 

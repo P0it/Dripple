@@ -58,7 +58,12 @@ class _BigActionButtonState extends State<BigActionButton> {
       fill = _down
           ? Color.lerp(widget.color, Colors.black, 0.14)!
           : widget.color;
-      foreground = Colors.white;
+      // Brass needs ink on it; a dark accent needs white. Pick by luminance
+      // rather than by which colour was passed, so a new accent cannot ship a
+      // button no one can read.
+      foreground = fill.computeLuminance() > 0.5
+          ? AppColors.ink
+          : Colors.white;
     } else {
       fill = _down ? AppColors.paperShade : AppColors.paper;
       foreground = widget.color;
