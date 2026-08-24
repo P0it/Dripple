@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 
+import '../../core/design/app_colors.dart';
+import '../../core/design/app_spacing.dart';
+import '../../core/design/app_typography.dart';
 import '../../core/game_icons.dart';
 
-/// Large, high-contrast button sized for small hands.
+/// Large button sized for small hands.
 ///
-/// Children aged 6-10 miss standard 36px material buttons often enough that
-/// it reads as the game being broken, so the tap target here is 64px tall
-/// with a chunky pressed state.
+/// Children aged 6-10 miss a standard 36px material button often enough that
+/// it reads as the game being broken, so the target here is 60px tall.
+///
+/// The press used to be a bevelled lift with an offset shadow. The size is
+/// what makes it hittable; the bevel was decoration, and it was the last
+/// plastic-looking thing on the board. Pressing now darkens and settles the
+/// fill instead.
 class BigActionButton extends StatefulWidget {
-  final String label;
-  final String? sublabel;
-  final GameIcon? icon;
-  final Color color;
-  final VoidCallback? onPressed;
-  final bool selected;
-
   const BigActionButton({
     super.key,
     required this.label,
@@ -24,6 +24,13 @@ class BigActionButton extends StatefulWidget {
     this.onPressed,
     this.selected = false,
   });
+
+  final String label;
+  final String? sublabel;
+  final GameIcon? icon;
+  final Color color;
+  final VoidCallback? onPressed;
+  final bool selected;
 
   @override
   State<BigActionButton> createState() => _BigActionButtonState();
@@ -35,9 +42,12 @@ class _BigActionButtonState extends State<BigActionButton> {
   @override
   Widget build(BuildContext context) {
     final enabled = widget.onPressed != null;
-    final base = enabled ? widget.color : const Color(0xFFD1D5DB);
-    final shadow = Color.lerp(base, Colors.black, 0.28)!;
-    final lift = _down || !enabled ? 0.0 : 4.0;
+    final fill = !enabled
+        ? AppColors.divider
+        : _down
+            ? Color.lerp(widget.color, Colors.black, 0.14)!
+            : widget.color;
+    final foreground = enabled ? Colors.white : AppColors.textDisabled;
 
     return Semantics(
       button: true,
@@ -52,56 +62,43 @@ class _BigActionButtonState extends State<BigActionButton> {
         onTap: widget.onPressed,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 90),
-          padding: EdgeInsets.only(top: lift, bottom: 4 - lift),
-          child: Container(
-            height: 60,
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            decoration: BoxDecoration(
-              color: base,
-              borderRadius: BorderRadius.circular(18),
-              border: widget.selected
-                  ? Border.all(color: Colors.white, width: 3)
-                  : null,
-              boxShadow: [
-                BoxShadow(
-                  color: shadow,
-                  offset: Offset(0, 4 - lift),
-                  blurRadius: 0,
-                ),
+          height: AppSpacing.buttonHeight,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          decoration: BoxDecoration(
+            color: fill,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            border: widget.selected
+                ? Border.all(color: AppColors.textPrimary, width: 2)
+                : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.icon case final icon?) ...[
+                GameIconView(icon, size: 22, color: foreground),
+                const SizedBox(width: AppSpacing.sm),
               ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (widget.icon != null) ...[
-                  GameIconView(widget.icon!, size: 26, color: Colors.white),
-                  const SizedBox(width: 10),
-                ],
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.label,
+                    style: AppTypography.label
+                        .copyWith(fontSize: 17, color: foreground),
+                  ),
+                  if (widget.sublabel case final sub?)
                     Text(
-                      widget.label,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
+                      sub,
+                      style: AppTypography.caption.copyWith(
+                        fontSize: 12,
+                        color: foreground.withValues(alpha: 0.85),
                       ),
                     ),
-                    if (widget.sublabel != null)
-                      Text(
-                        widget.sublabel!,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

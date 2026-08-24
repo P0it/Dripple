@@ -216,4 +216,54 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get difficultyHardDesc => 'AIが本気で勝ちにきます';
+
+  @override
+  String get turnStepDraw => '1  ひく';
+
+  @override
+  String get turnStepAction => '2  だす';
+
+  @override
+  String get cardsLeft => '枚';
+
+  @override
+  String get soundOff => '音を消す';
+
+  @override
+  String get soundOn => '音を出す';
+
+  @override
+  String get opponentThinking => 'あいてがかんがえています…';
+
+  @override
+  String get pickCardToDiscard => 'すてるカードをタップしてね';
+
+  @override
+  String get cancel => 'キャンセル';
+
+  @override
+  String get drawNewCard => 'あたらしいカード';
+
+  @override
+  String deckRemaining(int count) {
+    return 'のこり$countまい';
+  }
+
+  @override
+  String get discardPile => 'すてたカード';
+
+  @override
+  String get discardPileEmpty => 'ありません';
+
+  @override
+  String get takeIt => 'とる';
+
+  @override
+  String get completeSentence => 'ぶんをつくる';
+
+  @override
+  String get needTwoCards => 'カードを2まいいじょうおいてね';
+
+  @override
+  String get discardACard => 'カードをすてる';
 }

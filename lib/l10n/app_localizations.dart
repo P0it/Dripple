@@ -477,6 +477,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The AI plays to win'**
   String get difficultyHardDesc;
+
+  /// No description provided for @turnStepDraw.
+  ///
+  /// In en, this message translates to:
+  /// **'1  Draw'**
+  String get turnStepDraw;
+
+  /// No description provided for @turnStepAction.
+  ///
+  /// In en, this message translates to:
+  /// **'2  Play'**
+  String get turnStepAction;
+
+  /// No description provided for @cardsLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'left'**
+  String get cardsLeft;
+
+  /// No description provided for @soundOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get soundOff;
+
+  /// No description provided for @soundOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get soundOn;
+
+  /// No description provided for @opponentThinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking…'**
+  String get opponentThinking;
+
+  /// No description provided for @pickCardToDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the card you want to throw away'**
+  String get pickCardToDiscard;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @drawNewCard.
+  ///
+  /// In en, this message translates to:
+  /// **'New card'**
+  String get drawNewCard;
+
+  /// No description provided for @deckRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} left'**
+  String deckRemaining(int count);
+
+  /// No description provided for @discardPile.
+  ///
+  /// In en, this message translates to:
+  /// **'Thrown away'**
+  String get discardPile;
+
+  /// No description provided for @discardPileEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing here'**
+  String get discardPileEmpty;
+
+  /// No description provided for @takeIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Take it'**
+  String get takeIt;
+
+  /// No description provided for @completeSentence.
+  ///
+  /// In en, this message translates to:
+  /// **'Make a sentence'**
+  String get completeSentence;
+
+  /// No description provided for @needTwoCards.
+  ///
+  /// In en, this message translates to:
+  /// **'Put down two or more cards'**
+  String get needTwoCards;
+
+  /// No description provided for @discardACard.
+  ///
+  /// In en, this message translates to:
+  /// **'Throw a card away'**
+  String get discardACard;
 }
 
 class _AppLocalizationsDelegate

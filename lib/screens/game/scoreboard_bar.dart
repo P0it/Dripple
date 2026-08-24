@@ -1,114 +1,135 @@
+import 'package:dripple/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/design/app_colors.dart';
+import '../../core/design/app_spacing.dart';
+import '../../core/design/app_typography.dart';
 import '../../models/game_state.dart';
+import '../../models/player.dart';
 import 'mute_button.dart';
 
+/// The top strip: which step of the turn you are on, the clock, and how many
+/// cards everyone is holding.
+///
+/// A flat white strip over the board rather than a coloured header — the
+/// board below is the thing to look at, and a solid bar of colour up here
+/// competes with the cards for attention.
 class ScoreboardBar extends StatelessWidget {
-  final GameState gameState;
+  const ScoreboardBar({super.key, required this.gameState});
 
-  const ScoreboardBar({
-    super.key,required this.gameState});
+  final GameState gameState;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final drawing = gameState.turnPhase == TurnPhase.draw;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.point,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(bottom: BorderSide(color: AppColors.divider)),
       ),
       child: Row(
         children: [
-          // Turn step indicator — rounds are gone; the turn has two steps.
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
             decoration: BoxDecoration(
-              color: Colors.white24,
-              borderRadius: BorderRadius.circular(8),
+              color: AppColors.pointTint,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
             ),
             child: Text(
-              gameState.turnPhase == TurnPhase.draw ? '① 뽑기' : '② 액션',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
+              drawing ? l10n.turnStepDraw : l10n.turnStepAction,
+              style: AppTypography.caption.copyWith(
+                color: AppColors.point,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.xs),
           const MuteButton(),
           const Spacer(),
-          // Turn timer - only shown during a human turn
           if (gameState.turnTimeRemaining >= 0 &&
               gameState.phase == GamePhase.playing)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(right: AppSpacing.sm),
               child: TurnTimerWidget(
                 secondsRemaining: gameState.turnTimeRemaining,
                 totalSeconds: gameState.config.turnTimerSeconds,
               ),
             ),
-          // Cards remaining per player — one card left is the danger sign.
-          ...gameState.players.map((p) => Padding(
-                padding: const EdgeInsets.only(left: 12),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 12,
-                      backgroundColor: p.isAI ? Colors.white24 : Colors.white,
-                      child: Text(
-                        p.name[0],
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: p.isAI ? Colors.white : AppColors.point,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${p.hand.length}',
-                      style: TextStyle(
-                        color: p.hand.length == 1
-                            ? Colors.amberAccent
-                            : Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: p.hand.length == 1 ? 18 : 14,
-                      ),
-                    ),
-                  ],
-                ),
-              )),
+          for (final player in gameState.players)
+            _HandCount(player: player),
         ],
       ),
     );
   }
 }
 
-/// Circular countdown arc displayed in the scoreboard bar during human turns.
+/// One player's remaining card count. A single card is the danger sign, so it
+/// is the one thing here allowed to shout.
+class _HandCount extends StatelessWidget {
+  const _HandCount({required this.player});
 
-/// Circular countdown arc displayed in the scoreboard bar during human turns.
+  final Player player;
+
+  @override
+  Widget build(BuildContext context) {
+    final nearlyOut = player.hand.length == 1;
+
+    return Padding(
+      padding: const EdgeInsets.only(left: AppSpacing.sm),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: player.isAI ? AppColors.background : AppColors.pointTint,
+            ),
+            child: Text(
+              player.name.characters.first,
+              style: AppTypography.caption.copyWith(
+                fontWeight: FontWeight.w600,
+                color:
+                    player.isAI ? AppColors.textSecondary : AppColors.point,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            '${player.hand.length}',
+            style: AppTypography.label.copyWith(
+              color: nearlyOut ? AppColors.danger : AppColors.textPrimary,
+              fontSize: nearlyOut ? 17 : 15,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Circular countdown arc shown during a human turn.
 class TurnTimerWidget extends StatelessWidget {
-  final int secondsRemaining;
-  final int totalSeconds;
-
   const TurnTimerWidget({
     super.key,
     required this.secondsRemaining,
     required this.totalSeconds,
   });
 
+  final int secondsRemaining;
+  final int totalSeconds;
+
   @override
   Widget build(BuildContext context) {
     final isUrgent = secondsRemaining <= 5;
-    final arcColor = isUrgent ? AppColors.danger : Colors.white;
+    final arcColor = isUrgent ? AppColors.danger : AppColors.point;
     final fraction = totalSeconds > 0
         ? (secondsRemaining / totalSeconds).clamp(0.0, 1.0)
         : 0.0;
@@ -120,15 +141,15 @@ class TurnTimerWidget extends StatelessWidget {
         painter: CountdownArcPainter(
           fraction: fraction,
           arcColor: arcColor,
-          trackColor: Colors.white24,
+          trackColor: AppColors.divider,
         ),
         child: Center(
           child: Text(
             '$secondsRemaining',
-            style: TextStyle(
+            style: AppTypography.caption.copyWith(
               color: arcColor,
+              fontWeight: FontWeight.w600,
               fontSize: 11,
-              fontWeight: FontWeight.bold,
             ),
           ),
         ),
@@ -138,43 +159,36 @@ class TurnTimerWidget extends StatelessWidget {
 }
 
 class CountdownArcPainter extends CustomPainter {
-  final double fraction;
-  final Color arcColor;
-  final Color trackColor;
-
   const CountdownArcPainter({
     required this.fraction,
     required this.arcColor,
     required this.trackColor,
   });
 
+  final double fraction;
+  final Color arcColor;
+  final Color trackColor;
+
+  static const _fullTurn = 6.283185307179586;
+  static const _twelveOClock = -1.5707963267948966;
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.shortestSide / 2) - 2;
     const strokeWidth = 3.0;
-    const startAngle = -1.5707963267948966; // -pi/2 (12 o'clock)
 
-    final trackPaint = Paint()
-      ..color = trackColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    final arcPaint = Paint()
-      ..color = arcColor
+    Paint stroke(Color color) => Paint()
+      ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
 
     final rect = Rect.fromCircle(center: center, radius: radius);
-
-    // Background track (full circle)
-    canvas.drawArc(rect, 0, 6.283185307179586, false, trackPaint);
-
-    // Remaining time arc (sweeps clockwise from 12 o'clock)
+    canvas.drawArc(rect, 0, _fullTurn, false, stroke(trackColor));
     if (fraction > 0) {
-      canvas.drawArc(rect, startAngle, fraction * 6.283185307179586, false, arcPaint);
+      canvas.drawArc(
+          rect, _twelveOClock, fraction * _fullTurn, false, stroke(arcColor));
     }
   }
 

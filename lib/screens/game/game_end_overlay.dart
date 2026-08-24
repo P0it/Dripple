@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/design/app_colors.dart';
+import '../../core/design/app_spacing.dart';
 import '../../models/game_state.dart';
 import '../../models/player.dart';
 
@@ -48,12 +49,14 @@ class GameEndOverlayState extends State<GameEndOverlay> {
       child: FadeTransition(
         opacity: widget.fadeAnimation,
         child: Container(
-          color: Colors.black.withAlpha(204), // ~80% opacity
+          // A scrim, not a blackout: the board stays faintly visible so the
+          // result reads as landing on top of the game rather than replacing it.
+          color: AppColors.textPrimary.withValues(alpha: 0.45),
           child: Center(
             child: Card(
-              margin: const EdgeInsets.symmetric(horizontal: 32),
+              margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
               ),
               child: Padding(
                 padding:
@@ -64,7 +67,7 @@ class GameEndOverlayState extends State<GameEndOverlay> {
                     Text(
                       'Game Over!',
                       style: TextStyle(
-                        fontSize: 28,
+                        fontSize: 26,
                         fontWeight: FontWeight.bold,
                         color: isHumanWinner
                             ? AppColors.success
@@ -127,7 +130,7 @@ class ScoreRow extends StatelessWidget {
                   player.name[0],
                   style: const TextStyle(
                     fontSize: 12,
-                    color: Colors.white,
+                    color: AppColors.surface,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

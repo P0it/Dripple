@@ -216,4 +216,54 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get difficultyHardDesc => 'AI가 이기려고 둡니다';
+
+  @override
+  String get turnStepDraw => '1  뽑기';
+
+  @override
+  String get turnStepAction => '2  내기';
+
+  @override
+  String get cardsLeft => '장';
+
+  @override
+  String get soundOff => '소리 끄기';
+
+  @override
+  String get soundOn => '소리 켜기';
+
+  @override
+  String get opponentThinking => '상대가 생각하고 있어요…';
+
+  @override
+  String get pickCardToDiscard => '버릴 카드를 톡 눌러요';
+
+  @override
+  String get cancel => '취소';
+
+  @override
+  String get drawNewCard => '새 카드';
+
+  @override
+  String deckRemaining(int count) {
+    return '$count장 남음';
+  }
+
+  @override
+  String get discardPile => '버린 카드';
+
+  @override
+  String get discardPileEmpty => '없어요';
+
+  @override
+  String get takeIt => '가져오기';
+
+  @override
+  String get completeSentence => '문장 완성';
+
+  @override
+  String get needTwoCards => '카드를 2장 이상 놓아요';
+
+  @override
+  String get discardACard => '카드 버리기';
 }

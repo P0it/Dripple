@@ -49,8 +49,14 @@ class DrippleGame extends FlameGame {
   double get _sentenceZoneY => size.y * 0.30;
   double get _handY => size.y * 0.74;
 
+  // Flame's backgroundColor and the raw ui.Paint calls below take dart:ui
+  // colours, so the tokens cannot be imported here. These mirror
+  // AppColors.background and AppColors.point — change them together.
+  static const _background = ui.Color(0xFFF7F8FA);
+  static const _point = ui.Color(0xFF1D74F5);
+
   @override
-  ui.Color backgroundColor() => const ui.Color(0xFFF0FDF4);
+  ui.Color backgroundColor() => _background;
 
   /// An empty sentence zone used to be blank space with no affordance — a
   /// child had no way to know cards belonged there. Draw the target.
@@ -73,9 +79,9 @@ class DrippleGame extends FlameGame {
 
     canvas.drawRRect(
       rrect,
-      ui.Paint()..color = const ui.Color(0x14059669),
+      ui.Paint()..color = _point.withValues(alpha: 0.05),
     );
-    _drawDashedRRect(canvas, rrect, const ui.Color(0x5510B981));
+    _drawDashedRRect(canvas, rrect, _point.withValues(alpha: 0.35));
 
     _dropHint.paint(
       canvas,
@@ -90,9 +96,10 @@ class DrippleGame extends FlameGame {
     text: const material.TextSpan(
       text: '여기에 카드를 올려\n문장을 만들어요',
       style: material.TextStyle(
-        color: ui.Color(0xFF10B981),
+        fontFamily: 'Pretendard',
+        color: _point,
         fontSize: 15,
-        fontWeight: material.FontWeight.w700,
+        fontWeight: material.FontWeight.w600,
         height: 1.4,
       ),
     ),

@@ -2,58 +2,88 @@ import 'package:dripple/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/design/app_colors.dart';
+import '../../core/design/app_spacing.dart';
+import '../../core/design/app_typography.dart';
 import '../../models/game_state.dart';
+import '../../models/player.dart';
 
+/// The AI opponents, and whose turn it is.
+///
+/// The active player is marked with a ring rather than a filled disc: a solid
+/// block of colour at this size reads as a button and invites a tap that does
+/// nothing.
 class OpponentsBar extends StatelessWidget {
-  final GameState gameState;
+  const OpponentsBar({super.key, required this.gameState});
 
-  const OpponentsBar({
-    super.key,required this.gameState});
+  final GameState gameState;
 
   @override
   Widget build(BuildContext context) {
     final opponents = gameState.players.where((p) => p.isAI).toList();
     if (opponents.isEmpty) return const SizedBox.shrink();
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: opponents.map((opp) {
-          final isCurrentTurn =
-              gameState.currentPlayer.id == opp.id;
-          return Column(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor:
-                    isCurrentTurn ? AppColors.point : Colors.grey.shade300,
-                child: Icon(
-                  Icons.smart_toy,
-                  color: isCurrentTurn ? Colors.white : Colors.grey,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                opp.name,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight:
-                      isCurrentTurn ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-              Text(
-                AppLocalizations.of(context)!.nCards(opp.hand.length),
-                style: TextStyle(
-                  fontSize: 10,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          );
-        }).toList(),
+        children: [
+          for (final opponent in opponents)
+            _Opponent(
+              opponent: opponent,
+              isTheirTurn: gameState.currentPlayer.id == opponent.id,
+            ),
+        ],
       ),
+    );
+  }
+}
+
+class _Opponent extends StatelessWidget {
+  const _Opponent({required this.opponent, required this.isTheirTurn});
+
+  final Player opponent;
+  final bool isTheirTurn;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isTheirTurn ? AppColors.pointTint : AppColors.background,
+            border: Border.all(
+              color: isTheirTurn ? AppColors.point : AppColors.divider,
+              width: isTheirTurn ? 2 : 1,
+            ),
+          ),
+          child: Icon(
+            Icons.smart_toy_outlined,
+            size: 20,
+            color:
+                isTheirTurn ? AppColors.point : AppColors.textDisabled,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          opponent.name,
+          style: AppTypography.caption.copyWith(
+            color: isTheirTurn ? AppColors.textPrimary : AppColors.textSecondary,
+            fontWeight: isTheirTurn ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+        Text(
+          l10n.nCards(opponent.hand.length),
+          style: AppTypography.caption.copyWith(fontSize: 11),
+        ),
+      ],
     );
   }
 }

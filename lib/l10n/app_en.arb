@@ -141,5 +141,28 @@
   "difficultyMedium": "Medium",
   "difficultyMediumDesc": "A fair match",
   "difficultyHard": "Hard",
-  "difficultyHardDesc": "The AI plays to win"
+  "difficultyHardDesc": "The AI plays to win",
+  "turnStepDraw": "1  Draw",
+  "turnStepAction": "2  Play",
+  "cardsLeft": "left",
+  "soundOff": "Mute",
+  "soundOn": "Unmute",
+  "opponentThinking": "Thinking…",
+  "pickCardToDiscard": "Tap the card you want to throw away",
+  "cancel": "Cancel",
+  "drawNewCard": "New card",
+  "deckRemaining": "{count} left",
+  "discardPile": "Thrown away",
+  "discardPileEmpty": "Nothing here",
+  "takeIt": "Take it",
+  "completeSentence": "Make a sentence",
+  "needTwoCards": "Put down two or more cards",
+  "discardACard": "Throw a card away",
+  "@deckRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

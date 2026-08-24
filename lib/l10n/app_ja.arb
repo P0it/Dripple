@@ -62,5 +62,21 @@
   "difficultyMedium": "ふつう",
   "difficultyMediumDesc": "ちょうどいい相手",
   "difficultyHard": "むずかしい",
-  "difficultyHardDesc": "AIが本気で勝ちにきます"
+  "difficultyHardDesc": "AIが本気で勝ちにきます",
+  "turnStepDraw": "1  ひく",
+  "turnStepAction": "2  だす",
+  "cardsLeft": "枚",
+  "soundOff": "音を消す",
+  "soundOn": "音を出す",
+  "opponentThinking": "あいてがかんがえています…",
+  "pickCardToDiscard": "すてるカードをタップしてね",
+  "cancel": "キャンセル",
+  "drawNewCard": "あたらしいカード",
+  "deckRemaining": "のこり{count}まい",
+  "discardPile": "すてたカード",
+  "discardPileEmpty": "ありません",
+  "takeIt": "とる",
+  "completeSentence": "ぶんをつくる",
+  "needTwoCards": "カードを2まいいじょうおいてね",
+  "discardACard": "カードをすてる"
 }

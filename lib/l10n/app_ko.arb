@@ -62,5 +62,21 @@
   "difficultyMedium": "보통",
   "difficultyMediumDesc": "해볼 만한 상대",
   "difficultyHard": "어려움",
-  "difficultyHardDesc": "AI가 이기려고 둡니다"
+  "difficultyHardDesc": "AI가 이기려고 둡니다",
+  "turnStepDraw": "1  뽑기",
+  "turnStepAction": "2  내기",
+  "cardsLeft": "장",
+  "soundOff": "소리 끄기",
+  "soundOn": "소리 켜기",
+  "opponentThinking": "상대가 생각하고 있어요…",
+  "pickCardToDiscard": "버릴 카드를 톡 눌러요",
+  "cancel": "취소",
+  "drawNewCard": "새 카드",
+  "deckRemaining": "{count}장 남음",
+  "discardPile": "버린 카드",
+  "discardPileEmpty": "없어요",
+  "takeIt": "가져오기",
+  "completeSentence": "문장 완성",
+  "needTwoCards": "카드를 2장 이상 놓아요",
+  "discardACard": "카드 버리기"
 }

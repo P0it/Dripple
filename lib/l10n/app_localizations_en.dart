@@ -216,4 +216,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get difficultyHardDesc => 'The AI plays to win';
+
+  @override
+  String get turnStepDraw => '1  Draw';
+
+  @override
+  String get turnStepAction => '2  Play';
+
+  @override
+  String get cardsLeft => 'left';
+
+  @override
+  String get soundOff => 'Mute';
+
+  @override
+  String get soundOn => 'Unmute';
+
+  @override
+  String get opponentThinking => 'Thinking…';
+
+  @override
+  String get pickCardToDiscard => 'Tap the card you want to throw away';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get drawNewCard => 'New card';
+
+  @override
+  String deckRemaining(int count) {
+    return '$count left';
+  }
+
+  @override
+  String get discardPile => 'Thrown away';
+
+  @override
+  String get discardPileEmpty => 'Nothing here';
+
+  @override
+  String get takeIt => 'Take it';
+
+  @override
+  String get completeSentence => 'Make a sentence';
+
+  @override
+  String get needTwoCards => 'Put down two or more cards';
+
+  @override
+  String get discardACard => 'Throw a card away';
 }
