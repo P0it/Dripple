@@ -5,10 +5,10 @@ import 'package:dripple/models/word_card.dart';
 
 WordCard _pron(String w) => WordCard(
     id: 'p_$w', word: w, pos: PartOfSpeech.pronoun,
-    person: 1, number: 'plural');
+    person: 1, number: 'plural', animacy: Animacy.animate);
 WordCard _noun(String w) => WordCard(
     id: 'n_$w', word: w, pos: PartOfSpeech.noun, person: 3,
-    number: 'plural', countable: true);
+    number: 'plural', countable: true, animacy: Animacy.inanimate);
 WordCard _adj(String w) =>
     WordCard(id: 'a_$w', word: w, pos: PartOfSpeech.adjective);
 WordCard _adv(String w, AdverbKind kind) => WordCard(

@@ -43,6 +43,12 @@ enum AdverbKind {
   degree,
 }
 
+/// Whether a noun names something that can act.
+///
+/// Lets the engine reject "the flower reads" — grammatical, but the kind of
+/// sentence that teaches a child the wrong thing.
+enum Animacy { animate, inanimate }
+
 /// Montessori grammar symbol shapes. A child who cannot yet read the word
 /// can still see the shape of the sentence.
 enum PosShape {
@@ -70,9 +76,16 @@ class WordCard extends Equatable {
   /// predate valency data parsing.
   final Set<VerbFrame>? frames;
 
+  /// Nouns and pronouns. Null means unconstrained.
+  final Animacy? animacy;
+
   /// Adverb cards only. Null means the adverb may sit in any of the three
   /// positions, which keeps older fixtures parsing.
   final AdverbKind? adverbKind;
+
+  /// Verb cards only. When true the subject must be [Animacy.animate], so
+  /// "the star eats" fails while "the girl eats" passes.
+  final bool requiresAnimateSubject;
   final Map<String, String> meanings; // {"ko": "...", "ja": "...", "en": "..."}
 
   const WordCard({
@@ -86,7 +99,9 @@ class WordCard extends Equatable {
     this.vowelStart,
     this.adjOrder,
     this.frames,
+    this.animacy,
     this.adverbKind,
+    this.requiresAnimateSubject = false,
     this.meanings = const {},
   });
 
@@ -171,7 +186,7 @@ class WordCard extends Equatable {
 
   @override
   List<Object?> get props =>
-      [id, word, type, pos, person, number, frames];
+      [id, word, type, pos, person, number, frames, animacy];
 
   @override
   String toString() => 'WordCard($word, ${type == CardType.word ? pos?.name : type.name})';
