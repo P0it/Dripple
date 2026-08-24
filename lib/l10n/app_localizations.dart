@@ -435,6 +435,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Share the room code with your friends'**
   String get shareRoomCode;
+
+  /// No description provided for @aiDifficulty.
+  ///
+  /// In en, this message translates to:
+  /// **'Difficulty'**
+  String get aiDifficulty;
+
+  /// No description provided for @difficultyEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get difficultyEasy;
+
+  /// No description provided for @difficultyEasyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Relaxed — good for a first game'**
+  String get difficultyEasyDesc;
+
+  /// No description provided for @difficultyMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get difficultyMedium;
+
+  /// No description provided for @difficultyMediumDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A fair match'**
+  String get difficultyMediumDesc;
+
+  /// No description provided for @difficultyHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get difficultyHard;
+
+  /// No description provided for @difficultyHardDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI plays to win'**
+  String get difficultyHardDesc;
 }
 
 class _AppLocalizationsDelegate

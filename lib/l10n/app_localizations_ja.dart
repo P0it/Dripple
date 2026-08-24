@@ -195,4 +195,25 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get shareRoomCode => 'ルームコードを友達に共有してください';
+
+  @override
+  String get aiDifficulty => '難易度';
+
+  @override
+  String get difficultyEasy => 'やさしい';
+
+  @override
+  String get difficultyEasyDesc => 'のんびり — はじめてならここから';
+
+  @override
+  String get difficultyMedium => 'ふつう';
+
+  @override
+  String get difficultyMediumDesc => 'ちょうどいい相手';
+
+  @override
+  String get difficultyHard => 'むずかしい';
+
+  @override
+  String get difficultyHardDesc => 'AIが本気で勝ちにきます';
 }

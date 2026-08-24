@@ -195,4 +195,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shareRoomCode => 'Share the room code with your friends';
+
+  @override
+  String get aiDifficulty => 'Difficulty';
+
+  @override
+  String get difficultyEasy => 'Easy';
+
+  @override
+  String get difficultyEasyDesc => 'Relaxed — good for a first game';
+
+  @override
+  String get difficultyMedium => 'Medium';
+
+  @override
+  String get difficultyMediumDesc => 'A fair match';
+
+  @override
+  String get difficultyHard => 'Hard';
+
+  @override
+  String get difficultyHardDesc => 'The AI plays to win';
 }

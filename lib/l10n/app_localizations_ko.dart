@@ -195,4 +195,25 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get shareRoomCode => '방 코드를 친구에게 공유하세요';
+
+  @override
+  String get aiDifficulty => '난이도';
+
+  @override
+  String get difficultyEasy => '쉬움';
+
+  @override
+  String get difficultyEasyDesc => '느긋하게 — 처음이라면 여기부터';
+
+  @override
+  String get difficultyMedium => '보통';
+
+  @override
+  String get difficultyMediumDesc => '해볼 만한 상대';
+
+  @override
+  String get difficultyHard => '어려움';
+
+  @override
+  String get difficultyHardDesc => 'AI가 이기려고 둡니다';
 }

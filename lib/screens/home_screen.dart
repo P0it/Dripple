@@ -1,11 +1,20 @@
-import 'package:flutter/material.dart';
 import 'package:dripple/l10n/app_localizations.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../character/character_widget.dart';
-import '../core/game_feedback.dart';
-import '../core/theme/app_theme.dart';
 
+import '../core/brand/dripple_mark.dart';
+import '../core/design/app_colors.dart';
+import '../core/design/app_spacing.dart';
+import '../core/design/app_typography.dart';
+import '../core/game_feedback.dart';
+
+/// The front door.
+///
+/// One thing to do, one way to change it. The character moved to the board,
+/// where it belongs; the Character and Ranking buttons that used to sit here
+/// were wired to null, and a button a child can press that does nothing is
+/// worse than no button at all.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -18,6 +27,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref.read(gameFeedbackProvider).playMenuMusic();
     });
   }
@@ -25,102 +35,50 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final feedback = ref.read(gameFeedbackProvider);
 
     return Scaffold(
-      body: Container(
-        color: AppColors.background,
-        child: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Spacer(flex: 2),
-                // Character (placeholder — will use Rive when assets are ready)
-                const CharacterWidget(
-                  characterId: 'default',
-                  size: 160,
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  l10n.appTitle.toUpperCase(),
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 4,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  l10n.wordCardBattle,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white.withAlpha(220),
-                      ),
-                ),
-                const Spacer(),
-                SizedBox(
-                  width: 220,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      feedback.onButtonTap();
-                      context.push('/mode-select');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: AppColors.point,
-                    ),
-                    child: Text(
-                      l10n.play,
-                      style: const TextStyle(
-                          fontSize: 22, fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _navButton(Icons.person, l10n.character, null),
-                    const SizedBox(width: 24),
-                    _navButton(Icons.leaderboard, l10n.ranking, null),
-                    const SizedBox(width: 24),
-                    _navButton(Icons.settings, l10n.settings, () {
-                      feedback.onButtonTap();
-                      context.push('/settings');
-                    }),
-                  ],
-                ),
-                const Spacer(flex: 1),
-              ],
-            ),
+      backgroundColor: AppColors.surface,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Spacer(flex: 3),
+              const Center(child: DrippleMark(size: 96)),
+              const SizedBox(height: AppSpacing.xl),
+              Text(
+                'Dripple',
+                textAlign: TextAlign.center,
+                style: AppTypography.display.copyWith(letterSpacing: -0.5),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                l10n.wordCardBattle,
+                textAlign: TextAlign.center,
+                style: AppTypography.body
+                    .copyWith(color: AppColors.textSecondary),
+              ),
+              const Spacer(flex: 4),
+              ElevatedButton(
+                onPressed: () => _go(context, '/mode-select'),
+                child: Text(l10n.play),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              TextButton(
+                onPressed: () => _go(context, '/settings'),
+                child: Text(l10n.settings),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _navButton(IconData icon, String label, VoidCallback? onPressed) {
-    return Semantics(
-      label: label,
-      button: true,
-      enabled: onPressed != null,
-      child: Column(
-        children: [
-          Opacity(
-            opacity: onPressed != null ? 1.0 : 0.5,
-            child: IconButton(
-              onPressed: onPressed,
-              tooltip: label,
-              icon: Icon(icon, color: Colors.white, size: 28),
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(color: Colors.white.withAlpha(220), fontSize: 12),
-          ),
-        ],
-      ),
-    );
+  void _go(BuildContext context, String route) {
+    ref.read(gameFeedbackProvider).onButtonTap();
+    context.push(route);
   }
 }

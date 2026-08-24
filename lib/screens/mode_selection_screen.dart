@@ -1,10 +1,16 @@
-import 'package:flutter/material.dart';
 import 'package:dripple/l10n/app_localizations.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../core/theme/app_theme.dart';
-import '../models/word_card.dart';
+
+import '../core/design/app_colors.dart';
+import '../core/design/app_spacing.dart';
+import '../core/design/app_typography.dart';
 import '../engine/ai/ai_player.dart';
 
+/// Pick an opponent, then pick how hard it plays.
+///
+/// Selection is marked with a border and a tint rather than a filled block:
+/// a solid colour reads as "pressed" and leaves nowhere for the text to sit.
 class ModeSelectionScreen extends StatelessWidget {
   const ModeSelectionScreen({super.key});
 
@@ -13,203 +19,194 @@ class ModeSelectionScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.selectMode),
-        backgroundColor: AppColors.point,
-        foregroundColor: Colors.white,
-      ),
-      body: Container(
-        color: AppColors.background,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 32),
-                _ModeCard(
-                  icon: Icons.smart_toy,
-                  title: l10n.aiBattle,
-                  subtitle: l10n.aiBattleDesc,
-                  enabled: true,
-                  onTap: () => _showDifficultyDialog(context, l10n),
-                ),
-                const SizedBox(height: 16),
-                _ModeCard(
-                  icon: Icons.public,
-                  title: l10n.onlineBattle,
-                  subtitle: l10n.onlineBattleDesc,
-                  enabled: false,
-                  badge: l10n.comingSoon,
-                ),
-                const SizedBox(height: 16),
-                _ModeCard(
-                  icon: Icons.group,
-                  title: l10n.friendBattle,
-                  subtitle: l10n.friendBattleDesc,
-                  enabled: false,
-                  badge: l10n.comingSoon,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Step 1: pick a difficulty level.
-  void _showDifficultyDialog(BuildContext context, AppLocalizations l10n) {
-    showDialog<AIDifficulty>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('AI Difficulty'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+      backgroundColor: AppColors.background,
+      appBar: AppBar(title: Text(l10n.selectMode)),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xl),
           children: [
-            _DifficultyTile(
-              difficulty: AIDifficulty.easy,
-              label: 'Easy',
-              description: 'Relaxed – great for beginners',
-              icon: Icons.sentiment_satisfied_alt,
-              color: Colors.green,
-              onTap: () => Navigator.of(ctx).pop(AIDifficulty.easy),
+            _ModeCell(
+              icon: Icons.smart_toy_outlined,
+              title: l10n.aiBattle,
+              subtitle: l10n.aiBattleDesc,
+              onTap: () => _pickDifficulty(context, l10n),
             ),
-            _DifficultyTile(
-              difficulty: AIDifficulty.medium,
-              label: 'Medium',
-              description: 'Balanced – the default challenge',
-              icon: Icons.sentiment_neutral,
-              color: Colors.orange,
-              onTap: () => Navigator.of(ctx).pop(AIDifficulty.medium),
+            _ModeCell(
+              icon: Icons.public,
+              title: l10n.onlineBattle,
+              subtitle: l10n.onlineBattleDesc,
+              badge: l10n.comingSoon,
             ),
-            _DifficultyTile(
-              difficulty: AIDifficulty.hard,
-              label: 'Hard',
-              description: 'Ruthless – for experienced players',
-              icon: Icons.sentiment_very_dissatisfied,
-              color: Colors.red,
-              onTap: () => Navigator.of(ctx).pop(AIDifficulty.hard),
+            _ModeCell(
+              icon: Icons.group_outlined,
+              title: l10n.friendBattle,
+              subtitle: l10n.friendBattleDesc,
+              badge: l10n.comingSoon,
             ),
           ],
         ),
       ),
-    ).then((difficulty) {
-      if (difficulty != null && context.mounted) {
-        // Player count is fixed at four: JUMP and STEAL only matter with
-        // opponents to point them at, and asking a child two questions
-        // before the game starts is one too many.
-        context.push('/game?players=4&difficulty=${difficulty.name}');
-      }
-    });
-  }
-
-}
-
-// ---------------------------------------------------------------------------
-// Difficulty tile used inside the difficulty dialog
-// ---------------------------------------------------------------------------
-
-class _DifficultyTile extends StatelessWidget {
-  final AIDifficulty difficulty;
-  final String label;
-  final String description;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _DifficultyTile({
-    required this.difficulty,
-    required this.label,
-    required this.description,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(label, style: TextStyle(fontWeight: FontWeight.bold, color: color)),
-      subtitle: Text(description, style: const TextStyle(fontSize: 12)),
-      onTap: onTap,
     );
   }
+
+  Future<void> _pickDifficulty(
+      BuildContext context, AppLocalizations l10n) async {
+    final choice = await showModalBottomSheet<AIDifficulty>(
+      context: context,
+      builder: (sheet) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.sm),
+              child: Text(l10n.aiDifficulty, style: AppTypography.heading),
+            ),
+            _DifficultyCell(
+              label: l10n.difficultyEasy,
+              description: l10n.difficultyEasyDesc,
+              onTap: () => Navigator.of(sheet).pop(AIDifficulty.easy),
+            ),
+            _DifficultyCell(
+              label: l10n.difficultyMedium,
+              description: l10n.difficultyMediumDesc,
+              onTap: () => Navigator.of(sheet).pop(AIDifficulty.medium),
+            ),
+            _DifficultyCell(
+              label: l10n.difficultyHard,
+              description: l10n.difficultyHardDesc,
+              onTap: () => Navigator.of(sheet).pop(AIDifficulty.hard),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+        ),
+      ),
+    );
+
+    if (choice == null || !context.mounted) return;
+    // Player count is fixed at four: JUMP and STEAL only matter with
+    // opponents to point them at, and asking a child two questions before
+    // the game starts is one too many.
+    context.push('/game?players=4&difficulty=${choice.name}');
+  }
 }
 
-// ---------------------------------------------------------------------------
-// Mode card widget (unchanged from original)
-// ---------------------------------------------------------------------------
-
-class _ModeCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool enabled;
-  final String? badge;
-  final VoidCallback? onTap;
-
-  const _ModeCard({
+/// One opponent option.
+class _ModeCell extends StatelessWidget {
+  const _ModeCell({
     required this.icon,
     required this.title,
     required this.subtitle,
-    required this.enabled,
     this.badge,
     this.onTap,
   });
 
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String? badge;
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: enabled ? 1.0 : 0.5,
-      child: Card(
+    final enabled = onTap != null;
+    final foreground =
+        enabled ? AppColors.textPrimary : AppColors.textDisabled;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Material(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
         child: InkWell(
-          onTap: enabled ? onTap : null,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: AppSpacing.minTouch + 20),
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+              border: Border.all(color: AppColors.divider),
+            ),
             child: Row(
               children: [
-                Icon(icon, size: 40, color: AppColors.point),
-                const SizedBox(width: 16),
+                Icon(icon,
+                    size: 28,
+                    color: enabled ? AppColors.point : AppColors.textDisabled),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        subtitle,
-                        style: TextStyle(color: AppColors.textSecondary),
-                      ),
+                      Text(title,
+                          style: AppTypography.label
+                              .copyWith(fontSize: 17, color: foreground)),
+                      const SizedBox(height: 2),
+                      Text(subtitle, style: AppTypography.caption),
                     ],
                   ),
                 ),
-                if (badge != null)
+                if (badge case final text?)
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                     decoration: BoxDecoration(
-                      color: AppColors.specialCard(CardType.jump),
-                      borderRadius: BorderRadius.circular(8),
+                      color: AppColors.background,
+                      borderRadius:
+                          BorderRadius.circular(AppSpacing.radiusSm),
                     ),
-                    child: Text(
-                      badge!,
-                      style: const TextStyle(
-                          fontSize: 10, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                if (enabled)
-                  const Icon(Icons.chevron_right, color: AppColors.point),
+                    child: Text(text, style: AppTypography.caption),
+                  )
+                else if (enabled)
+                  const Icon(Icons.chevron_right,
+                      color: AppColors.textDisabled),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One difficulty row inside the sheet.
+class _DifficultyCell extends StatelessWidget {
+  const _DifficultyCell({
+    required this.label,
+    required this.description,
+    required this.onTap,
+  });
+
+  final String label;
+  final String description;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: AppSpacing.minTouch + 8),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(label, style: AppTypography.body),
+                  const SizedBox(height: 2),
+                  Text(description, style: AppTypography.caption),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.textDisabled),
+          ],
         ),
       ),
     );

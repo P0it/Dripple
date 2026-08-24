@@ -1,13 +1,11 @@
 {
   "@@locale": "ja",
-
   "appTitle": "Dripple",
   "wordCardBattle": "単語カードバトル",
   "play": "プレイ",
   "character": "キャラ",
   "ranking": "ランキング",
   "settings": "設定",
-
   "selectMode": "モード選択",
   "aiBattle": "AI対戦",
   "aiBattleDesc": "AIと対戦",
@@ -24,17 +22,14 @@
   "draw": "引く",
   "undo": "戻す",
   "submit": "提出",
-
   "correct": "正解！",
   "incorrect": "不正解！",
   "pointsEarned": "+{points}ポイント",
-
   "gameOver": "ゲーム終了！",
   "home": "ホーム",
   "playAgain": "もう一回",
   "combo": "コンボ: {count}x",
   "pts": "点",
-
   "errorArticleAVowel": "母音で始まる単語「{word}」の前には「an」を使います",
   "errorArticleAnConsonant": "子音で始まる単語「{word}」の前には「a」を使います",
   "errorArticlePlural": "「{article}」は複数名詞「{noun}」と一緒に使えません",
@@ -44,7 +39,6 @@
   "errorInvalidStructure": "無効な文構造です",
   "errorEmptySentence": "文を入力してください",
   "errorTooShort": "文には最低2つの単語が必要です",
-
   "audio": "オーディオ",
   "soundEffects": "効果音",
   "soundEffectsDesc": "カード音、判定音など",
@@ -61,5 +55,12 @@
   "you": "あなた",
   "waiting": "待機中...",
   "waitingForPlayers": "{count}人のプレイヤーを待っています...",
-  "shareRoomCode": "ルームコードを友達に共有してください"
+  "shareRoomCode": "ルームコードを友達に共有してください",
+  "aiDifficulty": "難易度",
+  "difficultyEasy": "やさしい",
+  "difficultyEasyDesc": "のんびり — はじめてならここから",
+  "difficultyMedium": "ふつう",
+  "difficultyMediumDesc": "ちょうどいい相手",
+  "difficultyHard": "むずかしい",
+  "difficultyHardDesc": "AIが本気で勝ちにきます"
 }
