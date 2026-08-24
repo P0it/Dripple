@@ -123,7 +123,7 @@ lib/
 │   │   ├── app_typography.dart   #   Pretendard, three weights
 │   │   ├── app_spacing.dart      #   4pt grid, three radii, 56px touch floor
 │   │   └── app_theme.dart        #   ThemeData assembled from the tokens
-│   ├── brand/dripple_mark.dart   # The drop-and-ripple mark, drawn not bundled
+│   ├── brand/dripple_mark.dart   # The bouncing-dots mark, drawn not bundled
 │   ├── sound_manager.dart        # SFX + BGM with crossfade
 │   ├── haptic_manager.dart       # Vibration patterns
 │   └── game_feedback.dart        # Unified audio + haptic controller

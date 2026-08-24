@@ -5,7 +5,8 @@ import '../core/design/app_colors.dart';
 import '../core/design/app_spacing.dart';
 import '../core/design/app_typography.dart';
 
-/// The first screen: a drop lands, ripples spread, the wordmark arrives.
+/// The first screen: three dots bounce along the line, then the wordmark
+/// arrives.
 ///
 /// [onFinished] is injected rather than navigating directly, so the timeline
 /// can be tested without standing up a router.
@@ -38,7 +39,7 @@ class _SplashScreenState extends State<SplashScreen>
       })
       ..forward();
 
-    // 0.14–0.64 of 1400ms is 200ms–900ms: the fall and the ripples.
+    // 0.14–0.64 of 1400ms is 200ms–900ms: the three staggered bounces.
     _mark = CurvedAnimation(
       parent: _controller,
       curve: const Interval(0.14, 0.64),
