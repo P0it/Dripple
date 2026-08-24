@@ -130,6 +130,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     if (!mounted) return;
 
     if (result.isCorrect) {
+      _game.playSuccessSweep();
       await feedback.onCorrectAnswer();
     } else {
       await feedback.onIncorrectAnswer();

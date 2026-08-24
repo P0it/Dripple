@@ -8,6 +8,7 @@ import '../models/word_card.dart';
 import 'card_painter.dart';
 import 'card_row_layout.dart';
 import 'components/card_component.dart';
+import 'components/sweep_component.dart';
 import 'components/pile_component.dart';
 
 typedef OnCardPlaced = void Function(int handIndex, int insertAt);
@@ -70,6 +71,16 @@ class DrippleGame extends FlameGame {
       (CardRowLayout.cardHeight + _bandInset * 2) / 2 -
       CardPainter.defaultHeight * _pileScale -
       8;
+
+  /// Where each card was standing when its component was last torn down.
+  ///
+  /// A card that moves between the hand and the sentence zone is a *removal*
+  /// in one list and an *addition* in the other, so without this the new
+  /// component has no idea the card was already on the board and flies in from
+  /// the deck. Entries live exactly one frame — both list updates happen
+  /// inside a single widget build, and anything not claimed by the next tick
+  /// belongs to a card that left the board.
+  final Map<String, Vector2> _lastSeen = {};
 
   /// When true the hand is a discard picker: cards are marked and a tap
   /// throws the card away instead of playing it.
@@ -283,6 +294,7 @@ class DrippleGame extends FlameGame {
     // Remove components no longer in the list
     existingComponents.removeWhere((comp) {
       if (!newIds.contains(comp.card.id)) {
+        _lastSeen[comp.card.id] = comp.position.clone();
         comp.removeFromParent();
         return true;
       }
@@ -392,12 +404,35 @@ class DrippleGame extends FlameGame {
         comp.markedForDiscard = !isSentenceZone && _discardMode;
         updatedComponents.add(comp);
         add(comp);
+
+        // Where the card is coming from: the slot it just left if it was
+        // already on the board, otherwise the deck — because that is literally
+        // where a new card comes from.
+        final origin = _lastSeen.remove(cardId) ??
+            (isSentenceZone ? null : _deck?.position.clone());
+        if (origin != null) comp.dealIn(origin, targetPos);
       }
     }
 
     existingComponents
       ..clear()
       ..addAll(updatedComponents);
+  }
+
+  /// Runs a light across the sentence well.
+  ///
+  /// Called when a sentence parses. The board says so a beat before the
+  /// judgment sheet does, which is where the player is already looking.
+  void playSuccessSweep() {
+    add(
+      SweepComponent(
+        bounds: _band(
+          _sentenceZoneY,
+          _sentenceZone.length,
+          minHeight: CardRowLayout.cardHeight,
+        ),
+      ),
+    );
   }
 
   bool _listsEqual(List<WordCard> a, List<WordCard> b) {
@@ -452,6 +487,8 @@ class DrippleGame extends FlameGame {
   @override
   void update(double dt) {
     super.update(dt);
+    _lastSeen.clear();
+
     final discard = _discard;
     if (discard == null) return;
 
