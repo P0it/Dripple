@@ -23,6 +23,7 @@ drill app.
 - **Haptics:** vibration — 6 intensity patterns for game events
 - **State Management:** Riverpod
 - **Routing:** GoRouter with fade transitions
+- **Design System:** `lib/core/design/` tokens + bundled Pretendard (no `google_fonts`)
 - **Grammar Engine:** Custom rule-based (Dart) — $0 operational cost
 - **AI Player:** Custom rule-based (Dart) — offline capable
 
@@ -102,7 +103,12 @@ checked only for animacy; the engine has no opinion on "water has apples".
 lib/
 ├── main.dart / app.dart          # Entry point + routing
 ├── core/
-│   ├── theme/app_theme.dart      # Design system (Duolingo-inspired green gradient)
+│   ├── design/                   # Design system — the only place a colour lives
+│   │   ├── app_colors.dart       #   one accent (#1D74F5), no gradients
+│   │   ├── app_typography.dart   #   Pretendard, three weights
+│   │   ├── app_spacing.dart      #   4pt grid, three radii, 56px touch floor
+│   │   └── app_theme.dart        #   ThemeData assembled from the tokens
+│   ├── brand/dripple_mark.dart   # The drop-and-ripple mark, drawn not bundled
 │   ├── sound_manager.dart        # SFX + BGM with crossfade
 │   ├── haptic_manager.dart       # Vibration patterns
 │   └── game_feedback.dart        # Unified audio + haptic controller
@@ -170,7 +176,12 @@ lib/
    sentence-zone reorder was hand-built inside Flame rather than swapping to
    Flutter widgets. Known cost: screen readers cannot see the Flame canvas.
 7. **$0 operational cost** for core gameplay — grammar engine and AI are fully client-side
-8. **Duolingo-level UX** — Rive animations, haptic feedback, polished audio
+8. **Restraint over decoration** — a near-white ground, one accent colour, no
+   gradients, and no shadows outside the card art. Hierarchy comes from weight
+   and whitespace. Ergonomics are scaled up for 6-10 year olds instead: a 56px
+   touch floor, 60px buttons, and card type sized to be read across a table.
+   `test/core/design/no_legacy_theme_test.dart` fails if a hex literal, a
+   gradient, or a BoxShadow reappears in a screen.
 
 ## Development
 

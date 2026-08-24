@@ -173,5 +173,10 @@
         "type": "int"
       }
     }
-  }
+  },
+  "jumpDesc": "Skips the next player's turn.",
+  "use": "Use it",
+  "stealDesc": "Pick someone, then pick a card to give them.",
+  "stealFromWho": "Who do you take from?",
+  "stealGiveWhat": "Which card do you give?"
 }

@@ -274,4 +274,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String cardsLeftLabel(int count) {
     return 'のこり$countまい';
   }
+
+  @override
+  String get jumpDesc => 'つぎのひとのばんをとばします。';
+
+  @override
+  String get use => 'つかう';
+
+  @override
+  String get stealDesc => 'あいてをえらんで、かわりにわたすカードをえらんでね。';
+
+  @override
+  String get stealFromWho => 'だれからとる？';
+
+  @override
+  String get stealGiveWhat => 'どのカードをわたす？';
 }

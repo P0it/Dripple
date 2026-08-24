@@ -4,7 +4,7 @@ import 'package:dripple/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../core/game_feedback.dart';
-import '../core/theme/app_theme.dart';
+import '../core/design/app_colors.dart';
 import '../engine/ai/ai_player.dart';
 import '../game/dripple_game.dart';
 import '../models/game_state.dart';

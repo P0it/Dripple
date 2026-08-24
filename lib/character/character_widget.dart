@@ -1,5 +1,7 @@
-import '../core/game_icons.dart';
 import 'package:flutter/material.dart';
+
+import '../core/design/app_colors.dart';
+import '../core/game_icons.dart';
 import 'character_emotion.dart';
 
 /// Character display widget.
@@ -80,73 +82,44 @@ class _CharacterWidgetState extends State<CharacterWidget>
   }
 }
 
-/// Placeholder character using Flutter widgets until Rive assets are ready
+/// Placeholder face, drawn in the same visual language as the brand mark,
+/// until Rive assets exist.
+///
+/// The old version filled the circle and the face with the same colour, so
+/// the face was invisible. Emotion is now carried by the face shape alone —
+/// the icons already differ per emotion, and a second colour system competing
+/// with the part-of-speech palette would teach a child nothing.
 class _PlaceholderCharacter extends StatelessWidget {
+  const _PlaceholderCharacter({required this.emotion, required this.size});
+
   final CharacterEmotion emotion;
   final double size;
-
-  const _PlaceholderCharacter({
-    required this.emotion,
-    required this.size,
-  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: _bgColor,
+      decoration: const BoxDecoration(
+        color: AppColors.pointTint,
         shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: _bgColor.withAlpha(77),
-            blurRadius: 8,
-            spreadRadius: 2,
-          ),
-        ],
       ),
       child: Center(
         child: GameIconView(
           _emotionIcon,
           size: size * 0.55,
-          color: _bgColor,
+          color: AppColors.point,
         ),
       ),
     );
   }
 
-  Color get _bgColor {
-    switch (emotion) {
-      case CharacterEmotion.idle:
-        return const Color(0xFF86EFAC);
-      case CharacterEmotion.happy:
-        return const Color(0xFF22C55E);
-      case CharacterEmotion.sad:
-        return const Color(0xFF93C5FD);
-      case CharacterEmotion.taunt:
-        return const Color(0xFFFBBF24);
-      case CharacterEmotion.shocked:
-        return const Color(0xFFF97316);
-      case CharacterEmotion.celebrate:
-        return const Color(0xFFA855F7);
-    }
-  }
-
-  GameIcon get _emotionIcon {
-    switch (emotion) {
-      case CharacterEmotion.idle:
-        return GameIcon.faceIdle;
-      case CharacterEmotion.happy:
-        return GameIcon.faceHappy;
-      case CharacterEmotion.sad:
-        return GameIcon.faceSad;
-      case CharacterEmotion.taunt:
-        return GameIcon.faceSmug;
-      case CharacterEmotion.shocked:
-        return GameIcon.faceShocked;
-      case CharacterEmotion.celebrate:
-        return GameIcon.faceCelebrate;
-    }
-  }
+  GameIcon get _emotionIcon => switch (emotion) {
+        CharacterEmotion.idle => GameIcon.faceIdle,
+        CharacterEmotion.happy => GameIcon.faceHappy,
+        CharacterEmotion.sad => GameIcon.faceSad,
+        CharacterEmotion.taunt => GameIcon.faceSmug,
+        CharacterEmotion.shocked => GameIcon.faceShocked,
+        CharacterEmotion.celebrate => GameIcon.faceCelebrate,
+      };
 }

@@ -80,5 +80,10 @@
   "needTwoCards": "カードを2まいいじょうおいてね",
   "discardACard": "カードをすてる",
   "winner": "ゆうしょう",
-  "cardsLeftLabel": "のこり{count}まい"
+  "cardsLeftLabel": "のこり{count}まい",
+  "jumpDesc": "つぎのひとのばんをとばします。",
+  "use": "つかう",
+  "stealDesc": "あいてをえらんで、かわりにわたすカードをえらんでね。",
+  "stealFromWho": "だれからとる？",
+  "stealGiveWhat": "どのカードをわたす？"
 }

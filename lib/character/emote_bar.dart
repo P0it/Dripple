@@ -1,8 +1,10 @@
-import '../core/theme/app_theme.dart';
-import '../core/game_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../core/design/app_colors.dart';
+import '../core/design/app_spacing.dart';
 import '../core/game_feedback.dart';
+import '../core/game_icons.dart';
 import 'emote_system.dart';
 
 /// Emote bar with 5 character expression buttons.
@@ -17,13 +19,14 @@ class EmoteBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final emoteState = ref.watch(emoteProvider);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: EmoteType.values.map((emote) {
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
             child: _EmoteButton(
               emote: emote,
               isOnCooldown: emoteState.isOnCooldown,
@@ -62,24 +65,22 @@ class _EmoteButton extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           opacity: isOnCooldown ? 0.4 : 1.0,
           child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 4,
-                offset: Offset(0, 2),
+            width: AppSpacing.minTouch,
+            height: AppSpacing.minTouch,
+            decoration: const BoxDecoration(
+              color: AppColors.background,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: GameIconView(
+                emote.icon,
+                size: 24,
+                color: isOnCooldown
+                    ? AppColors.textDisabled
+                    : AppColors.textSecondary,
               ),
-            ],
+            ),
           ),
-          child: Center(
-            child: GameIconView(emote.icon,
-                size: 24, color: AppColors.point),
-          ),
-        ),
       ),
     ),
   );
@@ -103,17 +104,11 @@ class EmoteBubble extends StatelessWidget {
         child: child,
       ),
       child: Container(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(AppSpacing.sm),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 6,
-              offset: Offset(0, 2),
-            ),
-          ],
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          border: Border.all(color: AppColors.divider),
         ),
         child: GameIconView(emote.icon, size: 30, color: AppColors.point),
       ),

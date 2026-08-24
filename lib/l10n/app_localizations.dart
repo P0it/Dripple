@@ -585,6 +585,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} cards left'**
   String cardsLeftLabel(int count);
+
+  /// No description provided for @jumpDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Skips the next player\'s turn.'**
+  String get jumpDesc;
+
+  /// No description provided for @use.
+  ///
+  /// In en, this message translates to:
+  /// **'Use it'**
+  String get use;
+
+  /// No description provided for @stealDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick someone, then pick a card to give them.'**
+  String get stealDesc;
+
+  /// No description provided for @stealFromWho.
+  ///
+  /// In en, this message translates to:
+  /// **'Who do you take from?'**
+  String get stealFromWho;
+
+  /// No description provided for @stealGiveWhat.
+  ///
+  /// In en, this message translates to:
+  /// **'Which card do you give?'**
+  String get stealGiveWhat;
 }
 
 class _AppLocalizationsDelegate

@@ -1,5 +1,10 @@
+import 'package:dripple/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/design/app_colors.dart';
+import '../../core/design/app_spacing.dart';
+import '../../core/design/app_typography.dart';
 import '../../core/game_icons.dart';
 import '../../models/game_state.dart';
 import '../../models/word_card.dart';
@@ -52,24 +57,30 @@ class _JumpSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Row(
+          Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              GameIconView(GameIcon.jump, size: 26),
-              SizedBox(width: 8),
-              Text('JUMP',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              GameIconView(GameIcon.jump,
+                  size: 26, color: AppColors.specialCard(CardType.jump)),
+              const SizedBox(width: AppSpacing.sm),
+              Text('JUMP', style: AppTypography.title),
             ],
           ),
-          const SizedBox(height: 8),
-          const Text('다음 사람의 차례를 건너뜁니다.'),
-          const SizedBox(height: 16),
-          FilledButton(onPressed: onConfirm, child: const Text('사용하기')),
+          const SizedBox(height: AppSpacing.sm),
+          Text(l10n.jumpDesc, style: AppTypography.body),
+          const SizedBox(height: AppSpacing.lg),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+                onPressed: onConfirm, child: Text(l10n.use)),
+          ),
         ],
       ),
     );
@@ -97,31 +108,32 @@ class _StealSheetState extends State<_StealSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final me = widget.state.currentPlayer;
     // playSteal indexes the hand after the STEAL card is removed.
     final handAfter = List<WordCard>.from(me.hand)..removeAt(widget.handIndex);
 
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              GameIconView(GameIcon.steal, size: 26),
-              SizedBox(width: 8),
-              Text('STEAL',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              GameIconView(GameIcon.steal,
+                  size: 26, color: AppColors.specialCard(CardType.steal)),
+              const SizedBox(width: AppSpacing.sm),
+              Text('STEAL', style: AppTypography.title),
             ],
           ),
-          const SizedBox(height: 4),
-          const Text('상대를 고르고, 대신 줄 카드를 고르세요.'),
-          const SizedBox(height: 16),
-          const Text('누구에게서 가져올까요?'),
+          const SizedBox(height: AppSpacing.xs),
+          Text(l10n.stealDesc, style: AppTypography.body),
+          const SizedBox(height: AppSpacing.lg),
+          Text(l10n.stealFromWho, style: AppTypography.label),
           Wrap(
-            spacing: 8,
+            spacing: AppSpacing.sm,
             children: [
               for (int i = 0; i < widget.state.players.length; i++)
                 if (i != widget.state.currentPlayerIndex &&
@@ -136,10 +148,10 @@ class _StealSheetState extends State<_StealSheet> {
                   ),
             ],
           ),
-          const SizedBox(height: 16),
-          const Text('어떤 카드를 줄까요?'),
+          const SizedBox(height: AppSpacing.lg),
+          Text(l10n.stealGiveWhat, style: AppTypography.label),
           Wrap(
-            spacing: 8,
+            spacing: AppSpacing.sm,
             children: [
               for (int i = 0; i < handAfter.length; i++)
                 ChoiceChip(
@@ -149,7 +161,7 @@ class _StealSheetState extends State<_StealSheet> {
                 ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Center(
             child: FilledButton(
               onPressed: (_target != null && _give != null)

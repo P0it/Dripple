@@ -274,4 +274,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String cardsLeftLabel(int count) {
     return '$count cards left';
   }
+
+  @override
+  String get jumpDesc => 'Skips the next player\'s turn.';
+
+  @override
+  String get use => 'Use it';
+
+  @override
+  String get stealDesc => 'Pick someone, then pick a card to give them.';
+
+  @override
+  String get stealFromWho => 'Who do you take from?';
+
+  @override
+  String get stealGiveWhat => 'Which card do you give?';
 }

@@ -274,4 +274,19 @@ class AppLocalizationsKo extends AppLocalizations {
   String cardsLeftLabel(int count) {
     return '$count장 남음';
   }
+
+  @override
+  String get jumpDesc => '다음 사람의 차례를 건너뜁니다.';
+
+  @override
+  String get use => '사용하기';
+
+  @override
+  String get stealDesc => '상대를 고르고, 대신 줄 카드를 고르세요.';
+
+  @override
+  String get stealFromWho => '누구에게서 가져올까요?';
+
+  @override
+  String get stealGiveWhat => '어떤 카드를 줄까요?';
 }

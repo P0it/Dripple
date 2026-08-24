@@ -80,5 +80,10 @@
   "needTwoCards": "카드를 2장 이상 놓아요",
   "discardACard": "카드 버리기",
   "winner": "우승",
-  "cardsLeftLabel": "{count}장 남음"
+  "cardsLeftLabel": "{count}장 남음",
+  "jumpDesc": "다음 사람의 차례를 건너뜁니다.",
+  "use": "사용하기",
+  "stealDesc": "상대를 고르고, 대신 줄 카드를 고르세요.",
+  "stealFromWho": "누구에게서 가져올까요?",
+  "stealGiveWhat": "어떤 카드를 줄까요?"
 }
