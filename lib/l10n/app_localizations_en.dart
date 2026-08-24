@@ -298,4 +298,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sentenceZoneHint => 'Drop cards here\nto build a sentence';
+
+  @override
+  String get cannotDiscardJustTaken =>
+      'You just took that card — you can\'t throw it away this turn';
+
+  @override
+  String get tapDeckToDraw => 'Tap the deck to take a card';
 }

@@ -7,6 +7,7 @@ import '../core/game_feedback.dart';
 import '../engine/ai/ai_player.dart';
 import '../game/dripple_game.dart';
 import '../models/game_state.dart';
+import '../models/word_card.dart';
 import '../providers/game_provider.dart';
 import 'game/action_bar.dart';
 import 'game/game_end_overlay.dart';
@@ -33,7 +34,6 @@ class _GameScreenState extends ConsumerState<GameScreen>
     with SingleTickerProviderStateMixin {
   late DrippleGame _game;
   bool _initialized = false;
-  bool _discardMode = false;
   late AnimationController _overlayFadeController;
   late Animation<double> _overlayFadeAnimation;
   ProviderSubscription? _gameSubscription;
@@ -43,6 +43,9 @@ class _GameScreenState extends ConsumerState<GameScreen>
     super.initState();
     _game = DrippleGame();
     _game.onCardPlaced = _onCardPlaced;
+    _game.onDrawFromDeck = _onDrawFromDeck;
+    _game.onDrawFromDiscard = _onDrawFromDiscard;
+    _game.onDiscardCard = _onDiscardCard;
     _game.onSentenceReorder = (from, to) =>
         ref.read(gameProvider.notifier).reorderSentence(from, to);
     _game.onSentenceRemove = (index) =>
@@ -83,6 +86,10 @@ class _GameScreenState extends ConsumerState<GameScreen>
           final humanPlayer = next.players[0];
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
+            _game.updatePiles(
+              deckCount: next.deck.length,
+              discardTop: next.discardTop,
+            );
             _game.updateHand(humanPlayer.hand);
             _game.updateSentenceZone(humanPlayer.sentenceZone);
           });
@@ -150,29 +157,44 @@ class _GameScreenState extends ConsumerState<GameScreen>
     final state = ref.read(gameProvider);
     if (state.phase != GamePhase.playing || state.currentPlayer.isAI) return;
 
-    if (_discardMode) {
-      final card = state.currentPlayer.hand[handIndex];
-      if (card.id == state.drawnFromDiscardCardId) {
-        _showHint('이 카드는 방금 가져와서 지금은 버릴 수 없어요');
-        return;
-      }
-      if (notifier.discardCard(handIndex)) {
-        ref.read(gameFeedbackProvider).onCardPlace();
-        _setDiscardMode(false);
-      }
+    if (state.turnPhase != TurnPhase.action) return;
+
+    // A JUMP or STEAL card is used, not played into a sentence. Tapping the
+    // card itself is how you use it — the chip row that used to sit under the
+    // board was a second place to find the same card.
+    final card = state.currentPlayer.hand[handIndex];
+    if (card.type == CardType.jump || card.type == CardType.steal) {
+      showSpecialCardSheet(
+        context,
+        ref: ref,
+        card: card,
+        handIndex: handIndex,
+      );
       return;
     }
 
-    if (state.turnPhase != TurnPhase.action) return;
     notifier.placeCard(handIndex);
     ref.read(gameFeedbackProvider).onCardPlace();
   }
 
-  void _setDiscardMode(bool value) {
-    if (_discardMode == value) return;
-    setState(() => _discardMode = value);
-    _game.discardMode = value;
-    ref.read(gameFeedbackProvider).onButtonTap();
+  /// A card dragged onto the discard pile. This replaced a mode: you used to
+  /// press a button, watch the hand turn red, then pick a card — two taps and
+  /// a state to be in. Dragging onto the pile is one gesture, and it is the
+  /// gesture the sentence zone already taught.
+  void _onDiscardCard(int handIndex) {
+    final notifier = ref.read(gameProvider.notifier);
+    final state = ref.read(gameProvider);
+    if (state.phase != GamePhase.playing || state.currentPlayer.isAI) return;
+    if (state.turnPhase != TurnPhase.action) return;
+
+    final card = state.currentPlayer.hand[handIndex];
+    if (card.id == state.drawnFromDiscardCardId) {
+      _showHint(AppLocalizations.of(context)!.cannotDiscardJustTaken);
+      return;
+    }
+    if (notifier.discardCard(handIndex)) {
+      ref.read(gameFeedbackProvider).onCardPlace();
+    }
   }
 
   void _showHint(String message) {
@@ -209,29 +231,10 @@ class _GameScreenState extends ConsumerState<GameScreen>
                 Expanded(
                   child: GameWidget(game: _game),
                 ),
-                // Special card actions (JUMP / STEAL)
-                if (gameState.phase == GamePhase.playing &&
-                    gameState.players.isNotEmpty &&
-                    !gameState.currentPlayer.isAI &&
-                    gameState.turnPhase == TurnPhase.action)
-                  SpecialCardRow(
-                    hand: gameState.currentPlayer.hand,
-                    onTap: (handIndex) => showSpecialCardSheet(
-                      context,
-                      ref: ref,
-                      card: gameState.currentPlayer.hand[handIndex],
-                      handIndex: handIndex,
-                    ),
-                  ),
-                // Action bar
-                ActionBar(
-                  gameState: gameState,
-                  discardMode: _discardMode,
-                  onDrawFromDeck: _onDrawFromDeck,
-                  onDrawFromDiscard: _onDrawFromDiscard,
-                  onSubmit: _onSubmit,
-                  onToggleDiscard: () => _setDiscardMode(!_discardMode),
-                ),
+                // Drawing, discarding and using a special card all happen on
+                // the board now. Submitting is the one thing with no object
+                // to touch, so it is the one thing left down here.
+                ActionBar(gameState: gameState, onSubmit: _onSubmit),
               ],
             ),
             // ---- Game-over overlay ----

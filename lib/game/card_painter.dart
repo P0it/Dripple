@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/material.dart'
-    show FontWeight, TextAlign, TextPainter, TextSpan, TextStyle;
+    show Colors, FontWeight, TextAlign, TextPainter, TextSpan, TextStyle;
 
 import '../core/design/app_colors.dart';
 import '../core/game_icons.dart';
@@ -231,5 +231,90 @@ class CardPainter {
       out = Color.lerp(out, const Color(0xFF17181C), 0.15)!;
     }
     return out;
+  }
+
+  /// The back of a card: what the deck shows.
+  ///
+  /// Carries the brand mark rather than a texture, so a face-down stack is
+  /// unmistakably part of this game and unmistakably not a word.
+  static void paintBack(Canvas canvas, Size size) {
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(size.width * 0.14),
+    );
+
+    canvas.drawRRect(
+      rrect.shift(const Offset(0, 3)),
+      Paint()
+        ..color = const Color(0x1A000000)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+    );
+
+    canvas.drawRRect(rrect, Paint()..color = AppColors.point);
+
+    // The mark, in the card's own inset panel.
+    final inset = Rect.fromLTWH(
+      size.width * 0.16,
+      size.height * 0.30,
+      size.width * 0.68,
+      size.width * 0.68,
+    );
+    _markOnBack(canvas, inset);
+  }
+
+  /// The three bouncing dots, simplified for the small panel on a card back.
+  /// Kept here rather than reaching for DrippleMarkPainter so the board does
+  /// not depend on the widget layer.
+  static void _markOnBack(Canvas canvas, Rect bounds) {
+    const dots = [
+      (x: 0.20, rise: 0.13, radius: 0.070),
+      (x: 0.50, rise: 0.32, radius: 0.100),
+      (x: 0.80, rise: 0.52, radius: 0.135),
+    ];
+    final baselineY = bounds.top + bounds.height * 0.78;
+    final white = Paint()..color = Colors.white;
+
+    canvas.drawLine(
+      Offset(bounds.left + bounds.width * 0.10, baselineY),
+      Offset(bounds.right - bounds.width * 0.10, baselineY),
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.35)
+        ..strokeWidth = bounds.width * 0.040
+        ..strokeCap = StrokeCap.round,
+    );
+
+    for (final dot in dots) {
+      canvas.drawCircle(
+        Offset(bounds.left + bounds.width * dot.x,
+            baselineY - bounds.height * dot.rise),
+        bounds.width * dot.radius,
+        white,
+      );
+    }
+  }
+
+  /// An empty slot where a pile would sit — a dashed outline, so the space
+  /// still reads as a place rather than as nothing.
+  static void paintEmptySlot(Canvas canvas, Size size) {
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(size.width * 0.14),
+    );
+    final path = Path()..addRRect(rrect);
+    final paint = Paint()
+      ..color = AppColors.border
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+
+    const dash = 7.0, gap = 6.0;
+    for (final metric in path.computeMetrics()) {
+      var d = 0.0;
+      while (d < metric.length) {
+        final next = (d + dash).clamp(0.0, metric.length);
+        canvas.drawPath(metric.extractPath(d, next), paint);
+        d = next + gap;
+      }
+    }
   }
 }

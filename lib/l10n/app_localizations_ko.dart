@@ -298,4 +298,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get sentenceZoneHint => '여기에 카드를 올려\n문장을 만들어요';
+
+  @override
+  String get cannotDiscardJustTaken => '방금 가져온 카드예요. 이번 턴에는 못 버려요';
+
+  @override
+  String get tapDeckToDraw => '덱을 눌러 카드를 한 장 가져와요';
 }

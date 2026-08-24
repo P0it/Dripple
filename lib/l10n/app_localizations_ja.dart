@@ -298,4 +298,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get sentenceZoneHint => 'ここに カードを おいて\nぶんを つくろう';
+
+  @override
+  String get cannotDiscardJustTaken => 'いまとったカードだから、このターンはすてられないよ';
+
+  @override
+  String get tapDeckToDraw => 'やまをタップしてカードをとってね';
 }

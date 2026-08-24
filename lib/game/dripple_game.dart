@@ -4,13 +4,16 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart' as material;
 import '../core/design/app_colors.dart';
 import '../models/word_card.dart';
+import 'card_painter.dart';
 import 'card_row_layout.dart';
 import 'components/card_component.dart';
+import 'components/pile_component.dart';
 
 typedef OnCardPlaced = void Function(int handIndex, int insertAt);
 typedef OnSentenceReorder = void Function(int from, int to);
 typedef OnSentenceRemove = void Function(int index);
 typedef OnHandCardTapped = void Function(int handIndex);
+typedef OnDiscardCard = void Function(int handIndex);
 
 /// The words printed on the two bands of the board.
 ///
@@ -39,6 +42,33 @@ class DrippleGame extends FlameGame {
   OnSentenceReorder? onSentenceReorder;
   OnSentenceRemove? onSentenceRemove;
   OnHandCardTapped? onHandCardTapped;
+
+  /// The deck was tapped.
+  void Function()? onDrawFromDeck;
+
+  /// The discard pile was tapped.
+  void Function()? onDrawFromDiscard;
+
+  /// A hand card was dragged onto the discard pile.
+  OnDiscardCard? onDiscardCard;
+
+  PileComponent? _deck;
+  PileComponent? _discard;
+
+  /// Piles are drawn smaller than a hand card. They sit in the strip above
+  /// the sentence band, which is the only space the board has, and a pile is
+  /// a place rather than something you read.
+  static const double _pileScale = 0.62;
+
+  /// Piles sit clear above the sentence band. The band is the card block
+  /// plus [_bandInset] on each side, so half of *that* is what has to be
+  /// cleared — halving the card height alone leaves the piles overlapping
+  /// the band by the inset.
+  double get _pileY =>
+      _sentenceZoneY -
+      (CardRowLayout.cardHeight + _bandInset * 2) / 2 -
+      CardPainter.defaultHeight * _pileScale -
+      8;
 
   /// When true the hand is a discard picker: cards are marked and a tap
   /// throws the card away instead of playing it.
@@ -330,6 +360,20 @@ class DrippleGame extends FlameGame {
               onSentenceReorder?.call(from, to);
               return true;
             }
+            // Dropped on the discard pile — that is how a card is thrown
+            // away. Checked before the sentence test because the pile sits
+            // above the sentence band and would otherwise read as a play.
+            final discard = _discard;
+            if (discard != null &&
+                discard.containsBoardPoint(_centreOf(component))) {
+              discard.isDropTarget = false;
+              final idx = _hand.indexWhere((c) => c.id == cardId);
+              if (idx >= 0) {
+                onDiscardCard?.call(idx);
+                return true;
+              }
+            }
+
             // Hand card lifted toward the sentence zone. Where it landed
             // decides where in the sentence it goes — a child who drops a
             // card in front of `cats` means it to read before `cats`.
@@ -373,9 +417,75 @@ class DrippleGame extends FlameGame {
     return true;
   }
 
+  /// Tells the board how deep the deck is and what is face up on the discard
+  /// pile. Both are drawn on the board rather than described in buttons.
+  void updatePiles({required int deckCount, WordCard? discardTop}) {
+    _ensurePiles();
+    _deck!.count = deckCount;
+    _discard!.topCard = discardTop;
+  }
+
+  void _ensurePiles() {
+    if (_deck != null) return;
+    _deck = PileComponent(
+      kind: PileKind.deck,
+      scale: _pileScale,
+      onTapped: (_) => onDrawFromDeck?.call(),
+    );
+    _discard = PileComponent(
+      kind: PileKind.discard,
+      scale: _pileScale,
+      onTapped: (_) {
+        if (_discard!.isEmpty) return;
+        onDrawFromDiscard?.call();
+      },
+    );
+    _layoutPiles();
+    addAll([_deck!, _discard!]);
+  }
+
+  void _layoutPiles() {
+    final deck = _deck;
+    final discard = _discard;
+    if (deck == null || discard == null) return;
+
+    const gap = 18.0;
+    final w = deck.size.x;
+    final centreX = size.x / 2;
+    deck.position = Vector2(centreX - gap / 2 - w, _pileY);
+    discard.position = Vector2(centreX + gap / 2, _pileY);
+  }
+
+  /// Lights the discard pile while a hand card hovers over it, so the drop
+  /// target is visible before the finger lifts.
+  @override
+  void update(double dt) {
+    super.update(dt);
+    final discard = _discard;
+    if (discard == null) return;
+
+    CardComponent? dragging;
+    for (final comp in _handComponents) {
+      if (comp.isDragging) {
+        dragging = comp;
+        break;
+      }
+    }
+
+    final over = dragging != null &&
+        discard.containsBoardPoint(_centreOf(dragging));
+    if (discard.isDropTarget != over) discard.isDropTarget = over;
+  }
+
+  Vector2 _centreOf(CardComponent card) => Vector2(
+        card.position.x + card.size.x / 2,
+        card.position.y + card.size.y / 2,
+      );
+
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
+    _layoutPiles();
     if (_hand.isNotEmpty) {
       _diffUpdateComponents(
         newCards: _hand,

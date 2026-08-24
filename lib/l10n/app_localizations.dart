@@ -633,6 +633,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Drop cards here\nto build a sentence'**
   String get sentenceZoneHint;
+
+  /// No description provided for @cannotDiscardJustTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'You just took that card — you can\'t throw it away this turn'**
+  String get cannotDiscardJustTaken;
+
+  /// No description provided for @tapDeckToDraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the deck to take a card'**
+  String get tapDeckToDraw;
 }
 
 class _AppLocalizationsDelegate
