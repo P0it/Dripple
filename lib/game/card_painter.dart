@@ -86,22 +86,37 @@ class CardPainter {
       Color accent, String locale) {
     canvas.drawRRect(rrect, Paint()..color = AppColors.surface);
 
-    final bandHeight = size.height * 0.30;
+    // A thin accent bar, not a filled header. Part of speech is carried by
+    // the colour alone now — the Montessori shapes that used to sit in the
+    // band are gone, and a 30% block of colour with nothing in it is just a
+    // smaller card.
+    final barHeight = size.height * 0.075;
     canvas.save();
     canvas.clipRRect(rrect);
     canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, bandHeight),
+      Rect.fromLTWH(0, 0, size.width, barHeight),
       Paint()..color = accent,
     );
     canvas.restore();
 
-    _symbol(canvas, card,
-        Rect.fromLTWH(0, 0, size.width, bandHeight), AppColors.surface);
-
-    _word(canvas, card, size,
-        top: bandHeight + size.height * 0.06,
-        color: AppColors.textPrimary,
-        maxFontSize: size.width * 0.26);
+    if (card.isSpecial) {
+      _specialIcon(
+        canvas,
+        card,
+        Rect.fromLTWH(0, size.height * 0.14, size.width, size.height * 0.22),
+        accent,
+      );
+      _word(canvas, card, size,
+          top: size.height * 0.44,
+          color: AppColors.textPrimary,
+          maxFontSize: size.width * 0.22);
+    } else {
+      // The word owns the card. It is the thing being learned.
+      _word(canvas, card, size,
+          top: size.height * 0.26,
+          color: AppColors.textPrimary,
+          maxFontSize: size.width * 0.30);
+    }
 
     _meaning(canvas, card, size, locale, accent);
 
@@ -116,70 +131,16 @@ class CardPainter {
 
   // ---------------------------------------------------------------------------
 
-  static void _symbol(
+  /// JUMP / STEAL / JOKER only. Word cards carry no glyph.
+  static void _specialIcon(
       Canvas canvas, WordCard card, Rect bounds, Color color) {
-    if (card.isSpecial) {
-      final icon = switch (card.type) {
-        CardType.jump => GameIcon.jump,
-        CardType.steal => GameIcon.steal,
-        CardType.joker => GameIcon.joker,
-        CardType.word => null,
-      };
-      if (icon != null) {
-        GameIconPainter.paint(canvas, icon, bounds, color);
-      }
-      return;
-    }
-    _posSymbol(canvas, card, bounds, color);
-  }
-
-  /// Montessori grammar symbol: shape carries the part of speech.
-  static void _posSymbol(
-      Canvas canvas, WordCard card, Rect bounds, Color color) {
-    if (card.posShape == PosShape.none) return;
-
-    final paint = Paint()..color = color;
-    final cx = bounds.center.dx;
-    final cy = bounds.center.dy;
-    final unit = bounds.shortestSide;
-
-    switch (card.posShape) {
-      case PosShape.triangleLarge:
-      case PosShape.triangleMedium:
-      case PosShape.triangleSmall:
-      case PosShape.trianglePronoun:
-        final half = unit *
-            switch (card.posShape) {
-              PosShape.triangleLarge => 0.42,
-              PosShape.triangleMedium => 0.34,
-              PosShape.trianglePronoun => 0.34,
-              _ => 0.26,
-            };
-        canvas.drawPath(
-          Path()
-            ..moveTo(cx, cy - half)
-            ..lineTo(cx - half, cy + half)
-            ..lineTo(cx + half, cy + half)
-            ..close(),
-          paint,
-        );
-      case PosShape.circle:
-        canvas.drawCircle(Offset(cx, cy), unit * 0.38, paint);
-      case PosShape.circleSmall:
-        canvas.drawCircle(Offset(cx, cy), unit * 0.24, paint);
-      case PosShape.crescent:
-        final r = unit * 0.36;
-        canvas.saveLayer(bounds.inflate(4), Paint());
-        canvas.drawCircle(Offset(cx, cy), r, paint);
-        canvas.drawCircle(
-          Offset(cx + r * 0.55, cy - r * 0.22),
-          r * 0.92,
-          Paint()..blendMode = BlendMode.clear,
-        );
-        canvas.restore();
-      case PosShape.none:
-        break;
-    }
+    final icon = switch (card.type) {
+      CardType.jump => GameIcon.jump,
+      CardType.steal => GameIcon.steal,
+      CardType.joker => GameIcon.joker,
+      CardType.word => null,
+    };
+    if (icon != null) GameIconPainter.paint(canvas, icon, bounds, color);
   }
 
   static void _word(Canvas canvas, WordCard card, Size size,
