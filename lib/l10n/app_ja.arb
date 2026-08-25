@@ -90,5 +90,8 @@
   "sentenceZoneMake": "ぶんを つくる ところ",
   "sentenceZoneHint": "カードを うえに おして\nぶんを つくろう",
   "cannotDiscardJustTaken": "いまとったカードだから、このターンはすてられないよ",
-  "tapDeckToDraw": "やまをタップしてカードをとってね"
+  "tapDeckToDraw": "やまをタップしてカードをとってね",
+  "dragToDiscard": "すてるカードは すてやまに ひっぱってね",
+  "pileDeck": "やま",
+  "pileDiscard": "すてやま"
 }

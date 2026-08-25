@@ -645,6 +645,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap the deck to take a card'**
   String get tapDeckToDraw;
+
+  /// No description provided for @dragToDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag a card onto the discard pile to throw it away'**
+  String get dragToDiscard;
+
+  /// No description provided for @pileDeck.
+  ///
+  /// In en, this message translates to:
+  /// **'Deck'**
+  String get pileDeck;
+
+  /// No description provided for @pileDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get pileDiscard;
 }
 
 class _AppLocalizationsDelegate

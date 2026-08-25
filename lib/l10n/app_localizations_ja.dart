@@ -304,4 +304,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get tapDeckToDraw => 'やまをタップしてカードをとってね';
+
+  @override
+  String get dragToDiscard => 'すてるカードは すてやまに ひっぱってね';
+
+  @override
+  String get pileDeck => 'やま';
+
+  @override
+  String get pileDiscard => 'すてやま';
 }

@@ -19,7 +19,6 @@ void main() {
     addTearDown(tester.view.reset);
 
     final container = ProviderContainer();
-    addTearDown(container.dispose);
 
     await tester.pumpWidget(
       UncontrolledProviderScope(
@@ -53,9 +52,6 @@ void main() {
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 32));
     }
-    // ignore: avoid_print
-    print('AFTER DRAW phase=${container.read(gameProvider).turnPhase} '
-        'hand=${container.read(gameProvider).players[0].hand.length}');
     expect(container.read(gameProvider).turnPhase, TurnPhase.action);
 
     // Step 2: throw one away, by dragging it onto the pile.
@@ -77,9 +73,17 @@ void main() {
     }
 
     final state = container.read(gameProvider);
-    // ignore: avoid_print
-    print('AFTER DISCARD hand=$handBefore -> ${state.players[0].hand.length} '
-        'currentPlayer=${state.currentPlayerIndex} pile=${state.discardPile.length}');
     expect(state.players[0].hand.length, handBefore - 1);
+    expect(state.currentPlayerIndex, isNot(0),
+        reason: 'throwing a card away is the action, so the turn ends');
+
+    // The turn timer and the AI loop both outlive the widget tree; tear the
+    // container down here rather than in a callback, which runs after the
+    // binding has already complained about the pending timer.
+    await tester.pumpWidget(const SizedBox.shrink());
+    container.dispose();
+    // Let the AI's in-flight delay expire; a disposed notifier drops it, but
+    // the timer itself is still on the clock.
+    await tester.pump(const Duration(seconds: 3));
   });
 }

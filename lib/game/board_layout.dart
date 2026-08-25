@@ -120,6 +120,21 @@ abstract final class HandFan {
   static double blockHeight(int count) =>
       count <= 0 ? 0 : BoardLayout.cardHeight + (count > 1 ? arcRise : 0);
 
+  /// Which card is showing at [x] — the one a thumb resting there is touching.
+  ///
+  /// Not the nearest slot: the fan overlaps, and the card you are touching is
+  /// the topmost one covering that point, which is the last one whose left
+  /// edge is left of the finger. Nearest-slot would hand you the card behind.
+  static int indexUnder(
+      double x, double screenWidth, int count, double centerY) {
+    if (count <= 0) return -1;
+    final slots = positions(screenWidth, count, centerY);
+    for (var i = count - 1; i >= 0; i--) {
+      if (x >= slots[i].dx) return i;
+    }
+    return 0;
+  }
+
   /// Which card a point falls on, by nearest slot.
   static int indexAt(
       Offset position, double screenWidth, int count, double centerY) {

@@ -30,10 +30,18 @@ class ZoneLabels {
   const ZoneLabels({
     this.hand = '내 카드',
     this.hint = '카드를 위로 밀어\n문장을 만들어요',
+    this.deck = '덱',
+    this.discard = '버림',
   });
 
   final String hand;
   final String hint;
+
+  /// The two piles carry their names on the felt. A pile with no name is a
+  /// rectangle of card backs; a named one is a place you can be told to put a
+  /// card, which is the whole of how a card is thrown away here.
+  final String deck;
+  final String discard;
 }
 
 class DrippleGame extends FlameGame {
@@ -69,6 +77,34 @@ class DrippleGame extends FlameGame {
   /// only fixed furniture on the board, so they do not move when the hand
   /// does.
   double get _pileY => size.y * 0.05;
+
+  /// The card a thumb is currently resting on in the fan.
+  CardComponent? _peeked;
+
+  /// A finger running along the fan. The card under it comes up out of the
+  /// hand, which is how an overlapping hand is read.
+  void _onScrub(CardComponent origin, double boardX) {
+    final index =
+        HandFan.indexUnder(boardX, size.x, _handComponents.length, _handY);
+    final comp = index < 0 ? null : _handComponents[index];
+    if (identical(comp, _peeked)) return;
+    _peeked?.peeking = false;
+    _peeked = comp;
+    comp?.peeking = true;
+  }
+
+  void _endScrub() {
+    _peeked?.peeking = false;
+    _peeked = null;
+  }
+
+  /// The card the thumb settled on, which is the one the player means to
+  /// play — not whichever card the press happened to land on first.
+  CardComponent? _resolveLift(CardComponent origin) {
+    final chosen = _peeked;
+    _peeked = null;
+    return chosen;
+  }
 
   /// Where each card was standing when its component was last torn down.
   ///
@@ -111,6 +147,10 @@ class DrippleGame extends FlameGame {
       deck.position.y + deck.size.y / 2,
     );
   }
+
+  /// The discard pile itself, so a test can see the states it lights up in.
+  @material.visibleForTesting
+  PileComponent? get debugDiscardPile => _discard;
 
   /// Centre of the discard pile in board coordinates, or null before the
   /// piles exist.
@@ -236,6 +276,8 @@ class DrippleGame extends FlameGame {
     _labels = value;
     _handLabelPainter = null;
     _dropHintPainter = null;
+    _deck?.label = value.deck;
+    _discard?.label = value.discard;
   }
 
   static const _labelStyle = material.TextStyle(
@@ -302,6 +344,11 @@ class DrippleGame extends FlameGame {
     required double yPosition,
     required bool isSentenceZone,
   }) {
+    // Priorities are about to be reassigned from the row order, which would
+    // strand a peeked card's saved priority. Nothing is being read while the
+    // hand is changing under it anyway.
+    if (!isSentenceZone) _endScrub();
+
     final newIds = newCards.map((c) => c.id).toSet();
 
     // Remove components no longer in the list
@@ -354,6 +401,11 @@ class DrippleGame extends FlameGame {
         final comp = CardComponent(
           card: card,
           position: targetPos,
+          // Only the fan hides cards behind one another, so only the fan reads
+          // by scrubbing. A card already in the open is picked up on contact.
+          onScrub: isSentenceZone ? null : _onScrub,
+          onScrubEnd: isSentenceZone ? null : _endScrub,
+          resolveLift: isSentenceZone ? null : _resolveLift,
           onTapped: (component) {
             if (isSentenceZone) {
               final idx = _sentenceZone.indexWhere((c) => c.id == cardId);
@@ -497,11 +549,13 @@ class DrippleGame extends FlameGame {
     if (_deck != null) return;
     _deck = PileComponent(
       kind: PileKind.deck,
+      label: _labels.deck,
       scale: _pileScale,
       onTapped: (_) => onDrawFromDeck?.call(),
     );
     _discard = PileComponent(
       kind: PileKind.discard,
+      label: _labels.discard,
       scale: _pileScale,
       onTapped: (_) {
         if (_discard!.isEmpty) return;
@@ -542,15 +596,22 @@ class DrippleGame extends FlameGame {
       }
     }
 
+    // A hand card in the air is the moment to say the pile will take it.
+    // Until then the board is silent about throwing a card away, which is how
+    // a player ends up believing that completing a sentence is the only move
+    // they have and that a turn they cannot finish cannot be ended.
+    final inviting = dragging != null;
+    if (discard.isInviting != inviting) discard.isInviting = inviting;
+
     final over = dragging != null &&
         discard.containsBoardPoint(_centreOf(dragging));
     if (discard.isDropTarget != over) discard.isDropTarget = over;
   }
 
-  Vector2 _centreOf(CardComponent card) => Vector2(
-        card.position.x + card.size.x / 2,
-        card.position.y + card.size.y / 2,
-      );
+  /// Where a card *looks* like it is. A held card is drawn raised off the
+  /// table, so judging a drop against its nominal slot puts the decision line
+  /// a card-third away from where the player sees it.
+  Vector2 _centreOf(CardComponent card) => card.visualCentre;
 
   @override
   void onGameResize(Vector2 size) {

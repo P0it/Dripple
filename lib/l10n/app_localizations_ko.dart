@@ -304,4 +304,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get tapDeckToDraw => '덱을 눌러 카드를 한 장 가져와요';
+
+  @override
+  String get dragToDiscard => '버릴 카드는 버림 더미로 끌어요';
+
+  @override
+  String get pileDeck => '덱';
+
+  @override
+  String get pileDiscard => '버림';
 }

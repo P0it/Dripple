@@ -305,4 +305,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tapDeckToDraw => 'Tap the deck to take a card';
+
+  @override
+  String get dragToDiscard =>
+      'Drag a card onto the discard pile to throw it away';
+
+  @override
+  String get pileDeck => 'Deck';
+
+  @override
+  String get pileDiscard => 'Discard';
 }

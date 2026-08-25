@@ -41,8 +41,6 @@ void main() {
     final pile = game.debugDiscardCentre!;
     final to = Offset(pile.x, pile.y);
 
-    // ignore: avoid_print
-    print('DRAG from=$from to=$to boardSize=${game.size}');
 
     final gesture = await tester.startGesture(from);
     const steps = 20;
@@ -50,12 +48,20 @@ void main() {
       await gesture.moveBy(Offset((to.dx - from.dx) / steps,
           (to.dy - from.dy) / steps));
       await tester.pump(const Duration(milliseconds: 16));
+      if (i == 2) {
+        // Barely moved yet, nowhere near the pile: the pile still has to say
+        // it will take the card, or nothing on the board ever admits that
+        // throwing one away is a move.
+        expect(game.debugDiscardPile!.isInviting, isTrue,
+            reason: 'the pile should invite as soon as a card is lifted');
+        expect(game.debugDiscardPile!.isDropTarget, isFalse);
+      }
     }
+    expect(game.debugDiscardPile!.isDropTarget, isTrue,
+        reason: 'the pile should light up once the card is over it');
     await gesture.up();
     await tester.pump(const Duration(seconds: 1));
 
-    // ignore: avoid_print
-    print('RESULT discarded=$discarded placed=$placed');
     expect(discarded, [0]);
     expect(placed, isEmpty);
   });

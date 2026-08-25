@@ -27,6 +27,7 @@ enum PileKind {
 class PileComponent extends PositionComponent with TapCallbacks {
   PileComponent({
     required this.kind,
+    required this.label,
     this.onTapped,
     double scale = 1,
     super.position,
@@ -40,6 +41,11 @@ class PileComponent extends PositionComponent with TapCallbacks {
   final PileKind kind;
   final void Function(PileComponent pile)? onTapped;
 
+  /// The name printed under the pile. A pile with no name is a rectangle of
+  /// card backs; a pile with one is a place, and a child can be told to put a
+  /// card there.
+  String label;
+
   /// How many cards are underneath. Drives the stacked-edge effect and the
   /// count printed under the deck.
   int count = 0;
@@ -49,6 +55,13 @@ class PileComponent extends PositionComponent with TapCallbacks {
 
   /// Lit while a dragged card hovers over this pile.
   bool isDropTarget = false;
+
+  /// Lit softly while a card is in the air anywhere on the board, before it
+  /// is over the pile. [isDropTarget] says *this is where it lands*; this says
+  /// *there is somewhere to put that*, which is the half a child needs first —
+  /// nothing on the board otherwise admits that throwing a card away is a
+  /// move you can make.
+  bool isInviting = false;
 
   bool get isEmpty => kind == PileKind.deck ? count == 0 : topCard == null;
 
@@ -82,8 +95,13 @@ class PileComponent extends PositionComponent with TapCallbacks {
       }
     }
 
-    if (isDropTarget) _renderDropHighlight(canvas);
+    if (isDropTarget) {
+      _renderDropHighlight(canvas);
+    } else if (isInviting) {
+      _renderInvite(canvas);
+    }
     if (kind == PileKind.deck && count > 0) _renderCount(canvas);
+    _renderLabel(canvas);
   }
 
   /// The cut edges of the cards underneath, each rotated a little, so a pile
@@ -127,6 +145,52 @@ class PileComponent extends PositionComponent with TapCallbacks {
         ..color = AppColors.danger
         ..style = ui.PaintingStyle.stroke
         ..strokeWidth = 3,
+    );
+  }
+
+  /// A dashed ring, same drawing the empty sentence well uses to ask for a
+  /// card. Softer than the drop highlight so the two read as *could* and
+  /// *will*, not as one thing flickering.
+  void _renderInvite(ui.Canvas canvas) {
+    final rrect = ui.RRect.fromRectAndRadius(
+      ui.Rect.fromLTWH(0, 0, size.x, size.y),
+      ui.Radius.circular(size.x * CardPainter.radiusRatio),
+    );
+    Materials.hairline(
+      canvas,
+      rrect.deflate(1.5),
+      color: AppColors.danger,
+      width: 2,
+      dashed: true,
+      opacity: 0.75,
+    );
+  }
+
+  material.TextPainter? _labelPainter;
+  String? _paintedLabel;
+
+  /// The name sits under the pile, where a table would print it on the felt.
+  void _renderLabel(ui.Canvas canvas) {
+    if (_paintedLabel != label || _labelPainter == null) {
+      _paintedLabel = label;
+      _labelPainter = material.TextPainter(
+        text: material.TextSpan(
+          text: label,
+          style: const material.TextStyle(
+            fontFamily: 'Pretendard',
+            color: AppColors.onFeltSoft,
+            fontSize: 11,
+            fontWeight: material.FontWeight.w700,
+            letterSpacing: 1.1,
+          ),
+        ),
+        textDirection: ui.TextDirection.ltr,
+        textAlign: ui.TextAlign.center,
+      )..layout();
+    }
+    _labelPainter!.paint(
+      canvas,
+      ui.Offset((size.x - _labelPainter!.width) / 2, size.y + 9),
     );
   }
 

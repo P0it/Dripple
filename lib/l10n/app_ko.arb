@@ -90,5 +90,8 @@
   "sentenceZoneMake": "문장 만드는 곳",
   "sentenceZoneHint": "카드를 위로 밀어\n문장을 만들어요",
   "cannotDiscardJustTaken": "방금 가져온 카드예요. 이번 턴에는 못 버려요",
-  "tapDeckToDraw": "덱을 눌러 카드를 한 장 가져와요"
+  "tapDeckToDraw": "덱을 눌러 카드를 한 장 가져와요",
+  "dragToDiscard": "버릴 카드는 버림 더미로 끌어요",
+  "pileDeck": "덱",
+  "pileDiscard": "버림"
 }

@@ -76,6 +76,8 @@ class _GameScreenState extends ConsumerState<GameScreen>
     _game.labels = ZoneLabels(
       hand: l10n.sentenceZoneHand,
       hint: l10n.sentenceZoneHint,
+      deck: l10n.pileDeck,
+      discard: l10n.pileDiscard,
     );
     if (!_initialized) {
       _initialized = true;
