@@ -4,7 +4,7 @@ import 'package:flame_test/flame_test.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:dripple/game/card_row_layout.dart';
+import 'package:dripple/game/board_layout.dart';
 import 'package:dripple/game/components/card_component.dart';
 import 'package:dripple/game/dripple_game.dart';
 import 'package:dripple/models/word_card.dart';
@@ -38,7 +38,7 @@ void main() {
 
       // Where the card would sit if it became the first of three.
       final after =
-          CardRowLayout.positions(game.size.x, 3, game.size.y * 0.30);
+          SentenceLine.positions(game.size.x, 3, game.debugSentenceY);
       final handCard =
           game.debugHandComponents.firstWhere((c) => c.card.id == 'h0');
 
@@ -68,7 +68,7 @@ void main() {
       await game.ready();
 
       final after =
-          CardRowLayout.positions(game.size.x, 3, game.size.y * 0.30);
+          SentenceLine.positions(game.size.x, 3, game.debugSentenceY);
       final handCard =
           game.debugHandComponents.firstWhere((c) => c.card.id == 'h0');
 
@@ -93,7 +93,7 @@ void main() {
       await game.ready();
 
       final handCard = game.debugHandComponents.single;
-      _drag(game, handCard, Vector2(game.size.x / 2, game.size.y * 0.30));
+      _drag(game, handCard, Vector2(game.size.x / 2, game.debugSentenceY));
 
       expect(insertAt, 0);
     },

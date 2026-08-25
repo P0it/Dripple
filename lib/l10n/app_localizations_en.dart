@@ -297,7 +297,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sentenceZoneMake => 'Build your sentence here';
 
   @override
-  String get sentenceZoneHint => 'Drop cards here\nto build a sentence';
+  String get sentenceZoneHint => 'Push cards up\nto build a sentence';
 
   @override
   String get cannotDiscardJustTaken =>

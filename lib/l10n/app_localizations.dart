@@ -631,7 +631,7 @@ abstract class AppLocalizations {
   /// No description provided for @sentenceZoneHint.
   ///
   /// In en, this message translates to:
-  /// **'Drop cards here\nto build a sentence'**
+  /// **'Push cards up\nto build a sentence'**
   String get sentenceZoneHint;
 
   /// No description provided for @cannotDiscardJustTaken.

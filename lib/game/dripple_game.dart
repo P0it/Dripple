@@ -5,8 +5,7 @@ import 'package:flutter/material.dart' as material;
 import '../core/design/app_colors.dart';
 import '../core/design/materials.dart';
 import '../models/word_card.dart';
-import 'card_painter.dart';
-import 'card_row_layout.dart';
+import 'board_layout.dart';
 import 'components/card_component.dart';
 import 'components/sweep_component.dart';
 import 'components/pile_component.dart';
@@ -17,19 +16,22 @@ typedef OnSentenceRemove = void Function(int index);
 typedef OnHandCardTapped = void Function(int handIndex);
 typedef OnDiscardCard = void Function(int handIndex);
 
-/// The words printed on the two bands of the board.
+/// The words printed on the board.
 ///
 /// Localised strings live in the widget tree and Flame's canvas has no
 /// `BuildContext`, so the screen hands them down. The defaults keep the
 /// board readable in tests and previews.
+///
+/// There is no label for the sentence any more. A label names a container, and
+/// the sentence stopped being one — it is just the cards you have pushed
+/// forward. What is left is the rail's name and, while nothing is pushed
+/// forward yet, one line of felt text saying how.
 class ZoneLabels {
   const ZoneLabels({
-    this.sentence = '문장 만드는 곳',
     this.hand = '내 카드',
-    this.hint = '여기에 카드를 올려\n문장을 만들어요',
+    this.hint = '카드를 위로 밀어\n문장을 만들어요',
   });
 
-  final String sentence;
   final String hand;
   final String hint;
 }
@@ -62,15 +64,10 @@ class DrippleGame extends FlameGame {
   /// a place rather than something you read.
   static const double _pileScale = 0.62;
 
-  /// Piles sit clear above the sentence band. The band is the card block
-  /// plus [_bandInset] on each side, so half of *that* is what has to be
-  /// cleared — halving the card height alone leaves the piles overlapping
-  /// the band by the inset.
-  double get _pileY =>
-      _sentenceZoneY -
-      (CardRowLayout.cardHeight + _bandInset * 2) / 2 -
-      CardPainter.defaultHeight * _pileScale -
-      8;
+  /// Piles sit at the top of the table, clear of everything. They are the
+  /// only fixed furniture on the board, so they do not move when the hand
+  /// does.
+  double get _pileY => size.y * 0.07;
 
   /// Where each card was standing when its component was last torn down.
   ///
@@ -103,12 +100,42 @@ class DrippleGame extends FlameGame {
   List<CardComponent> get debugSentenceComponents =>
       List.unmodifiable(_sentenceComponents);
 
+  /// Centre of the discard pile in board coordinates, or null before the
+  /// piles exist.
+  @material.visibleForTesting
+  Vector2? get debugDiscardCentre {
+    final discard = _discard;
+    if (discard == null) return null;
+    return Vector2(
+      discard.position.x + discard.size.x / 2,
+      discard.position.y + discard.size.y / 2,
+    );
+  }
+
   @material.visibleForTesting
   List<CardComponent> get debugHandComponents =>
       List.unmodifiable(_handComponents);
 
-  double get _sentenceZoneY => size.y * 0.30;
-  double get _handY => size.y * 0.74;
+  /// The two rows' anchors, so a test can ask the board where things go
+  /// instead of restating the fractions and drifting out of step with them.
+  @material.visibleForTesting
+  double get debugSentenceY => _sentenceZoneY;
+
+  @material.visibleForTesting
+  double get debugHandY => _handY;
+
+  /// Where a pushed-forward card sits, and where the fan rests.
+  ///
+  /// Far enough apart that a card clears the fan completely — that gap is the
+  /// whole signal that the card is in play — and close enough that the two
+  /// still read as one hand rather than as two places.
+  double get _sentenceZoneY => size.y * 0.45;
+  double get _handY => size.y * 0.80;
+
+  /// A hand card dropped above this line is being played; a played card
+  /// dropped below it is being taken back. One line, both directions, so the
+  /// gesture never depends on hitting a box.
+  double get _midlineY => (_sentenceZoneY + _handY) / 2;
 
   /// Transparent: [FeltScaffold] paints the table under the whole screen, and
   /// two radials meeting at the widget's edge would show a seam. The board
@@ -116,74 +143,42 @@ class DrippleGame extends FlameGame {
   @override
   ui.Color backgroundColor() => const ui.Color(0x00000000);
 
-  /// The board is a table, not two bands on a page.
+  /// The board is a table, and there is one hand on it.
   ///
-  /// The sentence zone is a recess cut into the felt and the hand is a raised
-  /// rail — the same distinction a real table makes, and a stronger read than
-  /// the blue-tint-versus-white-tray it replaces. You put cards *into* a hole
-  /// and take them *from* a ledge, and the shading says so before any label
-  /// does. Give both the same treatment and the distinction is gone again.
+  /// The sentence used to sit in a recess with a dashed border and a
+  /// placeholder, which is the anatomy of a form field: it read as *the place
+  /// you submit to* rather than as the cards you are playing. There is no
+  /// container now. Cards pushed forward simply lie on the felt, clear of the
+  /// fan, and the gap between them and the rail is the only thing saying they
+  /// are in play — which is exactly what the gap says at a real table.
   @override
   void render(ui.Canvas canvas) {
-    _renderSentenceWell(canvas);
     _renderHandRail(canvas);
+    if (_sentenceZone.isEmpty && _hand.isNotEmpty) _renderHint(canvas);
     super.render(canvas);
   }
 
-  /// Padding between a band's edge and the cards inside it.
+  /// Padding between the rail's edge and the cards on it.
   static const double _bandInset = 10;
-
-  ui.RRect _band(double centerY, int cardCount, {double minHeight = 0}) {
-    final content = math.max(
-      CardRowLayout.blockHeight(size.x, cardCount),
-      minHeight,
-    );
-    return ui.RRect.fromRectAndRadius(
-      ui.Rect.fromCenter(
-        center: ui.Offset(size.x / 2, centerY),
-        width: size.x - CardRowLayout.edgePadding * 2,
-        height: content + _bandInset * 2,
-      ),
-      const ui.Radius.circular(18),
-    );
-  }
-
-  void _renderSentenceWell(ui.Canvas canvas) {
-    final band = _band(
-      _sentenceZoneY,
-      _sentenceZone.length,
-      minHeight: CardRowLayout.cardHeight,
-    );
-
-    Materials.recess(canvas, band, AppColors.well);
-    // Dashed while empty, so it asks for a card; a solid hairline once it has
-    // one, so it stops asking and just frames what is there.
-    Materials.hairline(
-      canvas,
-      band.deflate(1),
-      color: AppColors.brass,
-      width: _sentenceZone.isEmpty ? 1.5 : 1,
-      dashed: _sentenceZone.isEmpty,
-      opacity: _sentenceZone.isEmpty ? 0.7 : 0.4,
-    );
-    _drawBandLabel(canvas, _sentenceLabel, band);
-
-    // The hint would sit under the cards once there are any; it is only there
-    // to explain an empty target.
-    if (_sentenceZone.isEmpty) {
-      _dropHint.paint(
-        canvas,
-        ui.Offset(
-          band.center.dx - _dropHint.width / 2,
-          band.center.dy - _dropHint.height / 2,
-        ),
-      );
-    }
-  }
 
   void _renderHandRail(ui.Canvas canvas) {
     if (_hand.isEmpty) return;
-    final band = _band(_handY, _hand.length);
+
+    // The rail is measured from the fan rather than from the screen: a leaning
+    // card's corner swings outside its own box, and a rail sized to the screen
+    // leaves the ends of the fan hanging off the ledge.
+    final slots = HandFan.positions(size.x, _hand.length, _handY);
+    final margin = HandFan.leanMargin + _bandInset;
+    final band = ui.RRect.fromRectAndRadius(
+      ui.Rect.fromLTRB(
+        math.max(BoardLayout.edgePadding, slots.first.dx - margin),
+        _handY - BoardLayout.cardHeight / 2 - _bandInset,
+        math.min(size.x - BoardLayout.edgePadding,
+            slots.last.dx + BoardLayout.cardWidth + margin),
+        _handY + BoardLayout.cardHeight / 2 + HandFan.arcRise + _bandInset,
+      ),
+      const ui.Radius.circular(18),
+    );
 
     Materials.raised(canvas, band, AppColors.rail);
     Materials.hairline(
@@ -192,12 +187,25 @@ class DrippleGame extends FlameGame {
       color: AppColors.brass,
       opacity: 0.35,
     );
-    _drawBandLabel(canvas, _handLabel, band);
+    _drawRailLabel(canvas, _handLabel, band);
   }
 
-  /// Labels ride just above their band, or just below it when the band sits
+  /// One line of felt text where the sentence will be. No box, no dashes, no
+  /// arrow — it explains the gesture and then gets out of the way the moment
+  /// the first card is pushed forward.
+  void _renderHint(ui.Canvas canvas) {
+    _dropHint.paint(
+      canvas,
+      ui.Offset(
+        size.x / 2 - _dropHint.width / 2,
+        _sentenceZoneY - _dropHint.height / 2,
+      ),
+    );
+  }
+
+  /// The rail's name rides just above it, or just below when the rail sits
   /// close enough to the top edge that there is no room.
-  void _drawBandLabel(
+  void _drawRailLabel(
     ui.Canvas canvas,
     material.TextPainter painter,
     ui.RRect band,
@@ -206,7 +214,7 @@ class DrippleGame extends FlameGame {
     final above = band.top - gap - painter.height;
     painter.paint(
       canvas,
-      ui.Offset(band.left + 4, above >= 0 ? above : band.bottom + gap),
+      ui.Offset(band.left + 8, above >= 0 ? above : band.bottom + gap),
     );
   }
 
@@ -214,7 +222,6 @@ class DrippleGame extends FlameGame {
 
   set labels(ZoneLabels value) {
     _labels = value;
-    _sentenceLabelPainter = null;
     _handLabelPainter = null;
     _dropHintPainter = null;
   }
@@ -226,14 +233,8 @@ class DrippleGame extends FlameGame {
     letterSpacing: 1.2,
   );
 
-  material.TextPainter? _sentenceLabelPainter;
   material.TextPainter? _handLabelPainter;
   material.TextPainter? _dropHintPainter;
-
-  material.TextPainter get _sentenceLabel => _sentenceLabelPainter ??= _text(
-        _labels.sentence,
-        _labelStyle.copyWith(color: AppColors.brass),
-      );
 
   material.TextPainter get _handLabel => _handLabelPainter ??= _text(
         _labels.hand,
@@ -306,8 +307,16 @@ class DrippleGame extends FlameGame {
       for (final c in existingComponents) c.card.id: c
     };
 
-    // Add new components and reposition all
-    final slots = CardRowLayout.positions(size.x, newCards.length, yPosition);
+    // Add new components and reposition all. The two rows are laid out by
+    // different rules — a held card only has to be identifiable, a played one
+    // has to be readable — so the layout is picked here rather than shared.
+    final count = newCards.length;
+    final slots = isSentenceZone
+        ? SentenceLine.positions(size.x, count, yPosition)
+        : HandFan.positions(size.x, count, yPosition);
+    final cardSize = isSentenceZone
+        ? SentenceLine.cardSize(size.x, count)
+        : ui.Size(BoardLayout.cardWidth, BoardLayout.cardHeight);
 
     final updatedComponents = <CardComponent>[];
 
@@ -324,6 +333,7 @@ class DrippleGame extends FlameGame {
         if (!comp.isDragging) comp.settleTo(targetPos);
         comp.priority = i;
         comp.markedForDiscard = !isSentenceZone && _discardMode;
+        _dress(comp, i, count, isSentenceZone, cardSize);
         updatedComponents.add(comp);
       } else {
         // New card — create component. Resolve the index by card id at drag
@@ -345,15 +355,13 @@ class DrippleGame extends FlameGame {
             if (isSentenceZone) {
               final from = _sentenceZone.indexWhere((c) => c.id == cardId);
               if (from < 0) return false;
-              // Dragged clear of the zone — send it back to hand.
-              final zoneReach =
-                  CardRowLayout.blockHeight(size.x, _sentenceZone.length) / 2 +
-                      CardComponent.cardHeight * 0.6;
-              if ((dropPosition.y - _sentenceZoneY).abs() > zoneReach) {
+              // Dropped back down past the midline — the card is being taken
+              // out of play and returned to the fan.
+              if (_centreOf(component).y > _midlineY) {
                 onSentenceRemove?.call(from);
                 return true;
               }
-              final to = CardRowLayout.indexAt(
+              final to = SentenceLine.indexAt(
                 ui.Offset(dropPosition.x, dropPosition.y),
                 size.x,
                 _sentenceZone.length,
@@ -364,8 +372,8 @@ class DrippleGame extends FlameGame {
               return true;
             }
             // Dropped on the discard pile — that is how a card is thrown
-            // away. Checked before the sentence test because the pile sits
-            // above the sentence band and would otherwise read as a play.
+            // away. Checked before the play test because the pile sits above
+            // the midline and would otherwise read as a play.
             final discard = _discard;
             if (discard != null &&
                 discard.containsBoardPoint(_centreOf(component))) {
@@ -377,17 +385,16 @@ class DrippleGame extends FlameGame {
               }
             }
 
-            // Hand card lifted toward the sentence zone. Where it landed
-            // decides where in the sentence it goes — a child who drops a
-            // card in front of `cats` means it to read before `cats`.
-            final handReach =
-                CardRowLayout.blockHeight(size.x, _hand.length) / 2;
-            if (dropPosition.y < _handY - handReach) {
+            // Pushed forward past the midline — the card is being played.
+            // Where it landed decides where in the sentence it goes: a child
+            // who drops a card in front of `cats` means it to read before
+            // `cats`.
+            if (_centreOf(component).y < _midlineY) {
               final idx = _hand.indexWhere((c) => c.id == cardId);
               if (idx >= 0) {
                 onCardPlaced?.call(
                   idx,
-                  CardRowLayout.insertionIndexAt(
+                  SentenceLine.insertionIndexAt(
                     ui.Offset(dropPosition.x, dropPosition.y),
                     size.x,
                     _sentenceZone.length,
@@ -402,6 +409,7 @@ class DrippleGame extends FlameGame {
         );
         comp.priority = i;
         comp.markedForDiscard = !isSentenceZone && _discardMode;
+        _dress(comp, i, count, isSentenceZone, cardSize);
         updatedComponents.add(comp);
         add(comp);
 
@@ -424,15 +432,37 @@ class DrippleGame extends FlameGame {
   /// Called when a sentence parses. The board says so a beat before the
   /// judgment sheet does, which is where the player is already looking.
   void playSuccessSweep() {
+    final height = BoardLayout.cardHeight + 24;
     add(
       SweepComponent(
-        bounds: _band(
-          _sentenceZoneY,
-          _sentenceZone.length,
-          minHeight: CardRowLayout.cardHeight,
+        bounds: ui.RRect.fromRectAndRadius(
+          ui.Rect.fromCenter(
+            center: ui.Offset(size.x / 2, _sentenceZoneY),
+            width: size.x,
+            height: height,
+          ),
+          const ui.Radius.circular(4),
         ),
       ),
     );
+  }
+
+  /// Everything about a card that follows from *where in the row it is*: how
+  /// far it leans, and how big it is.
+  ///
+  /// Both are eased inside the component rather than assigned, so a card
+  /// crossing between the fan and the line rotates square and changes size on
+  /// the way over instead of snapping at either end.
+  void _dress(
+    CardComponent comp,
+    int index,
+    int count,
+    bool isSentenceZone,
+    ui.Size cardSize,
+  ) {
+    comp.restingAngle =
+        isSentenceZone ? 0 : HandFan.lean(index, count);
+    comp.resizeTo(Vector2(cardSize.width, cardSize.height));
   }
 
   bool _listsEqual(List<WordCard> a, List<WordCard> b) {

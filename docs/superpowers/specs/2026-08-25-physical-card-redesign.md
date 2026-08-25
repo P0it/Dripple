@@ -256,3 +256,38 @@ Rewritten:
 - `lib/game/components/card_component.dart`, `pile_component.dart`
 - the eight screens and the game sub-widgets, for ground and tone
 - `test/core/design/no_legacy_theme_test.dart`
+
+
+---
+
+## Addendum, same day — the sentence zone is gone
+
+Shipped and looked at, the recessed sentence zone read as a *submission tray*:
+a box with a dashed border and a placeholder inside it is the anatomy of a form
+field, whatever material it is made of. At a table you do not drop cards into a
+slot; you push forward the ones you are playing.
+
+So the container went. The hand is now a single overlapping fan on the rail and
+a played card is pushed up onto bare felt. The midline between the two decides
+what a drop means, in both directions. Nothing about the game model changed —
+`placeCard`, `reorderSentence`, `removeFromSentence`, `submitSentence` and the
+AI are untouched; this was presentation only.
+
+Two consequences worth recording:
+
+**Overlap is allowed now.** `CardRowLayout` refused to overlap cards on the
+grounds that a hidden word cannot be played, and grew a second row instead.
+That was correct while the word across the middle was a card's only identity.
+It is not any more: the top-left index now carries the *word*, because that
+corner is the one still showing when the next card covers this one, and a word
+is to this deck what a rank is to a playing card. The bottom-right index keeps
+the dictionary abbreviation, which is only ever read on a card you can already
+see whole. Asymmetric corners are a deliberate break from a real deck — a real
+card repeats its rank at both ends because you might pick it up either way
+round, and ours is always upright.
+
+**The two rows no longer share a layout.** `lib/game/board_layout.dart` splits
+into `HandFan` — one line, overlapping, leaning, never wrapping — and
+`SentenceLine` — one line, never overlapping, shrinking its cards to fit. The
+split is the point: a held card has to be identifiable, a played card has to be
+read, and those are different requirements.

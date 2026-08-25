@@ -74,7 +74,6 @@ class _GameScreenState extends ConsumerState<GameScreen>
     super.didChangeDependencies();
     final l10n = AppLocalizations.of(context)!;
     _game.labels = ZoneLabels(
-      sentence: l10n.sentenceZoneMake,
       hand: l10n.sentenceZoneHand,
       hint: l10n.sentenceZoneHint,
     );

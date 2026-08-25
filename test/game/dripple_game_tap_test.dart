@@ -2,7 +2,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:dripple/game/card_row_layout.dart';
+import 'package:dripple/game/board_layout.dart';
 import 'package:dripple/game/dripple_game.dart';
 import 'package:dripple/models/word_card.dart';
 
@@ -25,8 +25,8 @@ Future<void> _pumpFrames(WidgetTester tester, [int frames = 5]) async {
 }
 
 Offset _centreOf(List<Offset> slots, int index) => Offset(
-      slots[index].dx + CardRowLayout.cardWidth / 2,
-      slots[index].dy + CardRowLayout.cardHeight / 2,
+      slots[index].dx + BoardLayout.cardWidth / 2,
+      slots[index].dy + BoardLayout.cardHeight / 2,
     );
 
 void main() {
@@ -40,7 +40,7 @@ void main() {
     game.updateHand(_twoCards());
     await _pumpFrames(tester);
 
-    final slots = CardRowLayout.positions(game.size.x, 2, game.size.y * 0.74);
+    final slots = HandFan.positions(game.size.x, 2, game.debugHandY);
     await tester.tapAt(_centreOf(slots, 1));
     await tester.pump(const Duration(seconds: 1));
 
@@ -57,7 +57,7 @@ void main() {
     game.updateSentenceZone(_twoCards());
     await _pumpFrames(tester);
 
-    final slots = CardRowLayout.positions(game.size.x, 2, game.size.y * 0.30);
+    final slots = SentenceLine.positions(game.size.x, 2, game.debugSentenceY);
     await tester.tapAt(_centreOf(slots, 0));
     await tester.pump(const Duration(seconds: 1));
 
@@ -74,7 +74,7 @@ void main() {
     game.updateHand(_twoCards());
     await _pumpFrames(tester);
 
-    final slots = CardRowLayout.positions(game.size.x, 2, game.size.y * 0.74);
+    final slots = HandFan.positions(game.size.x, 2, game.debugHandY);
     final from = _centreOf(slots, 0);
     final gesture = await tester.startGesture(from);
     for (var i = 0; i < 10; i++) {

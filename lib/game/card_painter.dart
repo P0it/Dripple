@@ -184,38 +184,61 @@ class CardPainter {
   /// Top-left and bottom-right, the second rotated 180°.
   ///
   /// This is the device that lets a hand be read while the cards overlap, and
-  /// it is the most card-like thing on the card. Without it a fanned hand is
-  /// a row of hidden words.
+  /// it is the most card-like thing on the card.
+  ///
+  /// The two corners carry different things, which is a deliberate break from
+  /// a real deck. A playing card repeats its rank at both corners because you
+  /// might pick it up either way round; ours is always upright, so each corner
+  /// can do the job it is actually in a position to do.
+  ///
+  /// **Top-left** carries the *word*, because that corner is the one still
+  /// showing when the card is covered by the next one in the fan, and the word
+  /// is this card's identity — the way a rank is a playing card's. Without it
+  /// a fanned hand is a row of parts of speech.
+  ///
+  /// **Bottom-right** carries the dictionary abbreviation, which is only ever
+  /// read on a card you can already see whole, and which an adult learner
+  /// wants spelled out rather than inferred from a pip.
   static void _indices(Canvas canvas, WordCard card, Size size, Color printed) {
-    final tag = PosPip.tagFor(card.pos);
     final inset = size.width * (_frameInset + 0.045);
+    final pipSide = size.width * 0.075;
+    final fontSize = size.width * 0.105;
 
-    void block() {
-      final tp = _tag(tag, size.width * 0.105, printed);
+    void block(String label, {required double maxWidth}) {
+      final tp = _tag(label, fontSize, printed, maxWidth: maxWidth);
       tp.paint(canvas, Offset(inset, inset));
 
-      final pipTop = inset + tp.height + size.height * 0.008;
-      final pipSide = size.width * 0.075;
       PosPip.paint(
         canvas,
         card.pos,
-        Rect.fromLTWH(inset + (tp.width - pipSide) / 2, pipTop, pipSide,
-            pipSide),
+        Rect.fromLTWH(
+          inset,
+          inset + tp.height + size.height * 0.008,
+          pipSide,
+          pipSide,
+        ),
         printed,
       );
     }
 
-    block();
+    // Held to under half the card: past that the index stops being an index
+    // and starts competing with the word across the middle.
+    block(card.word, maxWidth: size.width * 0.46);
 
     canvas.save();
     canvas.translate(size.width / 2, size.height / 2);
     canvas.rotate(3.141592653589793);
     canvas.translate(-size.width / 2, -size.height / 2);
-    block();
+    block(PosPip.tagFor(card.pos), maxWidth: size.width * 0.46);
     canvas.restore();
   }
 
-  static TextPainter _tag(String value, double fontSize, Color color) =>
+  static TextPainter _tag(
+    String value,
+    double fontSize,
+    Color color, {
+    required double maxWidth,
+  }) =>
       TextPainter(
         text: TextSpan(
           text: value,
@@ -225,11 +248,13 @@ class CardPainter {
             fontSize: fontSize,
             fontWeight: FontWeight.w700,
             height: 1.0,
-            letterSpacing: 0.2,
+            letterSpacing: 0.1,
           ),
         ),
         textDirection: TextDirection.ltr,
-      )..layout();
+        maxLines: 1,
+        ellipsis: '…',
+      )..layout(maxWidth: maxWidth);
 
   /// JUMP / STEAL / JOKER only. Word cards carry an index instead.
   static void _specialIcon(

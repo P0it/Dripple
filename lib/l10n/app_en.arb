@@ -181,7 +181,7 @@
   "stealGiveWhat": "Which card do you give?",
   "sentenceZoneHand": "My cards",
   "sentenceZoneMake": "Build your sentence here",
-  "sentenceZoneHint": "Drop cards here\nto build a sentence",
+  "sentenceZoneHint": "Push cards up\nto build a sentence",
   "cannotDiscardJustTaken": "You just took that card — you can't throw it away this turn",
   "tapDeckToDraw": "Tap the deck to take a card"
 }

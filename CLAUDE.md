@@ -226,9 +226,25 @@ lib/
    between headword and gloss. Each is load-bearing; drop any and it slides
    back toward a rounded rectangle with text in it.
 
-10. **The board is a table.** The sentence zone is recessed into the felt and
-    the hand sits on a raised rail. Recess versus rail is the distinction a
-    real table makes, and it reads before any label does.
+10. **The board is a table, and there is one hand on it.** The sentence used
+    to sit in its own recess with a dashed border and a placeholder, which is
+    the anatomy of a form field — it read as *the place you submit to* rather
+    than as the cards you are playing. There is no container now. The hand is
+    one overlapping fan on a rail; cards you are playing are pushed forward
+    onto bare felt, and the gap is the only thing saying they are in play,
+    which is exactly what the gap says at a real table.
+
+    The two rows are laid out by different rules because they have different
+    jobs (`lib/game/board_layout.dart`). A held card only has to be
+    *identifiable*, so `HandFan` overlaps and lets the corner index carry it.
+    A played card has to be *read*, so `SentenceLine` never overlaps and
+    shrinks its cards instead.
+
+    This repealed the older "cards never overlap — a child who cannot read the
+    card cannot play it" rule, which was right while a card carried its
+    identity only in the word across its middle. The card now repeats its word
+    in the top-left corner index, which is precisely what a corner index is
+    for. The ban went with the thing that made it necessary.
 
 11. **$0 operational cost** for core gameplay — grammar engine and AI are fully
     client-side.

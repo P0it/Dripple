@@ -4,7 +4,7 @@ import 'package:flame_test/flame_test.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:dripple/game/card_row_layout.dart';
+import 'package:dripple/game/board_layout.dart';
 import 'package:dripple/game/components/card_component.dart';
 import 'package:dripple/game/dripple_game.dart';
 import 'package:dripple/models/word_card.dart';
@@ -44,7 +44,7 @@ void main() {
       await game.ready();
 
       final slots =
-          CardRowLayout.positions(game.size.x, 2, game.size.y * 0.30);
+          SentenceLine.positions(game.size.x, 2, game.debugSentenceY);
       final first =
           game.debugSentenceComponents.firstWhere((c) => c.card.id == 'a');
 

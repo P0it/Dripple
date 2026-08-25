@@ -73,6 +73,18 @@ class CardComponent extends PositionComponent
   /// every rebuild while the hand as a whole stops reading as CSS.
   final double _jitter;
 
+  /// Where the card is meant to sit, in radians. The fan sets this so the row
+  /// splays; a card pushed forward into a sentence goes back to near-square,
+  /// keeping only its own crook. Changes are eased rather than snapped, so a
+  /// card leaving the fan rotates as it travels.
+  late double _angleTarget = _jitter;
+  late double _angle = _jitter;
+
+  set restingAngle(double radians) => _angleTarget = radians + _jitter * 0.5;
+
+  /// Resting jitter alone — what a card laid flat on the table takes.
+  double get squareAngle => _jitter;
+
   static double _jitterFor(String id) {
     final n = id.hashCode.abs() % 1000;
     return (n / 1000 * 2 - 1) * _maxJitter;
@@ -93,6 +105,19 @@ class CardComponent extends PositionComponent
   /// lands rather than arrives.
   double _pulse = 0;
 
+  /// The size the card is easing toward. A sentence line shrinks its cards to
+  /// stay on one line, so a card crossing into one changes size; snapping it
+  /// mid-flight reads as a glitch rather than as the same card.
+  Vector2? _sizeTarget;
+
+  void resizeTo(Vector2 target) {
+    if ((target - size).length < 0.01) {
+      _sizeTarget = null;
+      return;
+    }
+    _sizeTarget = target.clone();
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
@@ -104,6 +129,19 @@ class CardComponent extends PositionComponent
 
     _lift = approach(_lift, isDragging ? 1 : 0, 14);
     _enter = approach(_enter, 1, 11);
+    _angle = approach(_angle, _angleTarget, 10);
+
+    final wanted = _sizeTarget;
+    if (wanted != null) {
+      size.setValues(
+        approach(size.x, wanted.x, 14),
+        approach(size.y, wanted.y, 14),
+      );
+      if ((wanted - size).length < 0.15) {
+        size.setFrom(wanted);
+        _sizeTarget = null;
+      }
+    }
 
     if (!isDragging) _tiltTarget = 0;
     _tilt = approach(_tilt, _tiltTarget, 12);
@@ -126,9 +164,9 @@ class CardComponent extends PositionComponent
     canvas.save();
     canvas.translate(cx, cy);
     canvas.scale(scale);
-    // The crook straightens as the card is picked up — you square a card in
+    // The lean straightens as the card is picked up — you square a card in
     // your hand without thinking about it.
-    canvas.rotate(_jitter * (1 - _lift));
+    canvas.rotate(_angle * (1 - _lift));
 
     if (_tilt.abs() > 0.0005) {
       final m = material.Matrix4.identity()

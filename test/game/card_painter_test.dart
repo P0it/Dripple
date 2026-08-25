@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dripple/data/card_deck.dart';
 import 'package:dripple/game/card_painter.dart';
-import 'package:dripple/game/card_row_layout.dart';
+import 'package:dripple/game/board_layout.dart';
 import 'package:dripple/models/word_card.dart';
 
 void main() {
@@ -22,13 +22,24 @@ void main() {
 
   _fitTests();
 
-  test('a seven-card hand stays within two rows on a phone', () {
-    // The real constraint on card width. A third row pushes the hand into
-    // the sentence zone, so this is what keeps the board playable — not the
-    // card's absolute size.
-    for (final width in [390.0, 430.0]) {
-      expect(CardRowLayout.rowCount(width, 7), lessThanOrEqualTo(2),
-          reason: 'seven cards on a \${width.toInt()}pt screen');
+  test('a seven-card hand stays on one line with a readable sliver', () {
+    // The hand no longer wraps — it overlaps — so the constraint moved. What
+    // has to hold is that every card still shows enough of itself to be
+    // picked out and picked up: the corner index needs room, and a thumb
+    // needs something to land on.
+    //
+    // The index block sits at 13% of the card width and is a few characters
+    // wide, so a quarter of the card is the floor. It is also comfortably
+    // above the 44pt Apple touch minimum at these widths.
+    for (final width in [360.0, 390.0, 430.0]) {
+      final step = HandFan.step(width, 7);
+      expect(step, greaterThan(BoardLayout.cardWidth * 0.25),
+          reason: 'seven cards on a ${width.toInt()}pt screen');
+
+      final slots = HandFan.positions(width, 7, 400);
+      expect(slots.first.dx, greaterThanOrEqualTo(0));
+      expect(slots.last.dx + BoardLayout.cardWidth,
+          lessThanOrEqualTo(width + 0.01));
     }
   });
 
