@@ -146,7 +146,7 @@ class PileComponent extends PositionComponent with TapCallbacks {
           style: const material.TextStyle(
             fontFamily: 'Pretendard',
             color: AppColors.ink,
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: material.FontWeight.w700,
           ),
         )
@@ -155,8 +155,8 @@ class PileComponent extends PositionComponent with TapCallbacks {
 
     // A brass plate under the number. White type straight onto the lattice is
     // one more thing competing with it; a plate is what a real deck box does.
-    final w = _countPainter.width + 12;
-    final h = _countPainter.height + 5;
+    final w = _countPainter.width + 14;
+    final h = _countPainter.height + 6;
     final rect = ui.Rect.fromLTWH((size.x - w) / 2, size.y - h / 2 - 4, w, h);
     canvas.drawRRect(
       ui.RRect.fromRectAndRadius(rect, ui.Radius.circular(h / 2)),

@@ -59,15 +59,16 @@ class DrippleGame extends FlameGame {
   PileComponent? _deck;
   PileComponent? _discard;
 
-  /// Piles are drawn smaller than a hand card. They sit in the strip above
-  /// the sentence band, which is the only space the board has, and a pile is
-  /// a place rather than something you read.
-  static const double _pileScale = 0.62;
+  /// Piles are drawn at full card size, because that is what they are made
+  /// of. They used to be shrunk to 62% to squeeze into the strip above the
+  /// sentence band; that band is gone, and a deck that is smaller than the
+  /// cards it deals reads as a button with a picture of a deck on it.
+  static const double _pileScale = 1.0;
 
   /// Piles sit at the top of the table, clear of everything. They are the
   /// only fixed furniture on the board, so they do not move when the hand
   /// does.
-  double get _pileY => size.y * 0.07;
+  double get _pileY => size.y * 0.05;
 
   /// Where each card was standing when its component was last torn down.
   ///
@@ -99,6 +100,17 @@ class DrippleGame extends FlameGame {
   @material.visibleForTesting
   List<CardComponent> get debugSentenceComponents =>
       List.unmodifiable(_sentenceComponents);
+
+  /// Centre of the deck in board coordinates, or null before the piles exist.
+  @material.visibleForTesting
+  Vector2? get debugDeckCentre {
+    final deck = _deck;
+    if (deck == null) return null;
+    return Vector2(
+      deck.position.x + deck.size.x / 2,
+      deck.position.y + deck.size.y / 2,
+    );
+  }
 
   /// Centre of the discard pile in board coordinates, or null before the
   /// piles exist.
