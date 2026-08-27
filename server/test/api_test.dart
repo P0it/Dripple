@@ -193,4 +193,56 @@ void main() {
       expect(nonsense['body']['code'], equals('bad_action'));
     });
   });
+
+  Future<Map<String, dynamic>> get(String path, String uid) async {
+    final response = await handler(Request(
+      'GET',
+      Uri.parse('http://localhost$path'),
+      headers: {'authorization': 'Bearer $uid'},
+    ));
+    final text = await response.readAsString();
+    return {
+      'status': response.statusCode,
+      'body': text.isEmpty ? <String, dynamic>{} : jsonDecode(text),
+    };
+  }
+
+  group('reading a room back', () {
+    test('gives a player who was away their own hand and the table', () async {
+      final made = await post('/rooms', 'mina', {'name': 'Mina'});
+      final code = made['body']['code'] as String;
+      final roomId = made['body']['roomId'] as String;
+      await post('/rooms/join', 'jun', {'code': code, 'name': 'Jun'});
+      await post('/rooms/$roomId/start', 'mina');
+
+      final read = await get('/rooms/$roomId', 'jun');
+      expect(read['status'], equals(200));
+      expect(read['body']['yourSeat'], equals(1));
+      expect((read['body']['yourHand'] as List).length, equals(7));
+      expect(read['body']['public']['handCounts'], equals([7, 7]));
+    });
+
+    test('still tells nobody anybody else\'s cards', () async {
+      final made = await post('/rooms', 'mina', {'name': 'Mina'});
+      final code = made['body']['code'] as String;
+      final roomId = made['body']['roomId'] as String;
+      await post('/rooms/join', 'jun', {'code': code, 'name': 'Jun'});
+      await post('/rooms/$roomId/start', 'mina');
+
+      final told = everyString((await get('/rooms/$roomId', 'jun'))['body']);
+      final game = (await store.load(roomId))!.game!;
+      for (final card in game.players[0].hand) {
+        expect(told, isNot(contains(card.id)));
+      }
+      for (final card in game.deck) {
+        expect(told, isNot(contains(card.id)));
+      }
+    });
+
+    test('is a 404 for a room that never existed', () async {
+      final read = await get('/rooms/room_nope', 'mina');
+      expect(read['status'], equals(404));
+      expect(read['body']['code'], equals('no_such_room'));
+    });
+  });
 }

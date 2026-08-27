@@ -71,6 +71,13 @@ class GameService {
     throw const GameError('code_collision', 'could not allocate a room code');
   }
 
+  /// The room as it stands. Reading changes nothing, so it takes no version.
+  Future<Room> readRoom(String roomId) async {
+    final room = await _store.load(roomId);
+    if (room == null) throw GameError.noSuchRoom;
+    return room;
+  }
+
   Future<Room> joinRoom({
     required String code,
     required String uid,

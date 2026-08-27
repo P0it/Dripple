@@ -30,6 +30,9 @@ class Api {
   Handler get handler {
     final router = Router()
       ..get('/health', (Request r) => Response.ok('ok'))
+      // Reading the room back is how a client that was away — backgrounded,
+      // out of signal, freshly launched — finds out where the game got to.
+      ..get('/rooms/<roomId>', _guard(_readRoom))
       ..post('/rooms', _guard(_createRoom))
       ..post('/rooms/join', _guard(_joinRoom))
       ..post('/rooms/<roomId>/ready', _guard(_setReady))
@@ -45,6 +48,11 @@ class Api {
   }
 
   // ---------------------------------------------------------------------
+
+  Future<Response> _readRoom(Request request, String uid) async {
+    final room = await _service.readRoom(request.params['roomId']!);
+    return _ok(_view(room, uid));
+  }
 
   Future<Response> _createRoom(Request request, String uid) async {
     final body = await _body(request);
