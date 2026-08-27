@@ -1,8 +1,8 @@
 import 'dart:math';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:dripple_rules/models/game_state.dart';
 import 'package:dripple_rules/models/word_card.dart';
-import 'package:dripple/providers/game_provider.dart';
+import 'package:dripple_rules/engine/game_engine.dart';
 
 GameNotifier _notifier() => GameNotifier(random: Random(42), autoRunAI: false);
 
