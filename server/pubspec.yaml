@@ -1,0 +1,21 @@
+name: dripple_server
+description: >-
+  The authority for Dripple's online games. It owns the deck and every hand —
+  the things no player may hold — and it judges sentences with the same rules
+  package the app plays by, so there is only ever one implementation of
+  English grammar in this project.
+publish_to: 'none'
+version: 1.0.0
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  dripple_rules:
+    path: ../packages/dripple_rules
+  shelf: ^1.4.2
+  shelf_router: ^1.1.4
+
+dev_dependencies:
+  test: ^1.25.0
+  lints: ^5.0.0

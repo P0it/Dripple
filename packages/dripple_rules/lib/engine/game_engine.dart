@@ -94,6 +94,31 @@ class GameNotifier extends StateNotifier<GameState> {
   /// Test-only escape hatch for setting up specific board states.
   void debugSetState(GameState s) => state = s;
 
+  /// The game as it stands.
+  ///
+  /// [StateNotifier.state] is protected — it is for subclasses and tests — and
+  /// on a device nothing needs more than that, because the UI listens rather
+  /// than reads. The online server drives an engine from outside the class and
+  /// has nobody to listen on its behalf, so it reads here.
+  GameState get snapshot => state;
+
+  /// Pick a stored game back up.
+  ///
+  /// The online server holds no game in memory — it scales to nothing between
+  /// requests — so every turn starts by restoring the game from storage,
+  /// applying one action, and writing it back.
+  void restore(GameState s) {
+    _isProcessingAI = false;
+    state = s;
+  }
+
+  /// Play one bot turn, and return whether there was one to play.
+  ///
+  /// [runAITurns] plays every consecutive bot turn in one go, which is right
+  /// on a device where the delay between them is the animation. The server
+  /// cannot animate, so it steps one seat at a time and lets each client pace
+  /// what it shows.
+
   // -------------------------------------------------------------------------
   // Setup
   // -------------------------------------------------------------------------
@@ -602,6 +627,13 @@ class GameNotifier extends StateNotifier<GameState> {
   /// This lives in the notifier, not the screen. When the UI owned it, any
   /// turn advance the UI did not initiate — a timer expiry, a JUMP — left
   /// nobody to run the AI and the game froze.
+  bool runOneAITurn() {
+    if (state.phase != GamePhase.playing) return false;
+    if (!state.currentPlayer.isAI) return false;
+    _executeOneAITurn();
+    return true;
+  }
+
   Future<List<JudgmentResult>> runAITurns() async {
     if (_isProcessingAI) return const [];
     _isProcessingAI = true;

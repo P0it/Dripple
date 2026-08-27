@@ -39,3 +39,6 @@ web/.dart_tool/
 .dart_tool/
 pubspec.lock
 .playwright-mcp/
+
+# Server build artefacts
+server/.dart_tool/
