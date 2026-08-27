@@ -159,6 +159,22 @@ class WordCard extends Equatable {
 
   /// ARGB colour for this card's part of speech (Montessori convention).
 
+  /// A card whose face nobody at this seat may see — an opponent's hand, or
+  /// the deck. The board draws backs for these, so the number of them is the
+  /// only information they carry.
+  ///
+  /// Face-down cards exist only in a client's reconstructed view. They never
+  /// appear in the server's own state and never come out of [CardDeck].
+  factory WordCard.faceDown(String id) => WordCard(
+        id: id,
+        word: '',
+        type: CardType.word,
+      );
+
+  /// Whether this card is a placeholder standing in for a card this seat is
+  /// not allowed to see.
+  bool get isFaceDown => type == CardType.word && word.isEmpty;
+
   /// Create a special card
   factory WordCard.special(String id, CardType type) {
     assert(type != CardType.word);
