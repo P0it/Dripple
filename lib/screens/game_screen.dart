@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:dripple/l10n/app_localizations.dart';
@@ -5,15 +7,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../core/design/felt_scaffold.dart';
 import '../core/game_feedback.dart';
+import '../core/tutorial_prefs.dart';
 import '../engine/ai/ai_player.dart';
 import '../game/dripple_game.dart';
 import '../models/game_state.dart';
 import '../models/word_card.dart';
 import '../providers/game_provider.dart';
+import '../tutorial/tutorial_controller.dart';
+import '../tutorial/tutorial_script.dart';
+import 'tutorial/tutorial_overlay.dart';
 import 'game/action_bar.dart';
 import 'game/game_end_overlay.dart';
 import 'game/opponents_bar.dart';
-import 'game/scoreboard_bar.dart';
 import 'judgment_screen.dart';
 import 'widgets/special_card_sheet.dart';
 
@@ -21,10 +26,15 @@ class GameScreen extends ConsumerStatefulWidget {
   final int playerCount;
   final AIDifficulty difficulty;
 
+  /// Runs the scripted one-player lesson instead of a game: a dealt board
+  /// nobody can get stuck on, with the coach marks over it.
+  final bool tutorial;
+
   const GameScreen({
     super.key,
     required this.playerCount,
     this.difficulty = AIDifficulty.medium,
+    this.tutorial = false,
   });
 
   @override
@@ -36,6 +46,10 @@ class _GameScreenState extends ConsumerState<GameScreen>
   late DrippleGame _game;
   bool _initialized = false;
   late AnimationController _overlayFadeController;
+  TutorialController? _tutorial;
+  final GlobalKey _boardKey = GlobalKey();
+  final GlobalKey _submitKey = GlobalKey();
+  final GlobalKey _overlayKey = GlobalKey();
   late Animation<double> _overlayFadeAnimation;
   ProviderSubscription? _gameSubscription;
 
@@ -43,6 +57,9 @@ class _GameScreenState extends ConsumerState<GameScreen>
   void initState() {
     super.initState();
     _game = DrippleGame();
+    if (widget.tutorial) {
+      _tutorial = TutorialController()..addListener(_onTutorialStep);
+    }
     _game.onCardPlaced = _onCardPlaced;
     _game.onDrawFromDeck = _onDrawFromDeck;
     _game.onDrawFromDiscard = _onDrawFromDiscard;
@@ -52,6 +69,8 @@ class _GameScreenState extends ConsumerState<GameScreen>
     _game.onSentenceRemove = (index) =>
         ref.read(gameProvider.notifier).removeFromSentence(index);
     _game.onHandCardTapped = _onHandCardTapped;
+    _game.onHandReorder = (from, to) =>
+        ref.read(gameProvider.notifier).reorderHand(from, to);
     _overlayFadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 350),
@@ -62,8 +81,16 @@ class _GameScreenState extends ConsumerState<GameScreen>
     );
   }
 
+  /// A step change moves the coach mark, which is measured against the board
+  /// as it stands after this frame.
+  void _onTutorialStep() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
+    _tutorial?.removeListener(_onTutorialStep);
+    _tutorial?.dispose();
     _gameSubscription?.close();
     _overlayFadeController.dispose();
     super.dispose();
@@ -73,6 +100,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     final l10n = AppLocalizations.of(context)!;
+    _game.locale = Localizations.localeOf(context).languageCode;
     _game.labels = ZoneLabels(
       hand: l10n.sentenceZoneHand,
       hint: l10n.sentenceZoneHint,
@@ -94,6 +122,10 @@ class _GameScreenState extends ConsumerState<GameScreen>
             );
             _game.updateHand(humanPlayer.hand);
             _game.updateSentenceZone(humanPlayer.sentenceZone);
+            // After the board has been told, not before: a step that ends on
+            // a gesture moves the coach mark, and the mark is measured
+            // against where the cards now are.
+            _tutorial?.syncState(next);
           });
         }
         // Trigger fade-in animation whenever an overlay phase is entered
@@ -107,12 +139,16 @@ class _GameScreenState extends ConsumerState<GameScreen>
         }
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(gameProvider.notifier).startGame(
-              GameConfig(
-                playerCount: widget.playerCount,
-                difficulty: widget.difficulty,
-              ),
-            );
+        if (widget.tutorial) {
+          ref.read(gameProvider.notifier).startTutorial();
+        } else {
+          ref.read(gameProvider.notifier).startGame(
+                GameConfig(
+                  playerCount: widget.playerCount,
+                  difficulty: widget.difficulty,
+                ),
+              );
+        }
         ref.read(gameFeedbackProvider).playGameMusic();
       });
     }
@@ -132,13 +168,27 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
     if (result.isCorrect) {
       _game.playSuccessSweep();
+      _tutorial?.onSentenceAccepted();
       await feedback.onCorrectAnswer();
     } else {
+      _tutorial?.onSentenceRejected();
       await feedback.onIncorrectAnswer();
     }
     if (!mounted) return;
 
     await showJudgmentSheet(context, result);
+  }
+
+  /// End the turn without spending a card.
+  ///
+  /// Only a sentence empties a hand, so being made to throw a card away to
+  /// finish a turn left a player drawing one and discarding one forever at the
+  /// same hand size. Passing keeps the draw, and a hand that grows is the one
+  /// that eventually holds a long sentence.
+  void _onPass() {
+    if (ref.read(gameProvider.notifier).passTurn()) {
+      ref.read(gameFeedbackProvider).onButtonTap();
+    }
   }
 
   void _onDrawFromDeck() {
@@ -212,36 +262,128 @@ class _GameScreenState extends ConsumerState<GameScreen>
     );
   }
 
+  /// Where a coach mark's target is, in the overlay's own coordinates.
+  ///
+  /// The board is a canvas, so its furniture cannot be found by widget key
+  /// the way the submit button can. It hands out rectangles in board
+  /// coordinates instead, and the board's own box converts them.
+  Rect? _spotRect(TutorialSpot spot) {
+    final overlayBox =
+        _overlayKey.currentContext?.findRenderObject() as RenderBox?;
+    if (overlayBox == null || !overlayBox.hasSize) return null;
+
+    Rect? fromWidget(GlobalKey key) {
+      final box = key.currentContext?.findRenderObject() as RenderBox?;
+      if (box == null || !box.hasSize) return null;
+      final topLeft = overlayBox.globalToLocal(box.localToGlobal(Offset.zero));
+      return topLeft & box.size;
+    }
+
+    Rect? fromBoard(Rect? boardRect) {
+      if (boardRect == null) return null;
+      final box =
+          _boardKey.currentContext?.findRenderObject() as RenderBox?;
+      if (box == null || !box.hasSize) return null;
+      final topLeft =
+          overlayBox.globalToLocal(box.localToGlobal(boardRect.topLeft));
+      return topLeft & boardRect.size;
+    }
+
+    return switch (spot) {
+      TutorialSpot.none => null,
+      TutorialSpot.deck => fromBoard(_game.deckRect),
+      TutorialSpot.discard => fromBoard(_game.discardRect),
+      TutorialSpot.hand => fromBoard(_game.handRect),
+      TutorialSpot.sentence => fromBoard(_game.sentenceRect),
+      TutorialSpot.submit => fromWidget(_submitKey),
+    };
+  }
+
+  /// The step whose target has already been measured against a laid-out
+  /// board. The first build of a step runs before anything has a size, so
+  /// one extra frame is asked for and then the matter is closed.
+  String? _measuredStep;
+
+  void _remeasureIfNeeded(TutorialStep step) {
+    if (_measuredStep == step.id) return;
+    _measuredStep = step.id;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  void _leaveTutorial() {
+    ref.read(gameFeedbackProvider).onButtonTap();
+    if (mounted) context.go('/home');
+  }
+
+  void _finishTutorial() {
+    ref.read(gameFeedbackProvider).onButtonTap();
+    unawaited(TutorialPrefs.markCompleted());
+    if (!mounted) return;
+    // Landing on the mode list with home behind it, which is the stack a
+    // player who had walked there themselves would be standing on.
+    context.go('/home');
+    context.push('/mode-select');
+  }
+
   @override
   Widget build(BuildContext context) {
     final gameState = ref.watch(gameProvider);
+    final tutorial = _tutorial;
+    if (tutorial != null) _remeasureIfNeeded(tutorial.step);
 
     return FeltScaffold(
       body: SafeArea(
         child: Stack(
+          key: _overlayKey,
           children: [
             // ---- Main game UI ----
             Column(
               children: [
-                // Scoreboard
-                ScoreboardBar(gameState: gameState),
-                // Opponents area
+                // There is one row of players, not two. The strip that used to
+                // sit above this one carried every player's card count — which
+                // is the same number this row already prints under each
+                // opponent — plus a step pill saying "draw" or "action", which
+                // the action bar at the foot says in words you can act on. The
+                // only things up there with no double were the clock and the
+                // mute, so they moved into this row and the strip went.
                 OpponentsBar(gameState: gameState),
                 // The zone labels used to be one line of text above the whole
                 // board, which named neither band it sat over. They are drawn
                 // on the bands themselves now.
                 // Flame game area
                 Expanded(
-                  child: GameWidget(game: _game),
+                  child: GameWidget(key: _boardKey, game: _game),
                 ),
                 // Drawing, discarding and using a special card all happen on
                 // the board now. Submitting is the one thing with no object
                 // to touch, so it is the one thing left down here.
-                ActionBar(gameState: gameState, onSubmit: _onSubmit),
+                ActionBar(
+                  gameState: gameState,
+                  onSubmit: _onSubmit,
+                  // One player has nobody to hand a turn to, so the lesson
+                  // has no Pass button to explain.
+                  onPass: widget.tutorial ? null : _onPass,
+                  submitKey: _submitKey,
+                ),
               ],
             ),
+            // ---- The lesson ----
+            if (tutorial != null && gameState.phase == GamePhase.playing)
+              Positioned.fill(
+                child: TutorialOverlay(
+                  step: tutorial.step,
+                  hole: _spotRect(tutorial.step.spot),
+                  isLastStep: tutorial.isLastStep,
+                  isRetrying: tutorial.isRetrying,
+                  onNext: tutorial.next,
+                  onFinish: _finishTutorial,
+                  onQuit: _leaveTutorial,
+                ),
+              ),
             // ---- Game-over overlay ----
-            if (gameState.phase == GamePhase.gameEnd)
+            if (tutorial == null && gameState.phase == GamePhase.gameEnd)
               GameEndOverlay(
                 gameState: gameState,
                 fadeAnimation: _overlayFadeAnimation,

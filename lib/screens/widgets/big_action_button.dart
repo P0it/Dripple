@@ -55,15 +55,12 @@ class _BigActionButtonState extends State<BigActionButton> {
       fill = AppColors.divider;
       foreground = AppColors.textDisabled;
     } else if (widget.filled) {
-      fill = _down
-          ? Color.lerp(widget.color, Colors.black, 0.14)!
-          : widget.color;
-      // Brass needs ink on it; a dark accent needs white. Pick by luminance
+      fill =
+          _down ? Color.lerp(widget.color, Colors.black, 0.14)! : widget.color;
+      // Cream needs ink on it; a dark accent needs white. Pick by luminance
       // rather than by which colour was passed, so a new accent cannot ship a
       // button no one can read.
-      foreground = fill.computeLuminance() > 0.5
-          ? AppColors.ink
-          : Colors.white;
+      foreground = fill.computeLuminance() > 0.5 ? AppColors.ink : Colors.white;
     } else {
       fill = _down ? AppColors.paperShade : AppColors.paper;
       foreground = widget.color;
@@ -72,9 +69,10 @@ class _BigActionButtonState extends State<BigActionButton> {
     return Semantics(
       button: true,
       enabled: enabled,
-      label: widget.sublabel == null
-          ? widget.label
-          : '${widget.label}, ${widget.sublabel}',
+      label:
+          widget.sublabel == null
+              ? widget.label
+              : '${widget.label}, ${widget.sublabel}',
       child: GestureDetector(
         onTapDown: enabled ? (_) => setState(() => _down = true) : null,
         onTapUp: enabled ? (_) => setState(() => _down = false) : null,
@@ -87,9 +85,10 @@ class _BigActionButtonState extends State<BigActionButton> {
           decoration: BoxDecoration(
             color: fill,
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-            border: widget.selected
-                ? Border.all(color: AppColors.textPrimary, width: 2)
-                : (enabled && !widget.filled)
+            border:
+                widget.selected
+                    ? Border.all(color: AppColors.textPrimary, width: 2)
+                    : (enabled && !widget.filled)
                     ? Border.all(color: AppColors.border)
                     : null,
           ),
@@ -100,25 +99,36 @@ class _BigActionButtonState extends State<BigActionButton> {
                 GameIconView(icon, size: 22, color: foreground),
                 const SizedBox(width: AppSpacing.sm),
               ],
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    widget.label,
-                    style: AppTypography.label
-                        .copyWith(fontSize: 17, color: foreground),
-                  ),
-                  if (widget.sublabel case final sub?)
+              // Flexible so two of these can stand side by side. A button
+              // that overflows its row is a striped bar with no words on it,
+              // which is worse than a shortened label.
+              Flexible(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Text(
-                      sub,
-                      style: AppTypography.caption.copyWith(
-                        fontSize: 12,
-                        color: foreground.withValues(alpha: 0.85),
+                      widget.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.label.copyWith(
+                        fontSize: 17,
+                        color: foreground,
                       ),
                     ),
-                ],
+                    if (widget.sublabel case final sub?)
+                      Text(
+                        sub,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.caption.copyWith(
+                          fontSize: 12,
+                          color: foreground.withValues(alpha: 0.85),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ],
           ),

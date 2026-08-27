@@ -215,13 +215,13 @@ abstract final class Materials {
     canvas.restore();
   }
 
-  /// A brass hairline along a shape's outline. [dashed] draws it as a run of
+  /// A trim hairline along a shape's outline. [dashed] draws it as a run of
   /// dashes, which is how an empty target says "put something here" without
   /// becoming a sticker.
   static void hairline(
     Canvas canvas,
     RRect rrect, {
-    Color color = AppColors.brass,
+    Color color = AppColors.trim,
     double width = 1,
     bool dashed = false,
     double opacity = 1,

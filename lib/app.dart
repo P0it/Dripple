@@ -61,6 +61,13 @@ final _router = GoRouter(
       },
     ),
     GoRoute(
+      path: '/tutorial',
+      pageBuilder: (context, state) => _fadeTransition(
+        const GameScreen(playerCount: 1, tutorial: true),
+        state,
+      ),
+    ),
+    GoRoute(
       path: '/lobby',
       pageBuilder: (context, state) {
         final mode = state.uri.queryParameters['mode'] ?? 'online';

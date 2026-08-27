@@ -25,12 +25,13 @@ void main() {
   test('a seven-card hand stays on one line with a readable sliver', () {
     // The hand no longer wraps — it overlaps — so the constraint moved. What
     // has to hold is that every card still shows enough of itself to be
-    // picked out and picked up: the corner index needs room, and a thumb
-    // needs something to land on.
+    // picked out and picked up, and a thumb needs something to land on.
     //
-    // The index block sits at 13% of the card width and is a few characters
-    // wide, so a quarter of the card is the floor. It is also comfortably
-    // above the 44pt Apple touch minimum at these widths.
+    // Everything printed on the face is flush left — the part-of-speech tick
+    // at 9% in, the word under it — so the visible sliver of a covered card
+    // is the part that carries its identity. A quarter of the card leaves
+    // room for the tick and the first characters of the word, and is also
+    // comfortably above the 44pt Apple touch minimum at these widths.
     for (final width in [360.0, 390.0, 430.0]) {
       final step = HandFan.step(width, 7);
       expect(step, greaterThan(BoardLayout.cardWidth * 0.25),
@@ -46,7 +47,9 @@ void main() {
   /// Painting into a recorder catches the failures that actually happen here:
   /// a null deref, a bad clip, an unbalanced save/restore.
   void paintCard(WordCard card,
-      {bool highlighted = false, bool warned = false}) {
+      {bool highlighted = false,
+      bool warned = false,
+      String locale = 'ko'}) {
     final recorder = ui.PictureRecorder();
     CardPainter.paint(
       Canvas(recorder),
@@ -54,6 +57,7 @@ void main() {
       const Size(CardPainter.defaultWidth, CardPainter.defaultHeight),
       highlighted: highlighted,
       warned: warned,
+      locale: locale,
     );
     recorder.endRecording().dispose();
   }
@@ -100,6 +104,50 @@ void main() {
     expect(() => paintCard(card), returnsNormally);
   });
 
+  group('the gloss belongs to the player, not to the deck', () {
+    const cat = WordCard(
+      id: 'w',
+      word: 'cat',
+      pos: PartOfSpeech.noun,
+      meanings: {'ko': '고양이', 'ja': '猫', 'en': 'cat'},
+    );
+
+    test('prints the learner\'s own language', () {
+      expect(CardPainter.showsGloss(cat, 'ko'), isTrue);
+      expect(CardPainter.showsGloss(cat, 'ja'), isTrue);
+    });
+
+    test('prints nothing in English, because there is nothing to teach', () {
+      // `meanings['en']` of an English word is that same word. An English
+      // player was reading "cat" glossed as "cat" — or, before the locale was
+      // wired through at all, reading Korean.
+      expect(CardPainter.showsGloss(cat, 'en'), isFalse);
+    });
+
+    test('prints nothing for a locale the deck has no entry for', () {
+      expect(CardPainter.showsGloss(cat, 'fr'), isFalse);
+      const bare = WordCard(id: 'x', word: 'the', pos: PartOfSpeech.article);
+      expect(CardPainter.showsGloss(bare, 'ko'), isFalse);
+    });
+
+    test('every deck card is silent in English and speaks in Korean', () {
+      final deck = CardDeck().generate().where((c) => !c.isSpecial);
+      expect(deck, isNotEmpty);
+      for (final card in deck) {
+        expect(CardPainter.showsGloss(card, 'en'), isFalse,
+            reason: '"${card.word}" glosses itself in English');
+      }
+      expect(deck.where((c) => CardPainter.showsGloss(c, 'ko')), isNotEmpty);
+    });
+
+    test('paints in every locale without throwing', () {
+      for (final locale in ['ko', 'ja', 'en', 'fr']) {
+        expect(() => paintCard(cat, locale: locale), returnsNormally,
+            reason: 'locale $locale');
+      }
+    });
+  });
+
   test('paints a long word without throwing', () {
     const card = WordCard(
       id: 'y',
@@ -117,9 +165,11 @@ void main() {
 /// different metrics, so an unloaded run would prove nothing.
 void _fitTests() {
   test('every word in the deck fits inside a card', () {
+    // The same numbers the painter uses: the face's side margins are 9.1%
+    // each, and the headword is set at 22.7% of the width.
     const cardWidth = CardPainter.defaultWidth;
-    const maxWidth = cardWidth * 0.88;
-    const maxFontSize = cardWidth * 0.26;
+    const maxWidth = cardWidth * (1 - 0.091 * 2);
+    const maxFontSize = cardWidth * 0.227;
 
     final labels = {
       for (final card in CardDeck().generate())

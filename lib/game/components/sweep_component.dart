@@ -60,7 +60,7 @@ class SweepComponent extends PositionComponent {
     canvas.drawPath(
       path,
       ui.Paint()
-        ..color = AppColors.brass.withValues(alpha: 0.34 * alpha)
+        ..color = AppColors.trim.withValues(alpha: 0.34 * alpha)
         ..maskFilter =
             const ui.MaskFilter.blur(ui.BlurStyle.normal, 12),
     );

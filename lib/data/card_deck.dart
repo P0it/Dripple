@@ -683,6 +683,30 @@ class CardDeck {
   };
 
 
+  /// The scripted board the tutorial runs on.
+  ///
+  /// Nothing here is random. The hand arrives deliberately out of order —
+  /// `runs the cat` — because a lesson about word order needs a word order
+  /// worth fixing, and a hand that is already right gives a child nothing to
+  /// do. Drawing turns it into `the big cat runs` or `the cat runs`, so
+  /// whichever route they take through the lesson, a sentence is there.
+  ///
+  /// Returns the hand, the draw pile (top last) and the discard pile.
+  static ({List<WordCard> hand, List<WordCard> deck, List<WordCard> discard})
+      tutorialSetup() {
+    final source = CardDeck().generate();
+
+    WordCard take(String word) =>
+        source.firstWhere((c) => c.word == word && c.type == CardType.word);
+
+    return (
+      hand: [take('runs'), take('the'), take('cat')],
+      // The deck is drawn from the end, so `big` is the card on top.
+      deck: [take('bird'), take('small'), take('big')],
+      discard: [take('dog')],
+    );
+  }
+
   // === SPECIAL CARDS (12 cards) ===
   List<WordCard> _specialCards() => [
         for (int i = 0; i < 4; i++) WordCard.special(_nextId(), CardType.joker),

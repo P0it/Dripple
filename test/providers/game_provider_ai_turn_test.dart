@@ -111,4 +111,43 @@ void main() {
     expect(n.state.currentPlayerIndex, 0,
         reason: 'the AI must have taken its turn without any UI involvement');
   });
+
+  test('an AI with nothing to play keeps its draw and hands the turn on',
+      () async {
+    // Verbs only: no sentence at any length, no special card, and nothing in
+    // hand the AI can afford to lose. The old opponent was made to throw a
+    // verb away here purely to hand the turn over.
+    final n = GameNotifier(
+      random: Random(5),
+      aiPlayer: AIPlayer(difficulty: AIDifficulty.hard, random: Random(5)),
+      aiTurnDelay: Duration.zero,
+      autoRunAI: false,
+    );
+
+    n.debugSetState(GameState(
+      phase: GamePhase.playing,
+      turnPhase: TurnPhase.draw,
+      currentPlayerIndex: 1,
+      players: [
+        Player(id: 'human_0', name: 'You', hand: [_noun('h1', 'cats')]),
+        Player(id: 'ai_1', name: 'AI 1', isAI: true, hand: [
+          _verb('v1', 'like'),
+          _verb('v2', 'run'),
+        ]),
+      ],
+      deck: [for (var i = 0; i < 20; i++) _verb('deck_v$i', 'read')],
+      // An article on the pile, so taking it cannot make a sentence either.
+      discardPile: const [
+        WordCard(id: 'x1', word: 'the', pos: PartOfSpeech.article),
+      ],
+    ));
+
+    await n.runAITurns();
+
+    expect(n.state.currentPlayerIndex, 0, reason: 'the turn was handed on');
+    expect(n.state.players[1].hand.length, 3,
+        reason: 'it drew a card and kept it');
+    expect(n.state.discardPile.map((c) => c.id), ['x1'],
+        reason: 'nothing was thrown away');
+  });
 }

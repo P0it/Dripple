@@ -311,8 +311,72 @@ class AppLocalizationsEn extends AppLocalizations {
       'Drag a card onto the discard pile to throw it away';
 
   @override
+  String get passTurn => 'Pass';
+
+  @override
+  String get passTurnSub => 'Keep your cards';
+
+  @override
   String get pileDeck => 'Deck';
 
   @override
   String get pileDiscard => 'Discard';
+
+  @override
+  String get tutorial => 'Learn to play';
+
+  @override
+  String get tutorialDesc => 'One minute, on your own';
+
+  @override
+  String get tutorialWelcome =>
+      'Cards make sentences. Let\'s build one together — it takes a minute.';
+
+  @override
+  String get tutorialDeck =>
+      'This is the deck. Everyone takes a card from here.';
+
+  @override
+  String get tutorialDiscard =>
+      'Cards nobody wants land here, face up. You may take the top one instead.';
+
+  @override
+  String get tutorialDraw => 'Your turn starts with one card. Tap the deck.';
+
+  @override
+  String get tutorialSort =>
+      'These are your cards. Slide one sideways to tidy your hand.';
+
+  @override
+  String get tutorialBuild =>
+      'Push a card up here to play it. Push up two or more.';
+
+  @override
+  String get tutorialReorder =>
+      'Wrong order? Drag a card along the line to move it. Tap it to take it back.';
+
+  @override
+  String get tutorialSubmit => 'Looks right? Press Complete sentence.';
+
+  @override
+  String get tutorialDone => 'That\'s the whole game. Ready for a real one?';
+
+  @override
+  String get tutorialNext => 'Next';
+
+  @override
+  String get tutorialSkip => 'Skip';
+
+  @override
+  String get tutorialQuit => 'Leave';
+
+  @override
+  String get tutorialPlayForReal => 'Play for real';
+
+  @override
+  String get tutorialTryAgain =>
+      'Not a sentence yet — change the order, or take a card back and try another.';
+
+  @override
+  String get tutorialFirstTime => 'First time? Learn to play';
 }

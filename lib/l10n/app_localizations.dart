@@ -652,6 +652,18 @@ abstract class AppLocalizations {
   /// **'Drag a card onto the discard pile to throw it away'**
   String get dragToDiscard;
 
+  /// No description provided for @passTurn.
+  ///
+  /// In en, this message translates to:
+  /// **'Pass'**
+  String get passTurn;
+
+  /// No description provided for @passTurnSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep your cards'**
+  String get passTurnSub;
+
   /// No description provided for @pileDeck.
   ///
   /// In en, this message translates to:
@@ -663,6 +675,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Discard'**
   String get pileDiscard;
+
+  /// No description provided for @tutorial.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn to play'**
+  String get tutorial;
+
+  /// No description provided for @tutorialDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'One minute, on your own'**
+  String get tutorialDesc;
+
+  /// No description provided for @tutorialWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Cards make sentences. Let\'s build one together — it takes a minute.'**
+  String get tutorialWelcome;
+
+  /// No description provided for @tutorialDeck.
+  ///
+  /// In en, this message translates to:
+  /// **'This is the deck. Everyone takes a card from here.'**
+  String get tutorialDeck;
+
+  /// No description provided for @tutorialDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Cards nobody wants land here, face up. You may take the top one instead.'**
+  String get tutorialDiscard;
+
+  /// No description provided for @tutorialDraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Your turn starts with one card. Tap the deck.'**
+  String get tutorialDraw;
+
+  /// No description provided for @tutorialSort.
+  ///
+  /// In en, this message translates to:
+  /// **'These are your cards. Slide one sideways to tidy your hand.'**
+  String get tutorialSort;
+
+  /// No description provided for @tutorialBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Push a card up here to play it. Push up two or more.'**
+  String get tutorialBuild;
+
+  /// No description provided for @tutorialReorder.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong order? Drag a card along the line to move it. Tap it to take it back.'**
+  String get tutorialReorder;
+
+  /// No description provided for @tutorialSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Looks right? Press Complete sentence.'**
+  String get tutorialSubmit;
+
+  /// No description provided for @tutorialDone.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s the whole game. Ready for a real one?'**
+  String get tutorialDone;
+
+  /// No description provided for @tutorialNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get tutorialNext;
+
+  /// No description provided for @tutorialSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get tutorialSkip;
+
+  /// No description provided for @tutorialQuit.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get tutorialQuit;
+
+  /// No description provided for @tutorialPlayForReal.
+  ///
+  /// In en, this message translates to:
+  /// **'Play for real'**
+  String get tutorialPlayForReal;
+
+  /// No description provided for @tutorialTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Not a sentence yet — change the order, or take a card back and try another.'**
+  String get tutorialTryAgain;
+
+  /// No description provided for @tutorialFirstTime.
+  ///
+  /// In en, this message translates to:
+  /// **'First time? Learn to play'**
+  String get tutorialFirstTime;
 }
 
 class _AppLocalizationsDelegate

@@ -14,6 +14,7 @@ typedef OnCardPlaced = void Function(int handIndex, int insertAt);
 typedef OnSentenceReorder = void Function(int from, int to);
 typedef OnSentenceRemove = void Function(int index);
 typedef OnHandCardTapped = void Function(int handIndex);
+typedef OnHandReorder = void Function(int from, int to);
 typedef OnDiscardCard = void Function(int handIndex);
 
 /// The words printed on the board.
@@ -54,6 +55,9 @@ class DrippleGame extends FlameGame {
   OnSentenceReorder? onSentenceReorder;
   OnSentenceRemove? onSentenceRemove;
   OnHandCardTapped? onHandCardTapped;
+
+  /// A held card slid sideways along the rail.
+  OnHandReorder? onHandReorder;
 
   /// The deck was tapped.
   void Function()? onDrawFromDeck;
@@ -137,6 +141,53 @@ class DrippleGame extends FlameGame {
   List<CardComponent> get debugSentenceComponents =>
       List.unmodifiable(_sentenceComponents);
 
+  // -------------------------------------------------------------------------
+  // Where things are
+  //
+  // The board is a canvas, so a coach mark cannot find its target with a
+  // widget key the way it would anywhere else in the app. These hand the
+  // outlines out in board coordinates; the screen above converts them.
+  // -------------------------------------------------------------------------
+
+  ui.Rect? _rectOf(PileComponent? pile) => pile == null
+      ? null
+      : ui.Rect.fromLTWH(
+          pile.position.x, pile.position.y, pile.size.x, pile.size.y);
+
+  /// The face-down draw pile.
+  ui.Rect? get deckRect => _rectOf(_deck);
+
+  /// The face-up discard pile.
+  ui.Rect? get discardRect => _rectOf(_discard);
+
+  /// The rail and everything fanned on it. Null while the hand is empty.
+  ui.Rect? get handRect => _handBand()?.outerRect;
+
+  /// Where the cards pushed forward sit — or, while none are, the empty
+  /// stretch of felt that says to push one there. A coach mark pointing at
+  /// nothing would have nowhere to sit, and "push a card up to here" is
+  /// exactly the instruction that needs a *here*.
+  ui.Rect get sentenceRect {
+    final count = _sentenceZone.length;
+    if (count == 0) {
+      final w = math.min(
+          BoardLayout.usableWidth(size.x), BoardLayout.cardWidth * 3.2);
+      return ui.Rect.fromCenter(
+        center: ui.Offset(size.x / 2, _sentenceZoneY),
+        width: w,
+        height: BoardLayout.cardHeight,
+      );
+    }
+    final slots = SentenceLine.positions(size.x, count, _sentenceZoneY);
+    final cardSize = SentenceLine.cardSize(size.x, count);
+    return ui.Rect.fromLTRB(
+      slots.first.dx,
+      _sentenceZoneY - cardSize.height / 2,
+      slots.last.dx + cardSize.width,
+      _sentenceZoneY + cardSize.height / 2,
+    );
+  }
+
   /// Centre of the deck in board coordinates, or null before the piles exist.
   @material.visibleForTesting
   Vector2? get debugDeckCentre {
@@ -213,15 +264,16 @@ class DrippleGame extends FlameGame {
   /// Padding between the rail's edge and the cards on it.
   static const double _bandInset = 10;
 
-  void _renderHandRail(ui.Canvas canvas) {
-    if (_hand.isEmpty) return;
-
-    // The rail is measured from the fan rather than from the screen: a leaning
-    // card's corner swings outside its own box, and a rail sized to the screen
-    // leaves the ends of the fan hanging off the ledge.
+  /// The rail's own outline, or null while the hand is empty.
+  ///
+  /// Measured from the fan rather than from the screen: a leaning card's
+  /// corner swings outside its own box, and a rail sized to the screen leaves
+  /// the ends of the fan hanging off the ledge.
+  ui.RRect? _handBand() {
+    if (_hand.isEmpty) return null;
     final slots = HandFan.positions(size.x, _hand.length, _handY);
     final margin = HandFan.leanMargin + _bandInset;
-    final band = ui.RRect.fromRectAndRadius(
+    return ui.RRect.fromRectAndRadius(
       ui.Rect.fromLTRB(
         math.max(BoardLayout.edgePadding, slots.first.dx - margin),
         _handY - BoardLayout.cardHeight / 2 - _bandInset,
@@ -231,12 +283,17 @@ class DrippleGame extends FlameGame {
       ),
       const ui.Radius.circular(18),
     );
+  }
+
+  void _renderHandRail(ui.Canvas canvas) {
+    final band = _handBand();
+    if (band == null) return;
 
     Materials.raised(canvas, band, AppColors.rail);
     Materials.hairline(
       canvas,
       band.deflate(1),
-      color: AppColors.brass,
+      color: AppColors.trim,
       opacity: 0.35,
     );
     _drawRailLabel(canvas, _handLabel, band);
@@ -271,6 +328,21 @@ class DrippleGame extends FlameGame {
   }
 
   ZoneLabels _labels = const ZoneLabels();
+
+  String _locale = 'ko';
+
+  /// The language the cards print their gloss in. Set from the app's own
+  /// locale — a card used to print Korean to everyone, because the painter's
+  /// default was never overridden.
+  set locale(String value) {
+    if (_locale == value) return;
+    _locale = value;
+    _deck?.locale = value;
+    _discard?.locale = value;
+    for (final card in children.query<CardComponent>()) {
+      card.locale = value;
+    }
+  }
 
   set labels(ZoneLabels value) {
     _labels = value;
@@ -468,12 +540,30 @@ class DrippleGame extends FlameGame {
                 return true;
               }
             }
+
+            // Still on the rail: the card was slid sideways, which is a
+            // player sorting their hand. Nothing in the rules reads the
+            // order, but a fan whose cards cannot be slid reads as stuck.
+            final from = _hand.indexWhere((c) => c.id == cardId);
+            if (from >= 0) {
+              final to = HandFan.indexAt(
+                ui.Offset(dropPosition.x, dropPosition.y),
+                size.x,
+                _hand.length,
+                _handY,
+              );
+              if (to != from) {
+                onHandReorder?.call(from, to);
+                return true;
+              }
+            }
             return false;
           },
         );
         comp.priority = i;
         comp.markedForDiscard = !isSentenceZone && _discardMode;
         _dress(comp, i, count, isSentenceZone, cardSize);
+        comp.locale = _locale;
         updatedComponents.add(comp);
         add(comp);
 

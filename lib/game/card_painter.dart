@@ -8,17 +8,23 @@ import '../core/design/app_colors.dart';
 import '../core/design/materials.dart';
 import '../core/game_icons.dart';
 import '../models/word_card.dart';
-import 'pos_pip.dart';
 
 /// Draws a word card as a playing card.
 ///
 /// Lives outside the Flame component so the same painting can be previewed in
 /// a plain Flutter canvas and so the layout is readable on its own.
 ///
-/// The anatomy, outside in, is a real card's: two shadows, the cut edge of the
-/// stock, the face, grain, a printed frame, corner indices, the headword, a
-/// dictionary rule, and the gloss. Every one of those is load-bearing — drop
-/// any and it slides back toward a rounded rectangle with text in it.
+/// The anatomy, outside in: two shadows, the cut edge of the stock, the face,
+/// grain, and then three marks — a short part-of-speech tick at the top left,
+/// the headword at the bottom left, and the gloss under it.
+///
+/// **Everything on the face is flush left, and that is the whole layout.** A
+/// fanned hand overlaps, and what stays visible of a covered card is its left
+/// edge. Centre the word and only the top card is readable; hang everything
+/// off the left margin and all seven are. That single move retired the printed
+/// frame, both corner indices and the dictionary rule — the frame because a
+/// 32%-wide tick says the same thing without tinting the paper, and the
+/// indices because the word is already sitting where an index would go.
 class CardPainter {
   const CardPainter._();
 
@@ -37,7 +43,28 @@ class CardPainter {
   /// further than anything else in the redesign.
   static const double radiusRatio = 0.06;
 
-  /// How far the printed frame sits in from the card's edge.
+  /// The face's margins, as fractions of the card's width. Left and bottom
+  /// are equal so the headword sits in a true corner; the top is a shade
+  /// deeper because a tick reads as floating if it is level with the word.
+  static const double _padTop = 0.114;
+  static const double _padSide = 0.091;
+  static const double _padBottom = 0.091;
+
+  /// The part-of-speech tick: a third of the card wide, fully rounded.
+  ///
+  /// This replaced a frame around the whole face. The frame carried more
+  /// signal than it needed to — it tinted the paper, and the paper is the one
+  /// thing on this board that has to stay white.
+  static const double _tickWidth = 0.318;
+  static const double _tickHeight = 0.068;
+
+  /// Type sizes, also as fractions of the width, so a card is the same card
+  /// at every scale on the board.
+  static const double _wordSize = 0.227;
+  static const double _glossSize = 0.148;
+  static const double _glossGap = 0.023;
+
+  /// How far the card back's printed border sits in from the edge.
   static const double _frameInset = 0.085;
 
   static RRect outline(Size size) => RRect.fromRectAndRadius(
@@ -118,8 +145,6 @@ class CardPainter {
     Materials.grainOver(canvas, face.outerRect, 0.05);
     canvas.restore();
 
-    _frame(canvas, size, accent, printed);
-
     if (card.isSpecial) {
       _specialIcon(
         canvas,
@@ -129,132 +154,103 @@ class CardPainter {
       );
       _word(canvas, card, size,
           centerY: size.height * 0.50, maxFontSize: size.width * 0.21);
-    } else {
-      _indices(canvas, card, size, printed);
-      // The word owns the card. It is the thing being learned.
-      _word(canvas, card, size,
-          centerY: size.height * 0.375, maxFontSize: size.width * 0.30);
+      return;
     }
 
-    _rule(canvas, size, accent, printed);
-    _meaning(canvas, card, size, locale, printed);
+    _tick(canvas, size, accent);
+    _headword(canvas, card, size, locale);
   }
 
-  /// The printed frame. Part-of-speech colour lives here now rather than in a
-  /// bar across the top: it outlines the whole face, so it carries more signal
-  /// than the old 7.5% band while reading as printing rather than as a UI
-  /// element applied over the card.
-  static void _frame(Canvas canvas, Size size, Color accent, Color printed) {
-    // Pulled toward the printed shade. The palette's pale hues — the article
-    // blue especially — render a frame at raw strength as "a lighter card"
-    // rather than as a different part of speech, which is the one thing the
-    // frame exists to say.
-    final line = Color.lerp(accent, printed, 0.35)!;
-    final inset = size.width * _frameInset;
-    final radius = Radius.circular(size.width * radiusRatio * 0.55);
-
+  /// The part-of-speech mark: a short rounded tick in the top-left corner.
+  ///
+  /// Drawn at full strength rather than the printed shade the frame used. A
+  /// frame at raw saturation read as "a lighter card"; a tick is a colour chip
+  /// and wants to be the colour it is naming.
+  static void _tick(Canvas canvas, Size size, Color accent) {
+    final w = size.width;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(inset, inset, size.width - inset * 2,
-            size.height - inset * 2),
-        radius,
-      ),
-      Paint()
-        ..color = line.withValues(alpha: 0.70)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1,
-    );
-
-    final inner = inset + 2.5;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(inner, inner, size.width - inner * 2,
-            size.height - inner * 2),
-        radius,
-      ),
-      Paint()
-        ..color = line.withValues(alpha: 0.24)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1,
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-
-  /// Top-left and bottom-right, the second rotated 180°.
-  ///
-  /// This is the device that lets a hand be read while the cards overlap, and
-  /// it is the most card-like thing on the card.
-  ///
-  /// The two corners carry different things, which is a deliberate break from
-  /// a real deck. A playing card repeats its rank at both corners because you
-  /// might pick it up either way round; ours is always upright, so each corner
-  /// can do the job it is actually in a position to do.
-  ///
-  /// **Top-left** carries the *word*, because that corner is the one still
-  /// showing when the card is covered by the next one in the fan, and the word
-  /// is this card's identity — the way a rank is a playing card's. Without it
-  /// a fanned hand is a row of parts of speech.
-  ///
-  /// **Bottom-right** carries the dictionary abbreviation, which is only ever
-  /// read on a card you can already see whole, and which an adult learner
-  /// wants spelled out rather than inferred from a pip.
-  static void _indices(Canvas canvas, WordCard card, Size size, Color printed) {
-    final inset = size.width * (_frameInset + 0.045);
-    final pipSide = size.width * 0.075;
-    final fontSize = size.width * 0.105;
-
-    void block(String label, {required double maxWidth}) {
-      final tp = _tag(label, fontSize, printed, maxWidth: maxWidth);
-      tp.paint(canvas, Offset(inset, inset));
-
-      PosPip.paint(
-        canvas,
-        card.pos,
         Rect.fromLTWH(
-          inset,
-          inset + tp.height + size.height * 0.008,
-          pipSide,
-          pipSide,
-        ),
-        printed,
-      );
-    }
-
-    // Held to under half the card: past that the index stops being an index
-    // and starts competing with the word across the middle.
-    block(card.word, maxWidth: size.width * 0.46);
-
-    canvas.save();
-    canvas.translate(size.width / 2, size.height / 2);
-    canvas.rotate(3.141592653589793);
-    canvas.translate(-size.width / 2, -size.height / 2);
-    block(PosPip.tagFor(card.pos), maxWidth: size.width * 0.46);
-    canvas.restore();
+            w * _padSide, w * _padTop, w * _tickWidth, w * _tickHeight),
+        Radius.circular(w * _tickHeight / 2),
+      ),
+      Paint()..color = accent,
+    );
   }
 
-  static TextPainter _tag(
-    String value,
-    double fontSize,
-    Color color, {
-    required double maxWidth,
-  }) =>
-      TextPainter(
-        text: TextSpan(
-          text: value,
-          style: TextStyle(
-            color: color,
-            fontFamily: 'Pretendard',
-            fontSize: fontSize,
-            fontWeight: FontWeight.w700,
-            height: 1.0,
-            letterSpacing: 0.1,
+  /// The word, and under it the gloss — both flush left, both hanging off the
+  /// bottom margin so the gloss appearing or vanishing pushes the word up
+  /// rather than leaving a hole where it used to be.
+  static void _headword(
+      Canvas canvas, WordCard card, Size size, String locale) {
+    final w = size.width;
+    final maxWidth = w * (1 - _padSide * 2);
+
+    TextPainter build(double fontSize) => TextPainter(
+          text: TextSpan(
+            text: card.word,
+            style: TextStyle(
+              color: AppColors.ink,
+              fontFamily: 'Pretendard',
+              fontSize: fontSize,
+              fontWeight: FontWeight.w700,
+              height: 1.05,
+              letterSpacing: -0.2,
+            ),
           ),
+          textDirection: TextDirection.ltr,
+          textAlign: TextAlign.left,
+        )..layout();
+
+    final word = build(fitFontSize(build, maxWidth, w * _wordSize));
+    final gloss = _gloss(card, size, locale, maxWidth);
+
+    var bottom = size.height - w * _padBottom;
+    if (gloss != null) {
+      gloss.paint(canvas, Offset(w * _padSide, bottom - gloss.height));
+      bottom -= gloss.height + w * _glossGap;
+    }
+    word.paint(canvas, Offset(w * _padSide, bottom - word.height));
+  }
+
+  /// Whether [card] has anything to say in [locale] that the headword does
+  /// not already say.
+  @visibleForTesting
+  static bool showsGloss(WordCard card, String locale) {
+    final meaning = card.meanings[locale];
+    if (meaning == null || meaning.isEmpty) return false;
+    return meaning.toLowerCase() != card.word.toLowerCase();
+  }
+
+  /// The learner's own language, so a card teaches meaning as well as order.
+  ///
+  /// Null when there is nothing to teach, which is two cases and not one. The
+  /// obvious one is a locale the deck has no entry for. The other is English:
+  /// `meanings['en']` of an English word is that same word, so an English
+  /// player was reading `you` glossed as `you` — or, until the locale was
+  /// actually wired through, reading Korean.
+  static TextPainter? _gloss(
+      WordCard card, Size size, String locale, double maxWidth) {
+    if (!showsGloss(card, locale)) return null;
+    final meaning = card.meanings[locale]!;
+
+    return TextPainter(
+      text: TextSpan(
+        text: meaning,
+        style: TextStyle(
+          color: AppColors.inkSoft,
+          fontFamily: 'Pretendard',
+          fontSize: size.width * _glossSize,
+          fontWeight: FontWeight.w500,
+          height: 1.1,
         ),
-        textDirection: TextDirection.ltr,
-        maxLines: 1,
-        ellipsis: '…',
-      )..layout(maxWidth: maxWidth);
+      ),
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.left,
+      maxLines: 1,
+      ellipsis: '…',
+    )..layout(maxWidth: maxWidth);
+  }
 
   /// JUMP / STEAL / JOKER only. Word cards carry an index instead.
   static void _specialIcon(
@@ -319,57 +315,6 @@ class CardPainter {
     return fontSize;
   }
 
-  /// The hairline between headword and gloss, the way a dictionary entry sets
-  /// it. Short and centred — it separates without dividing the card in two.
-  static void _rule(Canvas canvas, Size size, Color accent, Color printed) {
-    final line = Color.lerp(accent, printed, 0.35)!;
-    final half = size.width * 0.11;
-    final y = size.height * 0.545;
-    canvas.drawLine(
-      Offset(size.width / 2 - half, y),
-      Offset(size.width / 2 + half, y),
-      Paint()
-        ..color = line.withValues(alpha: 0.45)
-        ..strokeWidth = 1.5
-        ..strokeCap = StrokeCap.round,
-    );
-  }
-
-  /// The learner's own language, so a card teaches meaning as well as order.
-  ///
-  /// It sits between the rule and the bottom index rather than at the card's
-  /// foot, which is both where a dictionary puts a gloss and the only band
-  /// wide enough to hold it without running into the index.
-  static void _meaning(
-      Canvas canvas, WordCard card, Size size, String locale, Color printed) {
-    final meaning = card.meanings[locale];
-    if (meaning == null || meaning.isEmpty) return;
-
-    final tp = TextPainter(
-      text: TextSpan(
-        text: meaning,
-        style: TextStyle(
-          color: printed.withValues(alpha: 0.85),
-          fontFamily: 'Pretendard',
-          fontSize: size.width * 0.12,
-          fontWeight: FontWeight.w600,
-          height: 1.1,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-      textAlign: TextAlign.center,
-      maxLines: 1,
-      ellipsis: '…',
-    )..layout(maxWidth: size.width * 0.70);
-
-    tp.paint(
-      canvas,
-      Offset((size.width - tp.width) / 2, size.height * 0.615),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-
   /// The back of a card: what the deck shows.
   ///
   /// A field, a lattice, a double border, and the mark — the four things every
@@ -427,7 +372,9 @@ class CardPainter {
     );
   }
 
-  /// The mark repeated at 6% across the back, on a staggered grid.
+  /// A pin-dot ground across the back, on a staggered grid. Not the mark
+  /// repeated — the mark is two cards, and cards printed on a card back read
+  /// as a mistake.
   static void _lattice(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.07);
@@ -443,38 +390,44 @@ class CardPainter {
     }
   }
 
-  /// The three bouncing dots, simplified for the small panel on a card back.
-  /// Kept here rather than reaching for DrippleMarkPainter so the board does
-  /// not depend on the widget layer.
+  /// The mark, in white, on the panel at the centre of the back.
+  ///
+  /// Drawn here rather than reaching for DrippleMarkPainter so the board does
+  /// not depend on the widget layer — but it is the same geometry, and if one
+  /// moves the other has to.
   static void _markOnBack(Canvas canvas, Rect bounds, Color color) {
-    const dots = [
-      (x: 0.20, rise: 0.13, radius: 0.070),
-      (x: 0.50, rise: 0.32, radius: 0.100),
-      (x: 0.80, rise: 0.52, radius: 0.135),
-    ];
-    final baselineY = bounds.top + bounds.height * 0.78;
-    final solid = Paint()..color = color;
+    const cardWidth = 0.435;
+    const cardHeight = cardWidth * 88 / 63;
+    const radius = cardWidth * 0.155;
+    const lean = 0.297;
 
-    canvas.drawLine(
-      Offset(bounds.left + bounds.width * 0.10, baselineY),
-      Offset(bounds.right - bounds.width * 0.10, baselineY),
-      Paint()
-        ..color = color.withValues(alpha: 0.35)
-        ..strokeWidth = bounds.width * 0.040
-        ..strokeCap = StrokeCap.round,
-    );
+    final w = bounds.width;
 
-    for (final dot in dots) {
-      canvas.drawCircle(
-        Offset(bounds.left + bounds.width * dot.x,
-            baselineY - bounds.height * dot.rise),
-        bounds.width * dot.radius,
-        solid,
+    void card(Rect rect, double alpha) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, Radius.circular(radius * w)),
+        Paint()..color = color.withValues(alpha: alpha),
       );
     }
+
+    final back = Rect.fromLTWH(bounds.left + 0.235 * w,
+        bounds.top + 0.200 * w, cardWidth * w, cardHeight * w);
+    final front = Rect.fromLTWH(bounds.left + 0.350 * w,
+        bounds.top + 0.225 * w, cardWidth * w, cardHeight * w);
+
+    canvas.save();
+    canvas.translate(back.center.dx, back.center.dy);
+    canvas.rotate(-lean);
+    canvas.translate(-back.center.dx, -back.center.dy);
+    // The back card is held down to 45% so the two read as two even though
+    // both are printed in the one ink a card back has.
+    card(back, 0.45);
+    canvas.restore();
+
+    card(front, 1);
   }
 
-  /// An empty slot where a pile would sit — a brass outline on the felt, so
+  /// An empty slot where a pile would sit — a dashed outline on the felt, so
   /// the space still reads as a place rather than as nothing.
   static void paintEmptySlot(Canvas canvas, Size size) {
     final rrect = outline(size);
@@ -483,6 +436,6 @@ class CardPainter {
       Paint()..color = const Color(0xFF000000).withValues(alpha: 0.22),
     );
     Materials.hairline(canvas, rrect,
-        color: AppColors.brassDim, width: 1.5, dashed: true);
+        color: AppColors.trimDim, width: 1.5, dashed: true);
   }
 }

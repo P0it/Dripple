@@ -19,7 +19,7 @@ abstract final class AppTheme {
         colorScheme: const ColorScheme.light(
           primary: AppColors.point,
           onPrimary: Colors.white,
-          secondary: AppColors.brass,
+          secondary: AppColors.trim,
           onSecondary: AppColors.ink,
           surface: AppColors.paper,
           onSurface: AppColors.ink,
@@ -45,13 +45,14 @@ abstract final class AppTheme {
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            // Brass, not blue. A button is furniture, and the rule says so —
+            // Cream, not blue. A button is furniture, and the rule says so —
             // but the reason is plainer than the rule: blue and green sit at
             // the same luminance in opposite hues, and a blue key on a green
-            // table reads as neither one thing nor the other.
-            backgroundColor: AppColors.brass,
+            // table reads as neither one thing nor the other. Cream is the
+            // one value that separates from felt at any lighting.
+            backgroundColor: AppColors.trim,
             foregroundColor: AppColors.ink,
-            disabledBackgroundColor: AppColors.brassDim,
+            disabledBackgroundColor: AppColors.trimDim,
             disabledForegroundColor: AppColors.onFeltSoft,
             minimumSize: const Size.fromHeight(AppSpacing.buttonHeight),
             // A key on a table, not a rectangle on a page.

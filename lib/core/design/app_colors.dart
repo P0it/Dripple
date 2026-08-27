@@ -44,9 +44,24 @@ abstract final class AppColors {
   /// into the table, and that is the whole read.
   static const well = Color(0xFF0B211B);
 
-  /// Hairlines, labels, frames. The table's own accent.
-  static const brass = Color(0xFFC6A664);
-  static const brassDim = Color(0xFF7E6A42);
+  /// Hairlines, labels, active rings, the one button on the table.
+  ///
+  /// This used to be brass, `#C6A664`, and brass is what made the board read
+  /// as old — not the green. A hundred-year-old casino table is green *and*
+  /// gold, and it was the gold laying a yellow cast over every rule and pill
+  /// that dated it.
+  ///
+  /// What replaced it is not another accent colour but the absence of one.
+  /// The trim is the same cream the furniture already sets its type in, so
+  /// the only things on this screen holding a colour are the felt itself and
+  /// the part-of-speech ticks on the cards — which is exactly the ordering
+  /// the game wants, because the cards are what you are meant to read.
+  static const trim = Color(0xFFF2EDE1);
+
+  /// Trim at rest: an inactive track, an empty slot's outline. Keyed off the
+  /// felt rather than off the cream, so a dim rule reads as unlit table
+  /// instead of as dirty paper.
+  static const trimDim = Color(0xFF6E8378);
 
   /// Type on furniture.
   static const onFelt = Color(0xFFF2EDE1);
@@ -110,6 +125,14 @@ abstract final class AppColors {
   /// The card back's field: the point blue taken down until white printing
   /// reads cleanly on it.
   static const cardBack = Color(0xFF12385E);
+
+  /// The table seen through a coach mark's cover.
+  ///
+  /// Deep felt at a little over half, not black. A covered part of the board
+  /// has to read as "not needed right now"; blacked out, it reads as gone,
+  /// and a child who cannot see the rest of the table cannot tell what the
+  /// bright part is part of.
+  static const scrim = Color(0x8C08201A);
 
   static const success = Color(0xFF12B76A);
   static const danger = Color(0xFFE5484D);

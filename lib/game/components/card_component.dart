@@ -66,6 +66,10 @@ class CardComponent extends PositionComponent
   /// Draws the card as a discard candidate.
   bool markedForDiscard = false;
 
+  /// Which language the gloss under the word is printed in. English prints no
+  /// gloss at all — see [CardPainter].
+  String locale = 'ko';
+
   Vector2 _originalPosition = Vector2.zero();
   int _restingPriority = 0;
 
@@ -251,6 +255,7 @@ class CardComponent extends PositionComponent
       highlighted: isDragging,
       warned: markedForDiscard,
       lift: _raised,
+      locale: locale,
     );
 
     canvas.restore();

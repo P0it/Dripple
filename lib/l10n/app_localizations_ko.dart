@@ -309,8 +309,65 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dragToDiscard => '버릴 카드는 버림 더미로 끌어요';
 
   @override
+  String get passTurn => '턴 넘기기';
+
+  @override
+  String get passTurnSub => '카드를 들고 넘겨요';
+
+  @override
   String get pileDeck => '덱';
 
   @override
   String get pileDiscard => '버림';
+
+  @override
+  String get tutorial => '배우기';
+
+  @override
+  String get tutorialDesc => '혼자서 1분이면 끝나요';
+
+  @override
+  String get tutorialWelcome => '카드를 모아 문장을 만드는 놀이예요. 같이 한 번 만들어 볼까요?';
+
+  @override
+  String get tutorialDeck => '여기가 공용덱이에요. 모두 여기서 카드를 한 장 가져가요.';
+
+  @override
+  String get tutorialDiscard => '아무도 안 쓰는 카드가 여기 쌓여요. 맨 위 카드는 대신 가져갈 수 있어요.';
+
+  @override
+  String get tutorialDraw => '내 차례는 카드 한 장부터예요. 덱을 톡 눌러 보세요.';
+
+  @override
+  String get tutorialSort => '이게 내 카드예요. 옆으로 끌면 순서를 바꿔 정리할 수 있어요.';
+
+  @override
+  String get tutorialBuild => '카드를 위로 밀어 올리면 문장이 돼요. 두 장 넘게 밀어 올려 보세요.';
+
+  @override
+  String get tutorialReorder => '순서가 이상하면 카드를 옆으로 끌어 옮겨요. 톡 누르면 다시 손으로 돌아와요.';
+
+  @override
+  String get tutorialSubmit => '다 됐으면 \'문장 완성\'을 눌러요.';
+
+  @override
+  String get tutorialDone => '이게 전부예요. 이제 진짜 대전을 해볼까요?';
+
+  @override
+  String get tutorialNext => '다음';
+
+  @override
+  String get tutorialSkip => '건너뛰기';
+
+  @override
+  String get tutorialQuit => '그만하기';
+
+  @override
+  String get tutorialPlayForReal => '진짜 대전 하기';
+
+  @override
+  String get tutorialTryAgain => '아직 문장이 아니에요. 순서를 바꾸거나, 카드를 하나 되돌려 보세요.';
+
+  @override
+  String get tutorialFirstTime => '처음이신가요? 배우기';
 }

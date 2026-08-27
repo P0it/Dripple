@@ -9,6 +9,7 @@ import '../core/design/felt_scaffold.dart';
 import '../core/design/app_spacing.dart';
 import '../core/design/app_typography.dart';
 import '../core/game_feedback.dart';
+import '../core/tutorial_prefs.dart';
 
 /// The front door.
 ///
@@ -24,12 +25,19 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  /// Whether to offer the lesson here. Null until it is known, so nothing
+  /// flickers into place on the first frame.
+  bool? _needsTutorial;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ref.read(gameFeedbackProvider).playMenuMusic();
+    });
+    TutorialPrefs.isCompleted().then((done) {
+      if (mounted) setState(() => _needsTutorial = !done);
     });
   }
 
@@ -68,6 +76,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Text(l10n.play),
               ),
               const SizedBox(height: AppSpacing.sm),
+              // Offered here only until it has been played once. After that
+              // it lives in the mode list, where someone who wants it again
+              // knows to look.
+              if (_needsTutorial ?? false)
+                TextButton(
+                  onPressed: () => _go(context, '/tutorial'),
+                  child: Text(l10n.tutorialFirstTime),
+                ),
               TextButton(
                 onPressed: () => _go(context, '/settings'),
                 child: Text(l10n.settings),

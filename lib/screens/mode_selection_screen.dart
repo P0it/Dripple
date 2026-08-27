@@ -26,6 +26,15 @@ class ModeSelectionScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(
               AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xl),
           children: [
+            // First, and not behind anything. Someone who has never played
+            // opens this screen not knowing what the game is, and the row
+            // that explains it should not be below the row that starts it.
+            _ModeCell(
+              icon: Icons.school_outlined,
+              title: l10n.tutorial,
+              subtitle: l10n.tutorialDesc,
+              onTap: () => context.push('/tutorial'),
+            ),
             _ModeCell(
               icon: Icons.smart_toy_outlined,
               title: l10n.aiBattle,

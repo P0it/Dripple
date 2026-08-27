@@ -46,6 +46,9 @@ class PileComponent extends PositionComponent with TapCallbacks {
   /// card there.
   String label;
 
+  /// Which language the discard top's gloss is printed in.
+  String locale = 'ko';
+
   /// How many cards are underneath. Drives the stacked-edge effect and the
   /// count printed under the deck.
   int count = 0;
@@ -91,7 +94,8 @@ class PileComponent extends PositionComponent with TapCallbacks {
         case PileKind.deck:
           CardPainter.paintBack(canvas, cardSize, shadow: false);
         case PileKind.discard:
-          CardPainter.paint(canvas, topCard!, cardSize, shadow: false);
+          CardPainter.paint(canvas, topCard!, cardSize,
+              shadow: false, locale: locale);
       }
     }
 
@@ -217,14 +221,14 @@ class PileComponent extends PositionComponent with TapCallbacks {
         ..layout();
     }
 
-    // A brass plate under the number. White type straight onto the lattice is
+    // A cream plate under the number. White type straight onto the lattice is
     // one more thing competing with it; a plate is what a real deck box does.
     final w = _countPainter.width + 14;
     final h = _countPainter.height + 6;
     final rect = ui.Rect.fromLTWH((size.x - w) / 2, size.y - h / 2 - 4, w, h);
     canvas.drawRRect(
       ui.RRect.fromRectAndRadius(rect, ui.Radius.circular(h / 2)),
-      ui.Paint()..color = AppColors.brass,
+      ui.Paint()..color = AppColors.trim,
     );
     _countPainter.paint(
       canvas,

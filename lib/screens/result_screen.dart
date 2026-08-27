@@ -31,7 +31,8 @@ class ResultScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: AppSpacing.xl),
-            const Center(child: DrippleMark(size: 56)),
+            const Center(
+                child: DrippleMark(size: 56, color: AppColors.pointOnFelt)),
             const SizedBox(height: AppSpacing.lg),
             Text(
               l10n.gameOver,

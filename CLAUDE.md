@@ -48,16 +48,24 @@ hand wins.
 ```
 Your turn
  (1) Draw exactly one card — deck top OR discard pile top (face up)
- (2) Take exactly one action
+ (2) Take at most one action
        - complete a sentence  (cards leave your hand for good)
        - play JUMP or STEAL
        - discard one card face up
+       - or pass, keeping everything you drew
 ```
 
 - No minimum or maximum sentence length. The grammar engine's 2-card floor is
   the only bound; longer sentences empty the hand faster, so the structure
   rewards them without a rule.
 - A failed submission does **not** cost the action. Cards return to hand.
+- **Discarding is optional, and passing is a real move.** Only a completed
+  sentence takes cards out of a hand for good, so a player forced to discard
+  in order to end a turn draws one and throws one away forever at the same
+  hand size and can never finish. Passing keeps the draw; the hand grows, and
+  a bigger hand is what a long sentence is made of. Passing is offered only
+  after the draw — passing before it would end a turn in which nothing
+  happened.
 - A card taken from the discard pile cannot be discarded on the same turn
   (Gin Rummy rule — otherwise two players trade one card forever).
 - Deck empty: shuffle the discard pile back in. After two recycles, the player
@@ -65,6 +73,13 @@ Your turn
 - Opening hands are guaranteed at least one verb and one subject-capable card.
 - Special cards: **JOKER** (wildcard word) / **JUMP** (skip the next player) /
   **STEAL** (forced card exchange with a chosen player).
+
+**The gloss belongs to the player, not to the deck.** A card prints its
+meaning in the app's own locale, which has to be injected — the painter's
+`ko` default is not a policy, and while nothing overrode it every player in
+the world read Korean. English prints no gloss at all: `meanings['en']` of an
+English word is that same word, so there is nothing to teach and the headword
+drops to the card's foot alone.
 
 ### What counts as a correct sentence
 
@@ -160,9 +175,21 @@ lib/
 - [x] Recursive chunk parser with prepositional phrases and pronoun case
 - [x] Rummy turn structure (draw → one action), discard pile, deck recycling
 - [x] AI rewritten — searches with the grammar engine, actually plays sentences
+- [x] AI plays by the same rules the human has, passing included — but
+      narrowly: only when its worst card is one it needs, its hand is under
+      the difficulty ceiling (easy 6 / medium 5 / hard 4), and the deck still
+      holds more than a full deal. Measured over 60 all-AI games, unrestricted
+      passing dropped games won by emptying a hand from 59/60 to 41/60; the
+      shipped rule holds 48/60. A passed card leaves the deck without reaching
+      the discard pile, so a recycle never brings it back.
 - [x] Special card UI for the human player (JUMP / STEAL)
 - [x] Free sentence-zone reordering inside Flame
 - [x] 90 unit tests passing
+- [x] Hand cards can be slid along the rail to sort them (cosmetic; the rules
+      never read hand order)
+- [x] Tutorial mode — a scripted one-player board with coach marks over the
+      deck, the discard pile, the rail, the sentence line and the submit
+      button (`lib/tutorial/`, `lib/screens/tutorial/`)
 - [x] Game logic + turn management + scoring with combo
 - [x] AI player (rule-based, strategic special card usage)
 - [x] Flame game board (drag & drop cards, sentence zone)
@@ -201,11 +228,11 @@ lib/
 6. **Flame is kept deliberately** — the card-game feel is the point, so the
    sentence-zone reorder was hand-built inside Flame rather than swapping to
    Flutter widgets. Known cost: screen readers cannot see the Flame canvas.
-8. **Paper takes the brand, furniture takes brass.** Every surface is one of
+8. **Paper takes the brand, furniture takes cream.** Every surface is one of
    two materials. *Paper* — the card face, sheets, dialogs — carries warm
    off-white stock, ink type, the point blue, and the part-of-speech palette;
    information lives there. *Furniture* — the table, the hand rail, the
-   sentence well, screen grounds — carries deep felt, brass hairlines, and
+   sentence well, screen grounds — carries deep felt, cream hairlines, and
    cream type; nothing is read there, only held. Decoration serving neither
    does not ship: a gradient describing a lit felt surface is furniture, a
    gradient on a button because it looked flat is not.
@@ -215,16 +242,40 @@ lib/
    and card-game materiality is *made of* those things, so it could not survive
    the goal. Ergonomics are unchanged: a 56px touch floor, 60px buttons, and
    card type sized to be read across a table.
+   The furniture accent was brass (`#C6A664`) until 2026-08-26. Brass is what
+   made the board read as old, not the green — a casino table is green *and*
+   gold, and it was the gold laying a yellow cast over every rule and pill
+   that dated it. What replaced it is not another accent but the absence of
+   one: `AppColors.trim` is the same cream the furniture already sets type in,
+   so the only things on the board holding a colour are the felt and the
+   part-of-speech ticks on the cards. That is the right ordering, because the
+   cards are what you are meant to read.
+
    `test/core/design/no_legacy_theme_test.dart` now guards the new rule — hex
    literals stay out of screens, gradients and shadows stay inside the design
    package and `lib/game/`, and the card's 63:88 proportion is pinned.
 
-9. **A card has the anatomy of a card.** Poker proportion, a corner radius of a
-   twentieth of the width rather than a seventh, two shadows so it sits on a
-   surface instead of floating on a page, the cut edge of the stock, grain, a
-   printed frame carrying the part of speech, corner indices, and a rule
-   between headword and gloss. Each is load-bearing; drop any and it slides
-   back toward a rounded rectangle with text in it.
+9. **A card has the anatomy of a card, and everything on it is flush left.**
+   Poker proportion, a corner radius of a twentieth of the width rather than a
+   seventh, two shadows so it sits on a surface instead of floating on a page,
+   the cut edge of the stock, and grain. On the face there are exactly three
+   marks, all hanging off the left margin: a short part-of-speech tick at the
+   top left, the headword at the bottom left, and the gloss under it.
+
+   Left alignment is the load-bearing part. A fanned hand overlaps, and what
+   stays visible of a covered card is its left edge. Centre the word and only
+   the top card is readable; hang everything off the left margin and all seven
+   are. That single move retired three earlier devices on 2026-08-26 — the
+   printed frame (a tick a third of the card wide says the same thing without
+   tinting the paper, and the paper is the one thing here that has to stay
+   white), both corner indices, and the dictionary rule between headword and
+   gloss.
+
+   The bottom-right index went for a second reason. A playing card repeats its
+   rank at both corners because you might pick it up either way round; ours is
+   always upright, so that block had no job — and its `n.` / `adj.`
+   abbreviation was English grammar metalanguage, which is the last thing a
+   six-year-old or a beginner abroad can read.
 
 10. **The board is a table, and there is one hand on it.** The sentence used
     to sit in its own recess with a dashed border and a placeholder, which is
@@ -242,9 +293,24 @@ lib/
 
     This repealed the older "cards never overlap — a child who cannot read the
     card cannot play it" rule, which was right while a card carried its
-    identity only in the word across its middle. The card now repeats its word
-    in the top-left corner index, which is precisely what a corner index is
-    for. The ban went with the thing that made it necessary.
+    identity only in the word across its middle. The word is not across the
+    middle any more: it sits at the bottom left, inside the sliver a covered
+    card still shows. The ban went with the thing that made it necessary.
+
+12. **The lesson is a mode, not a layer over the game.** A guided first turn
+    laid over a real game is a test, not a lesson: hands are dealt at random,
+    so there is no promise a playable sentence is in one, and a beginner asked
+    to find a sentence that may not exist learns only that the game is broken.
+    The tutorial deals its own one-player board — `runs the cat` in hand, `big`
+    on top of the deck — so every instruction can be followed.
+
+    Coach marks cover the board only while they are pointing at something. A
+    step that asks for a gesture rings its target and covers nothing: a hand
+    cannot aim at what it cannot see, and a card that misses has to be able to
+    find its way home. Because the board is a Flame canvas, `DrippleGame`
+    hands out `deckRect` / `discardRect` / `handRect` / `sentenceRect` in board
+    coordinates and the Flutter overlay above converts them — a widget key
+    cannot find something drawn on a canvas.
 
 11. **$0 operational cost** for core gameplay — grammar engine and AI are fully
     client-side.

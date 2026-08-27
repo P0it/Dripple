@@ -29,6 +29,14 @@ class GameNotifier extends StateNotifier<GameState> {
   final Random _random;
   AIPlayer _aiPlayer;
 
+  /// Whether the caller handed us an opponent to use.
+  ///
+  /// [startGame] builds one from the chosen difficulty, which silently threw
+  /// away anything a test had passed in — including its seeded [Random], so a
+  /// test that looked like it played the same twenty games every run was in
+  /// fact playing twenty different ones.
+  final bool _aiPlayerIsInjected;
+
   /// Disabled in tests so turns can be stepped deterministically.
   final bool autoRunAI;
 
@@ -47,6 +55,7 @@ class GameNotifier extends StateNotifier<GameState> {
     this.aiTurnDelay = const Duration(milliseconds: 700),
   })  : _grammarEngine = grammarEngine ?? GrammarEngine(),
         _aiPlayer = aiPlayer ?? AIPlayer(),
+        _aiPlayerIsInjected = aiPlayer != null,
         _random = random ?? Random(),
         super(const GameState());
 
@@ -67,7 +76,9 @@ class GameNotifier extends StateNotifier<GameState> {
 
   void startGame(GameConfig config) {
     _isProcessingAI = false;
-    _aiPlayer = AIPlayer(difficulty: config.difficulty);
+    if (!_aiPlayerIsInjected) {
+      _aiPlayer = AIPlayer(difficulty: config.difficulty);
+    }
 
     final deck = CardDeck().generate()..shuffle(_random);
     final (hands, remaining) = CardDeck.dealGuaranteedHands(
@@ -98,6 +109,34 @@ class GameNotifier extends StateNotifier<GameState> {
 
     _startTurnTimer();
     if (autoRunAI) unawaited(_runAITurnsIfNeeded());
+  }
+
+  /// Deal the scripted one-player board the tutorial is taught on.
+  ///
+  /// A guided lesson laid over a real game would be a test, not a lesson: the
+  /// hand is random, so there is no promise a playable sentence is in it, and
+  /// a beginner asked to find one that may not exist learns only that the
+  /// game is broken. Dealing the board instead means every instruction can be
+  /// followed.
+  ///
+  /// There are no opponents. Everything the lesson teaches — the two piles,
+  /// sorting a hand, building a sentence — happens inside one turn, so an
+  /// opponent would add waiting and teach nothing.
+  void startTutorial() {
+    _isProcessingAI = false;
+    _cancelTurnTimer();
+
+    final setup = CardDeck.tutorialSetup();
+
+    state = GameState(
+      phase: GamePhase.playing,
+      turnPhase: TurnPhase.draw,
+      players: [Player(id: 'human_0', name: 'You', hand: setup.hand)],
+      deck: setup.deck,
+      discardPile: setup.discard,
+      currentPlayerIndex: 0,
+      config: const GameConfig(playerCount: 1, initialHandSize: 3),
+    );
   }
 
   // -------------------------------------------------------------------------
@@ -256,6 +295,25 @@ class GameNotifier extends StateNotifier<GameState> {
     );
   }
 
+  /// Move a held card to another place on the rail.
+  ///
+  /// Purely cosmetic — the hand is a set, and nothing in the rules reads its
+  /// order. It exists because a player sorting their hand is half of holding
+  /// one, and because a fan whose cards can be pushed forward but not slid
+  /// sideways reads as a fan that is stuck.
+  void reorderHand(int from, int to) {
+    if (state.phase != GamePhase.playing) return;
+    final me = state.currentPlayer;
+    final hand = List<WordCard>.from(me.hand);
+    if (from < 0 || from >= hand.length) return;
+    if (to < 0 || to >= hand.length) return;
+    if (from == to) return;
+
+    final card = hand.removeAt(from);
+    hand.insert(to, card);
+    _updateCurrentPlayer(me.copyWith(hand: hand));
+  }
+
   void reorderSentence(int from, int to) {
     if (state.phase != GamePhase.playing) return;
     final me = state.currentPlayer;
@@ -318,6 +376,25 @@ class GameNotifier extends StateNotifier<GameState> {
       endTurn();
     }
     return judgment;
+  }
+
+  /// End the turn holding everything you drew.
+  ///
+  /// Only a completed sentence takes cards out of a hand for good, so a player
+  /// who draws one card and throws one away every turn holds the same number
+  /// of cards forever and can never finish. Keeping the card is what breaks
+  /// that loop: the hand grows, and a bigger hand is what a long sentence is
+  /// made of. Discarding is the move for a card you do not want, not the toll
+  /// you pay to end a turn.
+  ///
+  /// Available only after the draw. Passing before it would leave the board
+  /// in exactly the state it started the turn in, which is a turn that has
+  /// not happened.
+  bool passTurn() {
+    if (state.phase != GamePhase.playing) return false;
+    if (state.turnPhase != TurnPhase.action) return false;
+    endTurn();
+    return true;
   }
 
   /// Discard one card face up. Returns false if the discard is illegal.
@@ -563,14 +640,20 @@ class GameNotifier extends StateNotifier<GameState> {
 
       case AIActionType.discard:
         if (discardCard(action.discardIndex!)) return null;
+
+      case AIActionType.pass:
+        if (passTurn()) return null;
     }
 
-    // Fallback: the chosen action was rejected. Discard any legal card so
-    // the turn always ends and the loop cannot spin.
+    // Fallback: the chosen action was rejected. Passing always ends a turn
+    // that has had its draw, so the loop cannot spin; try to shed a card
+    // first, since a turn that costs nothing gets the AI no closer to
+    // winning.
     final hand = state.currentPlayer.hand;
     for (int i = 0; i < hand.length; i++) {
       if (discardCard(i)) return null;
     }
+    if (passTurn()) return null;
     endTurn();
     return null;
   }

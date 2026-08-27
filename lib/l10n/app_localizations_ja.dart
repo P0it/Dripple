@@ -309,8 +309,65 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dragToDiscard => 'すてるカードは すてやまに ひっぱってね';
 
   @override
+  String get passTurn => 'ターンをわたす';
+
+  @override
+  String get passTurnSub => 'カードはもったまま';
+
+  @override
   String get pileDeck => 'やま';
 
   @override
   String get pileDiscard => 'すてやま';
+
+  @override
+  String get tutorial => 'あそびかた';
+
+  @override
+  String get tutorialDesc => 'ひとりで1分';
+
+  @override
+  String get tutorialWelcome => 'カードをあつめて文を作るあそびです。いっしょに一つ作ってみましょう。';
+
+  @override
+  String get tutorialDeck => 'ここが山札です。みんなここから1枚とります。';
+
+  @override
+  String get tutorialDiscard => 'いらないカードはここにたまります。いちばん上のカードはもらえます。';
+
+  @override
+  String get tutorialDraw => '自分の番はカード1枚からです。山札をタップしてみましょう。';
+
+  @override
+  String get tutorialSort => 'これが自分のカードです。よこにずらすと、ならびかえられます。';
+
+  @override
+  String get tutorialBuild => 'カードを上におし出すと文になります。2枚いじょうおし出してみましょう。';
+
+  @override
+  String get tutorialReorder => 'じゅんばんがちがうときは、カードをよこにドラッグします。タップすると手にもどります。';
+
+  @override
+  String get tutorialSubmit => 'できたら「文を完成」をおします。';
+
+  @override
+  String get tutorialDone => 'これでぜんぶです。ほんばんをやってみましょうか。';
+
+  @override
+  String get tutorialNext => 'つぎへ';
+
+  @override
+  String get tutorialSkip => 'スキップ';
+
+  @override
+  String get tutorialQuit => 'やめる';
+
+  @override
+  String get tutorialPlayForReal => 'ほんばんをあそぶ';
+
+  @override
+  String get tutorialTryAgain => 'まだ文になっていません。じゅんばんをかえるか、カードを1枚もどしてみましょう。';
+
+  @override
+  String get tutorialFirstTime => 'はじめてですか？ あそびかた';
 }

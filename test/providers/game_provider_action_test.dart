@@ -39,6 +39,8 @@ GameNotifier _board({List<WordCard>? hand, List<WordCard>? discard}) {
 }
 
 void main() {
+  _passing();
+
   group('sentence zone editing', () {
     test('placeCard moves a card from hand to the sentence zone', () {
       final n = _board();
@@ -176,6 +178,64 @@ void main() {
 
       expect(n.state.phase, GamePhase.gameEnd);
       expect(n.state.winnerIndex, 1);
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Passing
+// ---------------------------------------------------------------------------
+
+void _passing() {
+  group('passTurn', () {
+    test('ends the turn without spending a card', () {
+      final n = _board();
+      final before = n.state.players[0].hand.length;
+      final pile = n.state.discardPile.length;
+
+      expect(n.passTurn(), isTrue);
+
+      expect(n.state.players[0].hand.length, before,
+          reason: 'passing costs nothing');
+      expect(n.state.discardPile.length, pile);
+      expect(n.state.currentPlayerIndex, 1);
+      expect(n.state.turnPhase, TurnPhase.draw);
+    });
+
+    test('is refused before the draw', () {
+      final n = _board();
+      n.debugSetState(n.state.copyWith(turnPhase: TurnPhase.draw));
+
+      expect(n.passTurn(), isFalse,
+          reason: 'a turn where nothing happened has not happened');
+      expect(n.state.currentPlayerIndex, 0);
+    });
+
+    test('returns staged cards to the hand', () {
+      final n = _board();
+      n.placeCard(0);
+      expect(n.state.players[0].sentenceZone, isNotEmpty);
+      final total = n.state.players[0].hand.length +
+          n.state.players[0].sentenceZone.length;
+
+      expect(n.passTurn(), isTrue);
+      expect(n.state.players[0].hand.length, total);
+      expect(n.state.players[0].sentenceZone, isEmpty);
+    });
+
+    test('drawing then passing grows the hand, which discarding never does',
+        () {
+      // The loop the pass button exists for: draw one, throw one away, and
+      // the hand is the size it was. Only a hand that grows can reach a
+      // sentence long enough to empty it.
+      final n = _board();
+      n.debugSetState(n.state.copyWith(turnPhase: TurnPhase.draw));
+      final before = n.state.players[0].hand.length;
+
+      n.drawFromDeck();
+      expect(n.state.players[0].hand.length, before + 1);
+      n.passTurn();
+      expect(n.state.players[0].hand.length, before + 1);
     });
   });
 }

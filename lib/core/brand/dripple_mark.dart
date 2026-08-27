@@ -4,12 +4,26 @@ import 'package:flutter/material.dart';
 
 import '../design/app_colors.dart';
 
-/// The Dripple mark: three dots bouncing along a line.
+/// The Dripple mark: two cards, dealt.
 ///
-/// The name is dribble — you dribble a sentence, moving words along under
-/// control until they arrive somewhere. So the mark is a rhythm, not an
-/// object: three bounces gaining height as they travel left to right, which
-/// is also the direction English word order runs.
+/// A card game's mark should be made of the thing the game is made of. So the
+/// mark is a poker-proportioned card with a second one laid under it at an
+/// angle — the moment two cards land on a table, which is the moment the game
+/// starts.
+///
+/// There is no letter on it and no pip. The earlier mark was three dots
+/// bouncing along a line, which is the shape of a loading indicator, and the
+/// first thing after it was a card with a `D` and a dot printed in the corner.
+/// Both were the mark saying its own name out loud. A pair of cards does not
+/// need to.
+///
+/// Nothing is outlined. The back card is the brand blue, the front is stock,
+/// and what separates them is a two-layer shadow — the same shadow a real card
+/// casts on the one beneath it. That is why [onLight] exists: on felt, on ink,
+/// on paper, a shadow is enough, but on pure white the front card has nothing
+/// to be lighter than and vanishes into the page. There the cut edge of the
+/// stock is drawn as a hairline, which is not a border added to the mark but
+/// the same 1px rim every card in this game already carries.
 ///
 /// Drawn rather than bundled so it is crisp at every size, from a 16px icon
 /// to a full-screen splash.
@@ -19,108 +33,167 @@ class DrippleMark extends StatelessWidget {
     this.size = 72,
     this.animation,
     this.color,
+    this.onLight = false,
   });
 
   final double size;
 
-  /// Drives the bounce. Null paints the resting state.
+  /// Drives the deal. Null paints the cards at rest.
   final Animation<double>? animation;
 
+  /// Overrides the back card's colour. The front card is always stock.
   final Color? color;
+
+  /// Draw the front card's cut edge, for grounds it would otherwise disappear
+  /// into — a white page, a light document, print.
+  final bool onLight;
 
   @override
   Widget build(BuildContext context) {
-    final paintColor = color ?? AppColors.point;
     final anim = animation;
 
+    DrippleMarkPainter painter(double progress) => DrippleMarkPainter(
+          progress: progress,
+          color: color ?? AppColors.point,
+          onLight: onLight,
+        );
+
     if (anim == null) {
-      return CustomPaint(
-        size: Size.square(size),
-        painter: DrippleMarkPainter(progress: 1, color: paintColor),
-      );
+      return CustomPaint(size: Size.square(size), painter: painter(1));
     }
 
     return AnimatedBuilder(
       animation: anim,
-      builder: (_, __) => CustomPaint(
-        size: Size.square(size),
-        painter: DrippleMarkPainter(progress: anim.value, color: paintColor),
-      ),
+      builder: (_, __) =>
+          CustomPaint(size: Size.square(size), painter: painter(anim.value)),
     );
   }
 }
 
-/// Paints the mark part-way through its bounce.
+/// Paints the mark part-way through the deal.
 ///
-/// [progress] 0 has every dot on the line; 1 has all three at rest, each at
-/// its own height. Exposed so the app-icon and launch-screen bake can reuse
-/// the exact geometry rather than tracing it again.
+/// [progress] 0 has both cards square and stacked; 1 has the back card swung
+/// out to its angle and the front card settled forward. Exposed so the
+/// app-icon and launch-screen bake can reuse the exact geometry rather than
+/// tracing it again.
 class DrippleMarkPainter extends CustomPainter {
-  const DrippleMarkPainter({required this.progress, required this.color});
+  const DrippleMarkPainter({
+    required this.progress,
+    required this.color,
+    this.onLight = false,
+  });
 
   final double progress;
   final Color color;
+  final bool onLight;
 
-  /// Where the dots land, as a fraction of height.
-  static const double _baseline = 0.78;
+  /// Both cards, as fractions of the mark's box. Poker proportion, and a
+  /// corner radius a shade over the deck's own 1/20 — a mark has to survive
+  /// 16px, where a 5% corner disappears. Not much over: at 15% the cards
+  /// stopped reading as cards and started reading as app-icon blobs.
+  static const double _cardWidth = 0.40;
+  static const double _cardHeight = _cardWidth * 88 / 63;
+  static const double _radius = _cardWidth * 0.09;
 
-  /// Each dot: how far along, how high it rests, how big it is — all as
-  /// fractions of the mark's box. Gaining height and weight as they travel
-  /// is what makes it read as momentum rather than as three loose dots.
-  static const _dots = [
-    (x: 0.20, rise: 0.13, radius: 0.070),
-    (x: 0.50, rise: 0.32, radius: 0.100),
-    (x: 0.80, rise: 0.52, radius: 0.135),
-  ];
+  /// Where the front card sits, and how far behind and to the left the back
+  /// one lands. The gap between them is the mark — too small and the pair
+  /// reads as one thick card with a blue rim.
+  static const double _frontLeft = 0.390;
+  static const double _frontTop = 0.245;
+  static const double _backLeft = 0.190;
+  static const double _backTop = 0.185;
 
-  /// Fraction of the timeline each dot's own bounce takes.
-  static const double _beat = 0.5;
+  /// The back card's final angle, in radians (~20°).
+  static const double _lean = 0.350;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final t = progress.clamp(0.0, 1.0);
-    final baselineY = size.height * _baseline;
+    final t = Curves.easeOutCubic.transform(progress.clamp(0.0, 1.0));
+    final w = size.width;
 
-    _line(canvas, size, baselineY);
+    // The back card swings out from under the front one, so at rest they are
+    // stacked and the deal is the mark assembling itself.
+    final backRect = Rect.fromLTWH(
+      _lerp(_frontLeft, _backLeft, t) * w,
+      _lerp(_frontTop, _backTop, t) * w,
+      _cardWidth * w,
+      _cardHeight * w,
+    );
+    final frontRect = Rect.fromLTWH(
+      _frontLeft * w,
+      _frontTop * w,
+      _cardWidth * w,
+      _cardHeight * w,
+    );
 
-    final paint = Paint()..color = color;
-    for (var i = 0; i < _dots.length; i++) {
-      final dot = _dots[i];
+    canvas.save();
+    canvas.translate(backRect.center.dx, backRect.center.dy);
+    canvas.rotate(-_lean * t);
+    canvas.translate(-backRect.center.dx, -backRect.center.dy);
+    _card(canvas, backRect, w, _backFill(backRect));
+    canvas.restore();
 
-      // Stagger the three bounces so they read as one travelling rhythm.
-      final start = i * (1 - _beat) / (_dots.length - 1);
-      final local = ((t - start) / _beat).clamp(0.0, 1.0);
-      final height = Curves.easeOutCubic.transform(local);
+    _card(canvas, frontRect, w, _frontFill(frontRect), edge: onLight);
+  }
 
-      final cx = size.width * dot.x;
-      final cy = baselineY - size.height * dot.rise * height;
+  /// The back card takes the brand blue, lit from the top-left the way a card
+  /// lying on a table is.
+  Paint _backFill(Rect rect) => Paint()
+    ..shader = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        Color.lerp(color, const Color(0xFFFFFFFF), 0.16)!,
+        Color.lerp(color, const Color(0xFF000000), 0.38)!,
+      ],
+    ).createShader(rect);
 
-      // Squash on the way up, so it reads as a push off the line rather than
-      // a dot sliding upward.
-      final squash = 1 + 0.18 * math.sin(local * math.pi);
+  /// The front card is stock, with the faintest fall-off across it. Flat paper
+  /// at this scale reads as a white rectangle; a card catches light.
+  Paint _frontFill(Rect rect) => Paint()
+    ..shader = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: const [Color(0xFFFFFFFF), AppColors.paperShade],
+    ).createShader(rect);
 
-      canvas.save();
-      canvas.translate(cx, cy);
-      canvas.scale(1 / squash, squash);
-      canvas.drawCircle(Offset.zero, size.width * dot.radius, paint);
-      canvas.restore();
+  void _card(Canvas canvas, Rect rect, double w, Paint fill,
+      {bool edge = false}) {
+    final rrect = RRect.fromRectAndRadius(rect, Radius.circular(_radius * w));
+
+    // Two shadows, near and far, because one shadow reads as a glow. The near
+    // one is contact; the far one is height.
+    canvas.drawRRect(
+      rrect.shift(Offset(0, w * 0.012)),
+      Paint()
+        ..color = const Color(0xFF000000).withValues(alpha: 0.20)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.016),
+    );
+    canvas.drawRRect(
+      rrect.shift(Offset(0, w * 0.042)),
+      Paint()
+        ..color = const Color(0xFF000000).withValues(alpha: 0.18)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.048),
+    );
+
+    canvas.drawRRect(rrect, fill);
+
+    if (edge) {
+      canvas.drawRRect(
+        rrect.deflate(w * 0.004),
+        Paint()
+          ..color = AppColors.paperEdge
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = math.max(1, w * 0.009),
+      );
     }
   }
 
-  /// The ground the dots bounce off. Faint — it is context, not content.
-  void _line(Canvas canvas, Size size, double y) {
-    final inset = size.width * 0.10;
-    canvas.drawLine(
-      Offset(inset, y),
-      Offset(size.width - inset, y),
-      Paint()
-        ..color = color.withValues(alpha: 0.25)
-        ..strokeWidth = size.width * 0.040
-        ..strokeCap = StrokeCap.round,
-    );
-  }
+  static double _lerp(double a, double b, double t) => a + (b - a) * t;
 
   @override
   bool shouldRepaint(DrippleMarkPainter old) =>
-      old.progress != progress || old.color != color;
+      old.progress != progress ||
+      old.color != color ||
+      old.onLight != onLight;
 }
