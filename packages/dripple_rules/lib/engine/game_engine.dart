@@ -8,6 +8,30 @@ import '../data/card_deck.dart';
 import 'grammar/grammar_engine.dart';
 import 'ai/ai_player.dart';
 
+/// Who sits in one seat when a game is dealt.
+///
+/// Offline this is always one human and the rest bots. Online it is the
+/// people who joined the room, plus a bot for any seat somebody walked away
+/// from mid-game.
+class SeatAssignment {
+  final String id;
+  final String name;
+  final bool isAI;
+
+  const SeatAssignment({
+    required this.id,
+    required this.name,
+    this.isAI = false,
+  });
+
+  /// The seating a local game has always had: you, then the bots.
+  static List<SeatAssignment> offline(int playerCount) => [
+        const SeatAssignment(id: 'human_0', name: 'You'),
+        for (int i = 1; i < playerCount; i++)
+          SeatAssignment(id: 'ai_$i', name: 'AI $i', isAI: true),
+      ];
+}
+
 /// Outcome of a sentence submission, surfaced to the UI for the judgment
 /// dialog.
 class JudgmentResult {
@@ -74,7 +98,17 @@ class GameNotifier extends StateNotifier<GameState> {
   // Setup
   // -------------------------------------------------------------------------
 
-  void startGame(GameConfig config) {
+  /// Deal a new game.
+  ///
+  /// [seats] says who sits where. An online game passes the people who
+  /// actually joined; an offline game leaves it out and gets one human seat
+  /// followed by bots, which is what every local game has always been.
+  void startGame(GameConfig config, {List<SeatAssignment>? seats}) {
+    if (seats != null && seats.length != config.playerCount) {
+      throw ArgumentError(
+        'roster of ${seats.length} does not fill ${config.playerCount} seats',
+      );
+    }
     _isProcessingAI = false;
     if (!_aiPlayerIsInjected) {
       _aiPlayer = AIPlayer(difficulty: config.difficulty);
@@ -87,10 +121,15 @@ class GameNotifier extends StateNotifier<GameState> {
       handSize: config.initialHandSize,
     );
 
+    final roster = seats ?? SeatAssignment.offline(config.playerCount);
     final players = <Player>[
-      Player(id: 'human_0', name: 'You', hand: hands[0]),
-      for (int i = 1; i < config.playerCount; i++)
-        Player(id: 'ai_$i', name: 'AI $i', isAI: true, hand: hands[i]),
+      for (int i = 0; i < config.playerCount; i++)
+        Player(
+          id: roster[i].id,
+          name: roster[i].name,
+          isAI: roster[i].isAI,
+          hand: hands[i],
+        ),
     ];
 
     final workingDeck = List<WordCard>.from(remaining);

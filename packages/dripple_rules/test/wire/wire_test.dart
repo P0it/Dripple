@@ -12,6 +12,24 @@ GameState _playedGame() {
   return engine.state;
 }
 
+/// Every string anywhere in an encoded payload.
+///
+/// Leak checks compare ids exactly rather than searching the payload's text:
+/// `card_2` is a substring of `card_20`, so a text search reports a leak that
+/// is not there and — worse — depends on how the deck happened to shuffle.
+Set<String> _everyString(Object? node) {
+  if (node is String) return {node};
+  if (node is Map) {
+    return {
+      for (final entry in node.entries) ..._everyString(entry.value),
+    };
+  }
+  if (node is Iterable) {
+    return {for (final item in node) ..._everyString(item)};
+  }
+  return const {};
+}
+
 void main() {
   group('GameSnapshot — the server\'s own copy', () {
     test('survives a round trip unchanged', () {
@@ -47,10 +65,10 @@ void main() {
   group('PublicView — what everyone may see', () {
     test('never contains another player\'s card ids', () {
       final state = _playedGame();
-      final public = PublicView.encode(state).toString();
-      for (var i = 1; i < state.players.length; i++) {
+      final leaked = _everyString(PublicView.encode(state));
+      for (var i = 0; i < state.players.length; i++) {
         for (final card in state.players[i].hand) {
-          expect(public, isNot(contains(card.id)),
+          expect(leaked, isNot(contains(card.id)),
               reason: 'seat $i leaked ${card.id}');
         }
       }
@@ -58,9 +76,9 @@ void main() {
 
     test('never contains the deck order', () {
       final state = _playedGame();
-      final public = PublicView.encode(state).toString();
+      final leaked = _everyString(PublicView.encode(state));
       for (final card in state.deck) {
-        expect(public, isNot(contains(card.id)));
+        expect(leaked, isNot(contains(card.id)));
       }
     });
 
