@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/design/app_colors.dart';
 import '../../core/design/app_spacing.dart';
-import '../../models/game_state.dart';
-import '../../models/player.dart';
+import 'package:dripple_rules/models/game_state.dart';
+import 'package:dripple_rules/models/player.dart';
 
 class GameEndOverlay extends StatefulWidget {
   final GameState gameState;

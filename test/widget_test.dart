@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dripple/models/game_state.dart';
+import 'package:dripple_rules/models/game_state.dart';
 import 'package:dripple/providers/game_provider.dart';
 
 void main() {

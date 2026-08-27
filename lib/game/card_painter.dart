@@ -7,7 +7,7 @@ import 'package:flutter/material.dart'
 import '../core/design/app_colors.dart';
 import '../core/design/materials.dart';
 import '../core/game_icons.dart';
-import '../models/word_card.dart';
+import 'package:dripple_rules/models/word_card.dart';
 
 /// Draws a word card as a playing card.
 ///

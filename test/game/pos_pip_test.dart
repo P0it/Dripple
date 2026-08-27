@@ -2,9 +2,9 @@ import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:dripple/data/card_deck.dart';
+import 'package:dripple_rules/data/card_deck.dart';
 import 'package:dripple/game/pos_pip.dart';
-import 'package:dripple/models/word_card.dart';
+import 'package:dripple_rules/models/word_card.dart';
 
 /// The corner index is what lets a hand be read while the cards overlap, so a
 /// part of speech with no tag or no pip is a card that cannot be scanned.

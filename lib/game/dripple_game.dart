@@ -4,7 +4,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart' as material;
 import '../core/design/app_colors.dart';
 import '../core/design/materials.dart';
-import '../models/word_card.dart';
+import 'package:dripple_rules/models/word_card.dart';
 import 'board_layout.dart';
 import 'components/card_component.dart';
 import 'components/sweep_component.dart';

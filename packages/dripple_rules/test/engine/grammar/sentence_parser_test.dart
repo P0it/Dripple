@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:dripple/models/word_card.dart';
-import 'package:dripple/engine/grammar/sentence_parser.dart';
+import 'package:test/test.dart';
+import 'package:dripple_rules/models/word_card.dart';
+import 'package:dripple_rules/engine/grammar/sentence_parser.dart';
 
 WordCard _c(String word, PartOfSpeech pos) =>
     WordCard(id: 'p_$word', word: word, pos: pos);

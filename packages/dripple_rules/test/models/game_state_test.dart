@@ -1,7 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:dripple/models/game_state.dart';
-import 'package:dripple/models/player.dart';
-import 'package:dripple/models/word_card.dart';
+import 'package:test/test.dart';
+import 'package:dripple_rules/models/game_state.dart';
+import 'package:dripple_rules/models/player.dart';
+import 'package:dripple_rules/models/word_card.dart';
 
 WordCard _w(String id) => WordCard(id: id, word: id, pos: PartOfSpeech.noun);
 

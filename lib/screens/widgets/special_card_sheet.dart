@@ -6,8 +6,8 @@ import '../../core/design/app_colors.dart';
 import '../../core/design/app_spacing.dart';
 import '../../core/design/app_typography.dart';
 import '../../core/game_icons.dart';
-import '../../models/game_state.dart';
-import '../../models/word_card.dart';
+import 'package:dripple_rules/models/game_state.dart';
+import 'package:dripple_rules/models/word_card.dart';
 import '../../providers/game_provider.dart';
 
 /// Bottom sheet for playing a JUMP or STEAL card.

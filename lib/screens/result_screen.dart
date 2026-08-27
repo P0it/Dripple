@@ -9,7 +9,7 @@ import '../core/design/felt_scaffold.dart';
 import '../core/design/app_spacing.dart';
 import '../core/design/app_typography.dart';
 import '../core/game_icons.dart';
-import '../models/player.dart';
+import 'package:dripple_rules/models/player.dart';
 import '../providers/game_provider.dart';
 
 /// Final standings.

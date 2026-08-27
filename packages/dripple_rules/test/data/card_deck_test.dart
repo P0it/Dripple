@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:dripple/data/card_deck.dart';
-import 'package:dripple/models/word_card.dart';
+import 'package:test/test.dart';
+import 'package:dripple_rules/data/card_deck.dart';
+import 'package:dripple_rules/models/word_card.dart';
 
 void main() {
   group('CardDeck composition', () {

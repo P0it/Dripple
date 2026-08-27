@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import '../models/word_card.dart';
+import 'package:dripple_rules/models/word_card.dart';
 
 /// The suit mark in a card's corner index.
 ///

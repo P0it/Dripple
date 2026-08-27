@@ -3,7 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:dripple/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'core/design/app_theme.dart';
-import 'engine/ai/ai_player.dart';
+import 'package:dripple_rules/engine/ai/ai_player.dart';
 import 'screens/home_screen.dart';
 import 'screens/mode_selection_screen.dart';
 import 'screens/game_screen.dart';

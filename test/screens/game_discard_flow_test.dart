@@ -4,10 +4,10 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:dripple/engine/ai/ai_player.dart';
+import 'package:dripple_rules/engine/ai/ai_player.dart';
 import 'package:dripple/game/dripple_game.dart';
 import 'package:dripple/l10n/app_localizations.dart';
-import 'package:dripple/models/game_state.dart';
+import 'package:dripple_rules/models/game_state.dart';
 import 'package:dripple/providers/game_provider.dart';
 import 'package:dripple/screens/game_screen.dart';
 

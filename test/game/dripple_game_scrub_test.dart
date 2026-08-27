@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dripple/game/board_layout.dart';
 import 'package:dripple/game/dripple_game.dart';
-import 'package:dripple/models/word_card.dart';
+import 'package:dripple_rules/models/word_card.dart';
 
 /// A fanned hand overlaps, so most of a card is behind the next one. Running a
 /// thumb along the hand is how it is read: the card under the finger comes up

@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../models/game_state.dart';
+import 'package:dripple_rules/models/game_state.dart';
 import 'tutorial_script.dart';
 
 /// Where the lesson is up to.

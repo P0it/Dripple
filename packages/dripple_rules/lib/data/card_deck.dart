@@ -7,8 +7,16 @@ class CardDeck {
   int _idCounter = 0;
   String _nextId() => 'card_${_idCounter++}';
 
-  /// Generate a full deck of cards
+  /// Generate a full deck of cards.
+  ///
+  /// Ids are positional and therefore identical on every device and in every
+  /// process: the nth card generated is always `card_n`. Online play sends
+  /// card ids over the wire rather than card contents — the deck is static
+  /// data both ends already hold — and that only works if this holds. Hence
+  /// the counter reset: without it, a second call on the same instance would
+  /// hand out a different set of ids for the same cards.
   List<WordCard> generate() {
+    _idCounter = 0;
     return [
       ..._pronouns(),
       ..._articles(),
@@ -713,4 +721,17 @@ class CardDeck {
         for (int i = 0; i < 3; i++) WordCard.special(_nextId(), CardType.jump),
         for (int i = 0; i < 3; i++) WordCard.special(_nextId(), CardType.steal),
       ];
+
+  static Map<String, WordCard>? _index;
+
+  /// Resolve a card id back to its card, or null if no such card exists.
+  ///
+  /// The canonical deck is built once and cached. Callers must not mutate the
+  /// returned card; [WordCard] is immutable.
+  static WordCard? cardById(String id) {
+    final index = _index ??= {
+      for (final card in CardDeck().generate()) card.id: card,
+    };
+    return index[id];
+  }
 }

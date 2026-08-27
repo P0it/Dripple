@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:dripple/game/dripple_game.dart';
 import 'package:dripple/l10n/app_localizations.dart';
 import 'package:dripple/l10n/app_localizations_ko.dart';
-import 'package:dripple/models/game_state.dart';
+import 'package:dripple_rules/models/game_state.dart';
 import 'package:dripple/providers/game_provider.dart';
 import 'package:dripple/screens/game_screen.dart';
 import 'package:dripple/screens/tutorial/tutorial_overlay.dart';

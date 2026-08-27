@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:dripple/game/board_layout.dart';
 import 'package:dripple/game/components/card_component.dart';
 import 'package:dripple/game/dripple_game.dart';
-import 'package:dripple/models/word_card.dart';
+import 'package:dripple_rules/models/word_card.dart';
 
 /// Drives a card through a real drag: press, move to [to], release.
 void _drag(DrippleGame game, CardComponent card, Vector2 to) {

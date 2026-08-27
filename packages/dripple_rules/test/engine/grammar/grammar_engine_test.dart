@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:dripple/models/word_card.dart';
-import 'package:dripple/engine/grammar/grammar_engine.dart';
+import 'package:test/test.dart';
+import 'package:dripple_rules/models/word_card.dart';
+import 'package:dripple_rules/engine/grammar/grammar_engine.dart';
 
 /// Helper to quickly create word cards for testing
 WordCard _pronoun(String word, int person, String number) => WordCard(

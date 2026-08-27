@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dripple/game/board_layout.dart';
 import 'package:dripple/game/dripple_game.dart';
-import 'package:dripple/models/word_card.dart';
+import 'package:dripple_rules/models/word_card.dart';
 
 /// Taps are how a card is discarded and how a staged card is taken back, so
 /// they have to survive on a component that also drags. Flame registers one

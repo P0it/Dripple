@@ -1,7 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:dripple/data/card_deck.dart';
-import 'package:dripple/engine/grammar/sentence_parser.dart';
-import 'package:dripple/models/word_card.dart';
+import 'package:test/test.dart';
+import 'package:dripple_rules/data/card_deck.dart';
+import 'package:dripple_rules/engine/grammar/sentence_parser.dart';
+import 'package:dripple_rules/models/word_card.dart';
 
 WordCard _pron(String w) => WordCard(
     id: 'p_$w', word: w, pos: PartOfSpeech.pronoun,

@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:dripple/engine/grammar/grammar_engine.dart';
-import 'package:dripple/models/word_card.dart';
+import 'package:test/test.dart';
+import 'package:dripple_rules/engine/grammar/grammar_engine.dart';
+import 'package:dripple_rules/models/word_card.dart';
 
 WordCard _art(String w, {bool? vowelStart}) => WordCard(
     id: 'a_$w', word: w, pos: PartOfSpeech.article, vowelStart: vowelStart);

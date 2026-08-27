@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dripple/core/design/app_colors.dart';
-import 'package:dripple/models/word_card.dart';
+import 'package:dripple_rules/models/word_card.dart';
 
 void main() {
   group('AppColors.forPartOfSpeech', () {

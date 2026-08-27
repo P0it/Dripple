@@ -5,7 +5,7 @@ import '../../core/design/app_colors.dart';
 import '../../core/design/app_spacing.dart';
 import '../../core/design/app_typography.dart';
 import '../../core/game_icons.dart';
-import '../../models/game_state.dart';
+import 'package:dripple_rules/models/game_state.dart';
 import '../widgets/big_action_button.dart';
 
 /// The one action with nothing on the board to touch.

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../models/word_card.dart';
+import 'package:dripple_rules/models/word_card.dart';
 
 /// Every colour in the app. Nothing outside this file defines one.
 ///

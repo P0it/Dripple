@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/game_state.dart';
-import '../models/player.dart';
-import '../models/word_card.dart';
-import '../data/card_deck.dart';
-import '../engine/grammar/grammar_engine.dart';
-import '../engine/ai/ai_player.dart';
+import 'package:dripple_rules/models/game_state.dart';
+import 'package:dripple_rules/models/player.dart';
+import 'package:dripple_rules/models/word_card.dart';
+import 'package:dripple_rules/data/card_deck.dart';
+import 'package:dripple_rules/engine/grammar/grammar_engine.dart';
+import 'package:dripple_rules/engine/ai/ai_player.dart';
 
 /// Outcome of a sentence submission, surfaced to the UI for the judgment
 /// dialog.

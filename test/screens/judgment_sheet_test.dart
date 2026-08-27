@@ -3,7 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dripple/l10n/app_localizations.dart';
-import 'package:dripple/models/word_card.dart';
+import 'package:dripple_rules/models/word_card.dart';
 import 'package:dripple/providers/game_provider.dart';
 import 'package:dripple/screens/judgment_screen.dart';
 

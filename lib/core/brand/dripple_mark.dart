@@ -98,13 +98,18 @@ class DrippleMarkPainter extends CustomPainter {
   /// Where the front card sits, and how far behind and to the left the back
   /// one lands. The gap between them is the mark — too small and the pair
   /// reads as one thick card with a blue rim.
-  static const double _frontLeft = 0.390;
-  static const double _frontTop = 0.245;
-  static const double _backLeft = 0.190;
-  static const double _backTop = 0.185;
+  static const double _frontLeft = 0.405;
+  static const double _frontTop = 0.235;
+  static const double _backLeft = 0.205;
+  static const double _backTop = 0.175;
 
   /// The back card's final angle, in radians (~20°).
   static const double _lean = 0.350;
+
+  /// The cut edge, a step darker than the board's `paperEdge`. On felt the
+  /// rim only has to hint at thickness; on a white page it is the only thing
+  /// holding the card's shape, so it has to carry.
+  static const Color _lightEdge = Color(0xFFCDC3AF);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -150,11 +155,15 @@ class DrippleMarkPainter extends CustomPainter {
 
   /// The front card is stock, with the faintest fall-off across it. Flat paper
   /// at this scale reads as a white rectangle; a card catches light.
+  ///
+  /// It starts at the deck's own warm off-white and not at pure white, which
+  /// is the same reason real card stock is not white either: against a white
+  /// page, a white card has nothing to be.
   Paint _frontFill(Rect rect) => Paint()
     ..shader = LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: const [Color(0xFFFFFFFF), AppColors.paperShade],
+      colors: const [AppColors.paper, AppColors.paperShade],
     ).createShader(rect);
 
   void _card(Canvas canvas, Rect rect, double w, Paint fill,
@@ -182,9 +191,9 @@ class DrippleMarkPainter extends CustomPainter {
       canvas.drawRRect(
         rrect.deflate(w * 0.004),
         Paint()
-          ..color = AppColors.paperEdge
+          ..color = _lightEdge
           ..style = PaintingStyle.stroke
-          ..strokeWidth = math.max(1, w * 0.009),
+          ..strokeWidth = math.max(1, w * 0.011),
       );
     }
   }

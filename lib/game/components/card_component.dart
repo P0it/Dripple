@@ -6,7 +6,7 @@ import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart' as material;
 
-import '../../models/word_card.dart';
+import 'package:dripple_rules/models/word_card.dart';
 import '../card_painter.dart';
 
 /// One card on the board.

@@ -6,7 +6,7 @@ import 'package:flutter/material.dart' as material;
 
 import '../../core/design/app_colors.dart';
 import '../../core/design/materials.dart';
-import '../../models/word_card.dart';
+import 'package:dripple_rules/models/word_card.dart';
 import '../card_painter.dart';
 
 /// Which pile this is.

@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dripple/game/board_layout.dart';
 import 'package:dripple/game/dripple_game.dart';
-import 'package:dripple/models/word_card.dart';
+import 'package:dripple_rules/models/word_card.dart';
 
 List<WordCard> _hand() => const [
       WordCard(id: 'a', word: 'cats', pos: PartOfSpeech.noun),

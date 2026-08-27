@@ -1,0 +1,18 @@
+name: dripple_rules
+description: >-
+  Dripple's rules — the card deck, the grammar engine, the AI player, and the
+  models they act on. Pure Dart with no Flutter dependency, so the app and the
+  online game server run the exact same rules rather than two implementations
+  that drift apart.
+publish_to: 'none'
+version: 1.0.0
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  equatable: ^2.0.7
+
+dev_dependencies:
+  test: ^1.25.0
+  lints: ^5.0.0

@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:dripple/game/board_layout.dart';
 import 'package:dripple/game/components/card_component.dart';
 import 'package:dripple/game/dripple_game.dart';
-import 'package:dripple/models/word_card.dart';
+import 'package:dripple_rules/models/word_card.dart';
 
 /// Two cards is the smallest hand that can be reordered.
 List<WordCard> _twoCards() => const [

@@ -1,7 +1,7 @@
 import 'package:dripple/l10n/app_localizations.dart';
 
-import '../models/game_state.dart';
-import '../models/word_card.dart';
+import 'package:dripple_rules/models/game_state.dart';
+import 'package:dripple_rules/models/word_card.dart';
 
 /// What a step points at.
 ///

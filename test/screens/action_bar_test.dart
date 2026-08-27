@@ -3,9 +3,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dripple/l10n/app_localizations.dart';
-import 'package:dripple/models/game_state.dart';
-import 'package:dripple/models/player.dart';
-import 'package:dripple/models/word_card.dart';
+import 'package:dripple_rules/models/game_state.dart';
+import 'package:dripple_rules/models/player.dart';
+import 'package:dripple_rules/models/word_card.dart';
 import 'package:dripple/screens/game/action_bar.dart';
 
 GameState _playing({

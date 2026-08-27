@@ -6,7 +6,7 @@ import '../core/design/app_colors.dart';
 import '../core/design/felt_scaffold.dart';
 import '../core/design/app_spacing.dart';
 import '../core/design/app_typography.dart';
-import '../engine/ai/ai_player.dart';
+import 'package:dripple_rules/engine/ai/ai_player.dart';
 
 /// Pick an opponent, then pick how hard it plays.
 ///
