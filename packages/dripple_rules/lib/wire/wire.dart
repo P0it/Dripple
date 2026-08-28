@@ -167,6 +167,7 @@ class PublicView {
       drawnFromDiscardCardId: json['drawnFromDiscard'] as String?,
       winnerIndex: json['winnerSeat'] as int?,
       turnTimeRemaining: json['turnTimeRemaining'] as int? ?? -1,
+      mySeatIndex: viewerSeat,
       config: GameConfig(
         playerCount: config['playerCount'] as int,
         initialHandSize: config['initialHandSize'] as int,

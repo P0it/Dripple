@@ -52,6 +52,14 @@ class GameState extends Equatable {
   final String? drawnFromDiscardCardId;
   final int? winnerIndex;
 
+  /// Which seat this device is playing.
+  ///
+  /// Offline it is always the first: the other seats are bots, so "not a bot"
+  /// and "me" were the same question and the screens asked the second by
+  /// asking the first. Online three of four seats are people and only one is
+  /// yours, so the question has to be asked directly.
+  final int mySeatIndex;
+
   const GameState({
     this.phase = GamePhase.setup,
     this.turnPhase = TurnPhase.draw,
@@ -64,6 +72,7 @@ class GameState extends Equatable {
     this.deckRecycleCount = 0,
     this.drawnFromDiscardCardId,
     this.winnerIndex,
+    this.mySeatIndex = 0,
   });
 
   Player get currentPlayer {
@@ -72,6 +81,26 @@ class GameState extends Equatable {
     }
     return players[currentPlayerIndex];
   }
+
+  /// This device's own player.
+  Player get me {
+    if (players.isEmpty || mySeatIndex >= players.length) {
+      return const Player(id: '', name: '');
+    }
+    return players[mySeatIndex];
+  }
+
+  /// Everybody else at the table, bots and people alike.
+  List<Player> get opponents => [
+        for (var i = 0; i < players.length; i++)
+          if (i != mySeatIndex) players[i],
+      ];
+
+  /// Whether this device may act right now.
+  bool get isMyTurn =>
+      phase == GamePhase.playing &&
+      players.isNotEmpty &&
+      currentPlayerIndex == mySeatIndex;
 
   WordCard? get discardTop => discardPile.isEmpty ? null : discardPile.last;
 
@@ -94,6 +123,7 @@ class GameState extends Equatable {
     int? deckRecycleCount,
     String? drawnFromDiscardCardId,
     int? winnerIndex,
+    int? mySeatIndex,
   }) {
     return GameState(
       phase: phase ?? this.phase,
@@ -108,6 +138,7 @@ class GameState extends Equatable {
       drawnFromDiscardCardId:
           drawnFromDiscardCardId ?? this.drawnFromDiscardCardId,
       winnerIndex: winnerIndex ?? this.winnerIndex,
+      mySeatIndex: mySeatIndex ?? this.mySeatIndex,
     );
   }
 
@@ -125,6 +156,7 @@ class GameState extends Equatable {
         deckRecycleCount: deckRecycleCount,
         drawnFromDiscardCardId: null,
         winnerIndex: winnerIndex,
+        mySeatIndex: mySeatIndex,
       );
 
   @override
@@ -140,5 +172,6 @@ class GameState extends Equatable {
         deckRecycleCount,
         drawnFromDiscardCardId,
         winnerIndex,
+        mySeatIndex,
       ];
 }

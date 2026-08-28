@@ -208,7 +208,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   void _onHandCardTapped(int handIndex) {
     final notifier = ref.read(gameProvider.notifier);
     final state = ref.read(gameProvider);
-    if (state.phase != GamePhase.playing || state.currentPlayer.isAI) return;
+    if (!state.isMyTurn) return;
 
     if (state.turnPhase != TurnPhase.action) return;
 
@@ -237,7 +237,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   void _onDiscardCard(int handIndex) {
     final notifier = ref.read(gameProvider.notifier);
     final state = ref.read(gameProvider);
-    if (state.phase != GamePhase.playing || state.currentPlayer.isAI) return;
+    if (!state.isMyTurn) return;
     if (state.turnPhase != TurnPhase.action) return;
 
     final card = state.currentPlayer.hand[handIndex];

@@ -29,7 +29,7 @@ class OpponentsBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final opponents = gameState.players.where((p) => p.isAI).toList();
+    final opponents = gameState.opponents;
     if (opponents.isEmpty) return const SizedBox.shrink();
 
     final showTimer = gameState.turnTimeRemaining >= 0 &&

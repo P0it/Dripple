@@ -43,11 +43,7 @@ class ActionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    final isHumanTurn = gameState.phase == GamePhase.playing &&
-        gameState.players.isNotEmpty &&
-        !gameState.currentPlayer.isAI;
-
-    if (!isHumanTurn) {
+    if (!gameState.isMyTurn) {
       return SizedBox(
         height: _height,
         child: Center(
