@@ -23,8 +23,15 @@ dependencies:
   audioplayers: ^6.1.0
   vibration: ^2.0.0
   shared_preferences: ^2.3.0
+  http: ^1.2.0
 
 dev_dependencies:
+  # The real server, so the client is tested against the thing it talks to
+  # rather than against a mock that can quietly drift away from it.
+  dripple_server:
+    path: server
+  # Only to stand that server up on a port in the client's tests.
+  shelf: ^1.4.2
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
