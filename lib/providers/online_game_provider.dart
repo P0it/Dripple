@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:dripple_rules/models/game_state.dart';
 import 'package:dripple_rules/models/word_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,9 +22,45 @@ class OnlineState {
   /// stop taking a second tap rather than sending it.
   final bool busy;
 
-  const OnlineState({this.room, this.error, this.judgment, this.busy = false});
+  /// Cards this player has pushed forward into a sentence but not yet
+  /// submitted, by id and in the order they were laid out.
+  ///
+  /// The server does not know about these and should not: building a sentence
+  /// moves cards around inside one hand and changes nothing anybody else can
+  /// see. Only the finished sentence is sent.
+  final List<String> staged;
 
-  GameState? get game => room?.game;
+  const OnlineState({
+    this.room,
+    this.error,
+    this.judgment,
+    this.busy = false,
+    this.staged = const [],
+  });
+
+  /// The board as it should be drawn: the server's game, with the cards this
+  /// player has pushed forward moved out of the hand and into the sentence.
+  GameState? get game {
+    final served = room?.game;
+    if (served == null || staged.isEmpty) return served;
+
+    final me = served.me;
+    final staging = <WordCard>[];
+    for (final id in staged) {
+      final card = me.hand.where((c) => c.id == id).firstOrNull;
+      if (card != null) staging.add(card);
+    }
+    final held = [
+      for (final c in me.hand)
+        if (!staged.contains(c.id)) c,
+    ];
+
+    final players = [...served.players];
+    players[served.mySeatIndex] =
+        me.copyWith(hand: held, sentenceZone: staging);
+    return served.copyWith(players: players);
+  }
+
   bool get isMyTurn => room?.game?.isMyTurn ?? false;
 
   OnlineState copyWith({
@@ -31,6 +68,7 @@ class OnlineState {
     OnlineError? error,
     Judgment? judgment,
     bool? busy,
+    List<String>? staged,
     bool clearError = false,
     bool clearJudgment = false,
   }) =>
@@ -39,6 +77,7 @@ class OnlineState {
         error: clearError ? null : (error ?? this.error),
         judgment: clearJudgment ? null : (judgment ?? this.judgment),
         busy: busy ?? this.busy,
+        staged: staged ?? this.staged,
       );
 }
 
@@ -106,8 +145,42 @@ class OnlineGameNotifier extends StateNotifier<OnlineState> {
   Future<void> drawFromDiscard() =>
       _run(() => _client.draw(roomId, fromDiscard: true));
 
-  Future<void> submit(List<WordCard> sentence) =>
-      _run(() => _client.submit(roomId, [for (final c in sentence) c.id]));
+  /// Push a held card forward into the sentence.
+  ///
+  /// Local only, and instant: nothing anybody else can see has changed, so
+  /// there is nothing to wait for. [insertAt] drops it into the line rather
+  /// than at the end.
+  void placeCard(int handIndex, {int? insertAt}) {
+    final game = state.game;
+    if (game == null || !state.isMyTurn) return;
+    if (handIndex < 0 || handIndex >= game.me.hand.length) return;
+
+    final staged = [...state.staged];
+    final id = game.me.hand[handIndex].id;
+    final at = insertAt == null ? staged.length : insertAt.clamp(0, staged.length);
+    staged.insert(at, id);
+    state = state.copyWith(staged: staged);
+  }
+
+  /// Take a card back out of the sentence.
+  void removeFromSentence(int index) {
+    if (index < 0 || index >= state.staged.length) return;
+    state = state.copyWith(staged: [...state.staged]..removeAt(index));
+  }
+
+  void reorderSentence(int from, int to) {
+    final staged = [...state.staged];
+    if (from < 0 || from >= staged.length) return;
+    final card = staged.removeAt(from);
+    staged.insert(to.clamp(0, staged.length), card);
+    state = state.copyWith(staged: staged);
+  }
+
+  /// Send the sentence as it stands.
+  Future<void> submitStaged() async {
+    if (state.staged.isEmpty) return;
+    await _run(() => _client.submit(roomId, state.staged));
+  }
 
   Future<void> discard(WordCard card) =>
       _run(() => _client.discard(roomId, card.id));
@@ -151,6 +224,18 @@ class OnlineGameNotifier extends StateNotifier<OnlineState> {
     await _run(() => _client.readRoom(roomId), quiet: true);
   }
 
+  /// Keep the sentence being built across a poll that changed nothing about
+  /// this hand, and drop it the moment the hand itself moved. Otherwise a
+  /// poll arriving mid-build would sweep the cards back off the table.
+  List<String> _stagingStillValid(RoomView room) {
+    if (state.staged.isEmpty) return const [];
+    if (room.judgment != null) return const [];
+    final hand = room.game?.me.hand;
+    if (hand == null) return const [];
+    final held = {for (final c in hand) c.id};
+    return state.staged.every(held.contains) ? state.staged : const [];
+  }
+
   bool _waitingOnNobody(RoomView room) {
     final game = room.game;
     if (game == null || game.phase != GamePhase.playing) return false;
@@ -180,7 +265,14 @@ class OnlineGameNotifier extends StateNotifier<OnlineState> {
     try {
       final room = await request();
       if (!mounted) return;
-      state = OnlineState(room: room, judgment: room.judgment);
+      // A reply is the new truth, and staging is not part of it. Cards that
+      // were played are gone from the hand; cards from a rejected sentence
+      // are back in it, which is where a rejected sentence belongs.
+      state = OnlineState(
+        room: room,
+        judgment: room.judgment,
+        staged: _stagingStillValid(room),
+      );
     } on OnlineError catch (e) {
       if (!mounted) return;
       state = quiet

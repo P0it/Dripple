@@ -82,7 +82,8 @@ void main() {
     addTearDown(notifier.dispose);
 
     await notifier.drawFromDeck();
-    await notifier.submit([notifier.state.game!.me.hand.first]);
+    notifier.placeCard(0);
+    await notifier.submitStaged();
 
     expect(notifier.state.judgment, isNotNull);
     expect(notifier.state.judgment!.isCorrect, isFalse);
@@ -137,5 +138,84 @@ void main() {
     expect(notifier.state.error, isNull,
         reason: 'a missed poll is not something to shout about');
     expect(notifier.state.game, equals(before));
+  });
+
+  group('building a sentence', () {
+    test('moves a card out of the hand and onto the table, locally', () async {
+      final notifier = await watching('mina');
+      addTearDown(notifier.dispose);
+      await notifier.drawFromDeck();
+
+      final held = notifier.state.game!.me.hand.length;
+      final first = notifier.state.game!.me.hand.first.id;
+      notifier.placeCard(0);
+
+      expect(notifier.state.game!.me.hand.length, equals(held - 1));
+      expect(notifier.state.game!.me.sentenceZone.map((c) => c.id),
+          equals([first]));
+    });
+
+    test('and back again when it is taken off', () async {
+      final notifier = await watching('mina');
+      addTearDown(notifier.dispose);
+      await notifier.drawFromDeck();
+      final held = notifier.state.game!.me.hand.length;
+
+      notifier.placeCard(0);
+      notifier.removeFromSentence(0);
+
+      expect(notifier.state.game!.me.hand.length, equals(held));
+      expect(notifier.state.game!.me.sentenceZone, isEmpty);
+    });
+
+    test('keeps the order the cards were laid in, and lets it be changed',
+        () async {
+      final notifier = await watching('mina');
+      addTearDown(notifier.dispose);
+      await notifier.drawFromDeck();
+
+      final hand = notifier.state.game!.me.hand;
+      final a = hand[0].id, b = hand[1].id, c = hand[2].id;
+      notifier.placeCard(0);
+      notifier.placeCard(0);
+      notifier.placeCard(0);
+      expect(notifier.state.game!.me.sentenceZone.map((x) => x.id),
+          equals([a, b, c]));
+
+      notifier.reorderSentence(2, 0);
+      expect(notifier.state.game!.me.sentenceZone.map((x) => x.id),
+          equals([c, a, b]));
+    });
+
+    test('is not swept away by a poll that changed nothing', () async {
+      final notifier = await watching('mina');
+      addTearDown(notifier.dispose);
+      await notifier.drawFromDeck();
+      notifier.placeCard(0);
+      final staged = notifier.state.staged;
+
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      expect(notifier.state.staged, equals(staged),
+          reason: 'a poll must not knock the cards off the table');
+    });
+
+    test('is cleared once the sentence has been judged', () async {
+      final notifier = await watching('mina');
+      addTearDown(notifier.dispose);
+      await notifier.drawFromDeck();
+      notifier.placeCard(0);
+      await notifier.submitStaged();
+
+      expect(notifier.state.judgment, isNotNull);
+      expect(notifier.state.staged, isEmpty);
+      expect(notifier.state.game!.me.sentenceZone, isEmpty);
+    });
+
+    test('cannot be built on somebody else\'s turn', () async {
+      final notifier = await watching('jun');
+      addTearDown(notifier.dispose);
+      notifier.placeCard(0);
+      expect(notifier.state.staged, isEmpty);
+    });
   });
 }
