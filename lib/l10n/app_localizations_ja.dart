@@ -370,4 +370,81 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get tutorialFirstTime => 'はじめてですか？ あそびかた';
+
+  @override
+  String get chooseName => 'なんて呼べばいい？';
+
+  @override
+  String get chooseNameHint => 'テーブルでの名前';
+
+  @override
+  String get chooseNameSave => 'これにする';
+
+  @override
+  String get createRoom => '部屋をつくる';
+
+  @override
+  String get createRoomDesc => 'コードを知っている友だちと遊ぶ';
+
+  @override
+  String get joinRoom => '部屋に入る';
+
+  @override
+  String get joinRoomDesc => '友だちにもらったコードを入力';
+
+  @override
+  String get enterRoomCode => '部屋コード';
+
+  @override
+  String get join => '入る';
+
+  @override
+  String get startGame => 'はじめる';
+
+  @override
+  String get leaveRoom => '出る';
+
+  @override
+  String get emptySeat => '空席';
+
+  @override
+  String get seatLeft => '出ていきました';
+
+  @override
+  String get hostLabel => 'ホスト';
+
+  @override
+  String get waitingForHost => 'ホストがはじめるのを待っています';
+
+  @override
+  String get needTwoPlayers => '2人からはじめられます';
+
+  @override
+  String get yourTurnBanner => 'あなたの番';
+
+  @override
+  String seatTurnBanner(String name) {
+    return '$nameの番';
+  }
+
+  @override
+  String get connectionLost => 'ゲームにつながりません';
+
+  @override
+  String get errorNotYourTurn => 'まだあなたの番ではありません';
+
+  @override
+  String get errorRoomFull => 'その部屋は満員です';
+
+  @override
+  String get errorNoSuchRoom => 'そのコードの部屋がありません';
+
+  @override
+  String get errorAlreadyStarted => 'そのゲームはもう始まっています';
+
+  @override
+  String get errorOffline => 'いまゲームにつながりません';
+
+  @override
+  String get errorGeneric => 'うまくいきませんでした';
 }

@@ -59,7 +59,17 @@ class RoomView {
   bool get isLobby => status == 'lobby';
   bool get isPlaying => status == 'playing';
   bool get isFinished => status == 'finished';
-  bool amHost(String uid) => hostUid == uid;
+
+  /// My own seat, or null before the game seats me.
+  SeatView? get mySeat =>
+      (yourSeat >= 0 && yourSeat < seats.length) ? seats[yourSeat] : null;
+
+  /// Whether the deal is mine to make.
+  ///
+  /// Read from the seat the server put me in rather than from what this
+  /// device believes its own id to be: one reply, one answer, no chance of
+  /// the two disagreeing.
+  bool get amHost => mySeat?.uid == hostUid && hostUid.isNotEmpty;
 
   static RoomView fromJson(Map<String, dynamic> json) {
     final publicJson = json['public'] as Map?;

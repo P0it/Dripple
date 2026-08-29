@@ -112,5 +112,37 @@
   "tutorialQuit": "やめる",
   "tutorialPlayForReal": "ほんばんをあそぶ",
   "tutorialTryAgain": "まだ文になっていません。じゅんばんをかえるか、カードを1枚もどしてみましょう。",
-  "tutorialFirstTime": "はじめてですか？ あそびかた"
+  "tutorialFirstTime": "はじめてですか？ あそびかた",
+  "chooseName": "なんて呼べばいい？",
+  "chooseNameHint": "テーブルでの名前",
+  "chooseNameSave": "これにする",
+  "createRoom": "部屋をつくる",
+  "createRoomDesc": "コードを知っている友だちと遊ぶ",
+  "joinRoom": "部屋に入る",
+  "joinRoomDesc": "友だちにもらったコードを入力",
+  "enterRoomCode": "部屋コード",
+  "join": "入る",
+  "startGame": "はじめる",
+  "leaveRoom": "出る",
+  "emptySeat": "空席",
+  "seatLeft": "出ていきました",
+  "hostLabel": "ホスト",
+  "waitingForHost": "ホストがはじめるのを待っています",
+  "needTwoPlayers": "2人からはじめられます",
+  "yourTurnBanner": "あなたの番",
+  "seatTurnBanner": "{name}の番",
+  "@seatTurnBanner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "connectionLost": "ゲームにつながりません",
+  "errorNotYourTurn": "まだあなたの番ではありません",
+  "errorRoomFull": "その部屋は満員です",
+  "errorNoSuchRoom": "そのコードの部屋がありません",
+  "errorAlreadyStarted": "そのゲームはもう始まっています",
+  "errorOffline": "いまゲームにつながりません",
+  "errorGeneric": "うまくいきませんでした"
 }

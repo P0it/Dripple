@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app.dart';
 import 'core/haptic_manager.dart';
 import 'core/sound_manager.dart';
+import 'providers/online_providers.dart';
+import 'services/player_identity.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +17,10 @@ void main() async {
   final hapticManager = HapticManager();
   await Future.wait([soundManager.init(), hapticManager.init()]);
 
+  // Who this device plays as. Read once here so screens can ask for it
+  // without each of them awaiting the same preferences future.
+  final identity = await PlayerIdentity.load();
+
   runApp(
     ProviderScope(
       overrides: [
@@ -26,6 +32,7 @@ void main() async {
           return soundManager;
         }),
         hapticManagerProvider.overrideWith((_) => hapticManager),
+        playerIdentityProvider.overrideWithValue(identity),
       ],
       child: const DrippleApp(),
     ),

@@ -112,5 +112,37 @@
   "tutorialQuit": "그만하기",
   "tutorialPlayForReal": "진짜 대전 하기",
   "tutorialTryAgain": "아직 문장이 아니에요. 순서를 바꾸거나, 카드를 하나 되돌려 보세요.",
-  "tutorialFirstTime": "처음이신가요? 배우기"
+  "tutorialFirstTime": "처음이신가요? 배우기",
+  "chooseName": "뭐라고 부를까요?",
+  "chooseNameHint": "자리에 앉을 이름",
+  "chooseNameSave": "이걸로 할래요",
+  "createRoom": "방 만들기",
+  "createRoomDesc": "내 코드를 아는 친구와 놀기",
+  "joinRoom": "방 들어가기",
+  "joinRoomDesc": "친구가 준 코드를 입력해요",
+  "enterRoomCode": "방 코드",
+  "join": "들어가기",
+  "startGame": "시작",
+  "leaveRoom": "나가기",
+  "emptySeat": "빈자리",
+  "seatLeft": "나갔어요",
+  "hostLabel": "방장",
+  "waitingForHost": "방장이 시작하기를 기다리는 중",
+  "needTwoPlayers": "두 명부터 시작할 수 있어요",
+  "yourTurnBanner": "내 차례",
+  "seatTurnBanner": "{name}의 차례",
+  "@seatTurnBanner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "connectionLost": "게임에 연결할 수 없어요",
+  "errorNotYourTurn": "아직 내 차례가 아니에요",
+  "errorRoomFull": "그 방은 꽉 찼어요",
+  "errorNoSuchRoom": "그 코드의 방이 없어요",
+  "errorAlreadyStarted": "그 게임은 이미 시작했어요",
+  "errorOffline": "지금은 게임에 연결할 수 없어요",
+  "errorGeneric": "잘 안 됐어요"
 }

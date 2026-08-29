@@ -38,12 +38,12 @@ void main() {
       final made = await mina.createRoom(name: 'Mina');
       expect(made.isLobby, isTrue);
       expect(made.yourSeat, equals(0));
-      expect(made.amHost('mina'), isTrue);
+      expect(made.amHost, isTrue);
       expect(made.game, isNull, reason: 'a lobby has no game yet');
 
       final joined = await jun.joinRoom(code: made.code, name: 'Jun');
       expect(joined.yourSeat, equals(1));
-      expect(joined.amHost('jun'), isFalse);
+      expect(joined.amHost, isFalse);
 
       final started = await mina.startGame(made.roomId);
       expect(started.isPlaying, isTrue);

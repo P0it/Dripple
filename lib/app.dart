@@ -8,6 +8,7 @@ import 'screens/home_screen.dart';
 import 'screens/mode_selection_screen.dart';
 import 'screens/game_screen.dart';
 import 'screens/lobby_screen.dart';
+import 'screens/online/online_game_screen.dart';
 import 'screens/result_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/splash_screen.dart';
@@ -68,16 +69,18 @@ final _router = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/lobby',
-      pageBuilder: (context, state) {
-        final mode = state.uri.queryParameters['mode'] ?? 'online';
-        final playerCount =
-            int.tryParse(state.uri.queryParameters['players'] ?? '2') ?? 2;
-        return _fadeTransition(
-          LobbyScreen(mode: mode, playerCount: playerCount),
-          state,
-        );
-      },
+      path: '/lobby/:roomId',
+      pageBuilder: (context, state) => _fadeTransition(
+        LobbyScreen(roomId: state.pathParameters['roomId']!),
+        state,
+      ),
+    ),
+    GoRoute(
+      path: '/online/:roomId',
+      pageBuilder: (context, state) => _fadeTransition(
+        OnlineGameScreen(roomId: state.pathParameters['roomId']!),
+        state,
+      ),
     ),
     GoRoute(
       path: '/settings',

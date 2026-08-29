@@ -370,4 +370,81 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get tutorialFirstTime => '처음이신가요? 배우기';
+
+  @override
+  String get chooseName => '뭐라고 부를까요?';
+
+  @override
+  String get chooseNameHint => '자리에 앉을 이름';
+
+  @override
+  String get chooseNameSave => '이걸로 할래요';
+
+  @override
+  String get createRoom => '방 만들기';
+
+  @override
+  String get createRoomDesc => '내 코드를 아는 친구와 놀기';
+
+  @override
+  String get joinRoom => '방 들어가기';
+
+  @override
+  String get joinRoomDesc => '친구가 준 코드를 입력해요';
+
+  @override
+  String get enterRoomCode => '방 코드';
+
+  @override
+  String get join => '들어가기';
+
+  @override
+  String get startGame => '시작';
+
+  @override
+  String get leaveRoom => '나가기';
+
+  @override
+  String get emptySeat => '빈자리';
+
+  @override
+  String get seatLeft => '나갔어요';
+
+  @override
+  String get hostLabel => '방장';
+
+  @override
+  String get waitingForHost => '방장이 시작하기를 기다리는 중';
+
+  @override
+  String get needTwoPlayers => '두 명부터 시작할 수 있어요';
+
+  @override
+  String get yourTurnBanner => '내 차례';
+
+  @override
+  String seatTurnBanner(String name) {
+    return '$name의 차례';
+  }
+
+  @override
+  String get connectionLost => '게임에 연결할 수 없어요';
+
+  @override
+  String get errorNotYourTurn => '아직 내 차례가 아니에요';
+
+  @override
+  String get errorRoomFull => '그 방은 꽉 찼어요';
+
+  @override
+  String get errorNoSuchRoom => '그 코드의 방이 없어요';
+
+  @override
+  String get errorAlreadyStarted => '그 게임은 이미 시작했어요';
+
+  @override
+  String get errorOffline => '지금은 게임에 연결할 수 없어요';
+
+  @override
+  String get errorGeneric => '잘 안 됐어요';
 }

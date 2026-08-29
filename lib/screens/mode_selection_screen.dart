@@ -1,5 +1,6 @@
 import 'package:dripple/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/design/app_colors.dart';
@@ -7,16 +8,21 @@ import '../core/design/felt_scaffold.dart';
 import '../core/design/app_spacing.dart';
 import '../core/design/app_typography.dart';
 import 'package:dripple_rules/engine/ai/ai_player.dart';
+import '../providers/online_providers.dart';
+import '../services/online_client.dart';
+import 'online/join_sheet.dart';
+import 'online/name_sheet.dart';
+import 'online/online_messages.dart';
 
 /// Pick an opponent, then pick how hard it plays.
 ///
 /// Selection is marked with a border and a tint rather than a filled block:
 /// a solid colour reads as "pressed" and leaves nowhere for the text to sit.
-class ModeSelectionScreen extends StatelessWidget {
+class ModeSelectionScreen extends ConsumerWidget {
   const ModeSelectionScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
 
     return FeltScaffold(
@@ -42,15 +48,24 @@ class ModeSelectionScreen extends StatelessWidget {
               onTap: () => _pickDifficulty(context, l10n),
             ),
             _ModeCell(
-              icon: Icons.public,
-              title: l10n.onlineBattle,
-              subtitle: l10n.onlineBattleDesc,
-              badge: l10n.comingSoon,
+              icon: Icons.add_circle_outline,
+              title: l10n.createRoom,
+              subtitle: l10n.createRoomDesc,
+              onTap: () => _createRoom(context, ref),
             ),
             _ModeCell(
               icon: Icons.group_outlined,
-              title: l10n.friendBattle,
-              subtitle: l10n.friendBattleDesc,
+              title: l10n.joinRoom,
+              subtitle: l10n.joinRoomDesc,
+              onTap: () => _joinRoom(context, ref),
+            ),
+            // Matchmaking against strangers is a separate problem — who you
+            // are matched with, and what they may say to you — and this game
+            // is played by children. It comes after friends.
+            _ModeCell(
+              icon: Icons.public,
+              title: l10n.onlineBattle,
+              subtitle: l10n.onlineBattleDesc,
               badge: l10n.comingSoon,
             ),
           ],
@@ -104,6 +119,54 @@ class ModeSelectionScreen extends StatelessWidget {
 }
 
 /// One opponent option.
+
+/// Everything online needs a name first, and nobody is asked for one until
+/// this moment.
+Future<String?> _ensureName(BuildContext context, WidgetRef ref) async {
+  final existing = ref.read(playerNameProvider);
+  if (existing != null) return existing;
+  if (!context.mounted) return null;
+  return showNameSheet(context, ref);
+}
+
+Future<void> _createRoom(BuildContext context, WidgetRef ref) async {
+  final name = await _ensureName(context, ref);
+  if (name == null || !context.mounted) return;
+  await _enterRoom(
+    context,
+    () => ref.read(onlineClientProvider).createRoom(name: name),
+  );
+}
+
+Future<void> _joinRoom(BuildContext context, WidgetRef ref) async {
+  final name = await _ensureName(context, ref);
+  if (name == null || !context.mounted) return;
+  final code = await showJoinSheet(context);
+  if (code == null || !context.mounted) return;
+  await _enterRoom(
+    context,
+    () => ref.read(onlineClientProvider).joinRoom(code: code, name: name),
+  );
+}
+
+/// Make or join a room and walk into its lobby, saying plainly what happened
+/// if the server would not have us.
+Future<void> _enterRoom(
+  BuildContext context,
+  Future<RoomView> Function() request,
+) async {
+  final l10n = AppLocalizations.of(context)!;
+  try {
+    final room = await request();
+    if (context.mounted) context.push('/lobby/${room.roomId}');
+  } on OnlineError catch (e) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(messageForError(l10n, e))));
+  }
+}
+
 class _ModeCell extends StatelessWidget {
   const _ModeCell({
     required this.icon,

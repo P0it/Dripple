@@ -777,6 +777,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'First time? Learn to play'**
   String get tutorialFirstTime;
+
+  /// No description provided for @chooseName.
+  ///
+  /// In en, this message translates to:
+  /// **'What should we call you?'**
+  String get chooseName;
+
+  /// No description provided for @chooseNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name at the table'**
+  String get chooseNameHint;
+
+  /// No description provided for @chooseNameSave.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s me'**
+  String get chooseNameSave;
+
+  /// No description provided for @createRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Make a room'**
+  String get createRoom;
+
+  /// No description provided for @createRoomDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Play with friends who have your code'**
+  String get createRoomDesc;
+
+  /// No description provided for @joinRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a room'**
+  String get joinRoom;
+
+  /// No description provided for @joinRoomDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the code a friend gave you'**
+  String get joinRoomDesc;
+
+  /// No description provided for @enterRoomCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Room code'**
+  String get enterRoomCode;
+
+  /// No description provided for @join.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get join;
+
+  /// No description provided for @startGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get startGame;
+
+  /// No description provided for @leaveRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get leaveRoom;
+
+  /// No description provided for @emptySeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty seat'**
+  String get emptySeat;
+
+  /// No description provided for @seatLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Left the game'**
+  String get seatLeft;
+
+  /// No description provided for @hostLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Host'**
+  String get hostLabel;
+
+  /// No description provided for @waitingForHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the host to start'**
+  String get waitingForHost;
+
+  /// No description provided for @needTwoPlayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Two players are needed to start'**
+  String get needTwoPlayers;
+
+  /// No description provided for @yourTurnBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Your turn'**
+  String get yourTurnBanner;
+
+  /// No description provided for @seatTurnBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}\'s turn'**
+  String seatTurnBanner(String name);
+
+  /// No description provided for @connectionLost.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection to the game'**
+  String get connectionLost;
+
+  /// No description provided for @errorNotYourTurn.
+  ///
+  /// In en, this message translates to:
+  /// **'It\'s not your turn yet'**
+  String get errorNotYourTurn;
+
+  /// No description provided for @errorRoomFull.
+  ///
+  /// In en, this message translates to:
+  /// **'That room is full'**
+  String get errorRoomFull;
+
+  /// No description provided for @errorNoSuchRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'No room with that code'**
+  String get errorNoSuchRoom;
+
+  /// No description provided for @errorAlreadyStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'That game has already started'**
+  String get errorAlreadyStarted;
+
+  /// No description provided for @errorOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach the game right now'**
+  String get errorOffline;
+
+  /// No description provided for @errorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'That didn\'t work'**
+  String get errorGeneric;
 }
 
 class _AppLocalizationsDelegate

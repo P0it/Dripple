@@ -113,7 +113,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
       _gameSubscription = ref.listenManual(gameProvider, (prev, next) {
         if (!mounted) return;
         if (next.players.isNotEmpty && next.phase == GamePhase.playing) {
-          final humanPlayer = next.players[0];
+          final humanPlayer = next.me;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             _game.updatePiles(

@@ -205,5 +205,37 @@
   "tutorialQuit": "Leave",
   "tutorialPlayForReal": "Play for real",
   "tutorialTryAgain": "Not a sentence yet — change the order, or take a card back and try another.",
-  "tutorialFirstTime": "First time? Learn to play"
+  "tutorialFirstTime": "First time? Learn to play",
+  "chooseName": "What should we call you?",
+  "chooseNameHint": "Your name at the table",
+  "chooseNameSave": "That's me",
+  "createRoom": "Make a room",
+  "createRoomDesc": "Play with friends who have your code",
+  "joinRoom": "Join a room",
+  "joinRoomDesc": "Type the code a friend gave you",
+  "enterRoomCode": "Room code",
+  "join": "Join",
+  "startGame": "Start",
+  "leaveRoom": "Leave",
+  "emptySeat": "Empty seat",
+  "seatLeft": "Left the game",
+  "hostLabel": "Host",
+  "waitingForHost": "Waiting for the host to start",
+  "needTwoPlayers": "Two players are needed to start",
+  "yourTurnBanner": "Your turn",
+  "seatTurnBanner": "{name}'s turn",
+  "@seatTurnBanner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "connectionLost": "No connection to the game",
+  "errorNotYourTurn": "It's not your turn yet",
+  "errorRoomFull": "That room is full",
+  "errorNoSuchRoom": "No room with that code",
+  "errorAlreadyStarted": "That game has already started",
+  "errorOffline": "Can't reach the game right now",
+  "errorGeneric": "That didn't work"
 }

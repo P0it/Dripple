@@ -379,4 +379,81 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tutorialFirstTime => 'First time? Learn to play';
+
+  @override
+  String get chooseName => 'What should we call you?';
+
+  @override
+  String get chooseNameHint => 'Your name at the table';
+
+  @override
+  String get chooseNameSave => 'That\'s me';
+
+  @override
+  String get createRoom => 'Make a room';
+
+  @override
+  String get createRoomDesc => 'Play with friends who have your code';
+
+  @override
+  String get joinRoom => 'Join a room';
+
+  @override
+  String get joinRoomDesc => 'Type the code a friend gave you';
+
+  @override
+  String get enterRoomCode => 'Room code';
+
+  @override
+  String get join => 'Join';
+
+  @override
+  String get startGame => 'Start';
+
+  @override
+  String get leaveRoom => 'Leave';
+
+  @override
+  String get emptySeat => 'Empty seat';
+
+  @override
+  String get seatLeft => 'Left the game';
+
+  @override
+  String get hostLabel => 'Host';
+
+  @override
+  String get waitingForHost => 'Waiting for the host to start';
+
+  @override
+  String get needTwoPlayers => 'Two players are needed to start';
+
+  @override
+  String get yourTurnBanner => 'Your turn';
+
+  @override
+  String seatTurnBanner(String name) {
+    return '$name\'s turn';
+  }
+
+  @override
+  String get connectionLost => 'No connection to the game';
+
+  @override
+  String get errorNotYourTurn => 'It\'s not your turn yet';
+
+  @override
+  String get errorRoomFull => 'That room is full';
+
+  @override
+  String get errorNoSuchRoom => 'No room with that code';
+
+  @override
+  String get errorAlreadyStarted => 'That game has already started';
+
+  @override
+  String get errorOffline => 'Can\'t reach the game right now';
+
+  @override
+  String get errorGeneric => 'That didn\'t work';
 }
