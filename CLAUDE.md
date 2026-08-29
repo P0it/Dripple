@@ -136,6 +136,16 @@ to be one statable line, and half a semantic check is worse than none.
 ## Project Structure
 
 ```
+packages/dripple_rules/           # The rules, as a package with no Flutter
+│   ├── models/                   #   WordCard, Player, GameState
+│   ├── engine/grammar/           #   parser + 5 rules
+│   ├── engine/ai/                #   the bot
+│   ├── engine/game_engine.dart   #   turn logic (GameNotifier)
+│   ├── data/card_deck.dart       #   the deck; ids are positional
+│   └── wire/wire.dart            #   GameSnapshot (private) / PublicView
+server/                           # The authority for online games
+│   ├── bin/server.dart           #   entrypoint
+│   └── lib/src/                  #   rooms, seats, actions, HTTP
 lib/
 ├── main.dart / app.dart          # Entry point + routing
 ├── core/
@@ -203,9 +213,14 @@ lib/
 - [x] Ad service interface (abstract)
 
 ### Next Steps (Planned)
-- [ ] Room creation (title, password)
-- [ ] Online multiplayer (Firebase Realtime DB implementation)
+- [x] Shared rules package — app and server run the same grammar engine
+- [x] Game server (Dart) — owns the deck and every hand; HTTP actions
+- [x] Online play with friends by room code — make, join, deal, play
+- [ ] Firebase project: RTDB store, anonymous auth, Cloud Run deploy
+- [ ] Push updates (RTDB subscription) in place of polling
 - [ ] Friends list + online presence
+- [ ] Levels / ranks, then a leaderboard
+- [ ] Random matchmaking
 - [ ] Quick messages (preset phrases instead of free chat)
 - [ ] Rive character assets (2-3 characters for launch)
 - [ ] Audio assets (kenney.nl Casino Audio + freesound.org + pixabay.com)
@@ -312,6 +327,33 @@ lib/
     coordinates and the Flutter overlay above converts them — a widget key
     cannot find something drawn on a canvas.
 
+12. **The server owns the deck, and no player does.** Realtime DB stores; it
+    does not run code, so a shuffle has to happen either on a player's device
+    or on a server. A player holding the shuffle and everyone else's hand is
+    not a card game, so there is a server — written in Dart against
+    `packages/dripple_rules`, because a second implementation of English
+    grammar would drift from the first and the day they disagreed would be
+    undebuggable.
+
+    It keeps nothing between requests: it reads a room, applies one action,
+    writes it back against the version it read. Cloud Run scales to nothing
+    when idle, and a game living in memory would die with the instance. Turn
+    deadlines are timestamps for the same reason — there is no clock running,
+    so an expired turn is noticed by whatever request touches the room next.
+
+    Two encodings, not one. `GameSnapshot` is the server's own copy and never
+    leaves it; `PublicView` is what the table can see. Both are tested for
+    what they must not contain.
+
+13. **Building a sentence is local; only the finished one is sent.** Laying
+    cards out and reordering them moves cards inside one hand and changes
+    nothing anybody else can see. The board draws the same either way.
+
+14. **No sign-in, and nothing collected.** An id is minted on the device on
+    first use and a name is asked for only when somebody first taps Online.
+    A new phone is a new player. That is the trade, and it is the right way
+    round for a game six-year-olds play.
+
 11. **$0 operational cost** for core gameplay — grammar engine and AI are fully
     client-side.
 
@@ -324,8 +366,16 @@ flutter run
 # Analyze
 flutter analyze
 
-# Test
+# Test — three packages
 flutter test
+(cd packages/dripple_rules && dart test)
+(cd server && dart test)
+
+# Run the game server locally (in memory, trusts every token)
+(cd server && dart run bin/server.dart --insecure-local)
+
+# Point the app at a server other than localhost:8080
+flutter run --dart-define=DRIPPLE_SERVER=http://192.168.0.10:8080
 
 # Flutter SDK (if not in PATH)
 export PATH="/opt/flutter/bin:/opt/flutter/bin/cache/dart-sdk/bin:$PATH"
@@ -378,10 +428,13 @@ FLUTTER_ALLOW_ROOT=true flutter <command>
 - No security model (opponent hands readable in proposed Firebase structure)
 - No conflict resolution for disconnections/stale turns
 
-### Testing status (90 tests)
-- Grammar engine 20, sentence parser 15, word card 5, card deck 8,
-  game state 7, GameNotifier 26, AI player 8, widget 1
-- Still untested: EmoteNotifier, SoundManager, HapticManager, screen widgets
+### Testing status (335 tests)
+- `packages/dripple_rules` 166 — grammar, parser, deck, models, turn logic,
+  wire format. Runs with `dart test`, no Flutter.
+- `server` 42 — rooms, seating, turn authority, expiry, redaction, HTTP.
+- app 127 — screens, Flame board, tutorial, and the online client and
+  provider driven against the real server rather than a mock of it.
+- Still untested: EmoteNotifier, SoundManager, HapticManager
 
 ### Missing for App Store
 - Audio/Rive assets (placeholder only)
