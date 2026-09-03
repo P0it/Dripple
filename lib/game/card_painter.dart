@@ -58,6 +58,16 @@ class CardPainter {
   static const double _tickWidth = 0.318;
   static const double _tickHeight = 0.068;
 
+  /// How much of the card's width the headword may occupy.
+  ///
+  /// Narrower than the space between the margins, and that is the point: it is
+  /// the budget `HandFan.minVisible` is set against. A word allowed to run the
+  /// full width would need almost the whole card showing to be read, which
+  /// would mean either no overlap at all or a fan whose long words are cut in
+  /// half. Spending a little type size on the two longest labels in the deck
+  /// buys every card in the hand being readable while covered.
+  static const double wordMaxWidth = 0.73;
+
   /// Type sizes, also as fractions of the width, so a card is the same card
   /// at every scale on the board.
   static const double _wordSize = 0.227;
@@ -191,7 +201,7 @@ class CardPainter {
   static void _headword(
       Canvas canvas, WordCard card, Size size, String locale) {
     final w = size.width;
-    final maxWidth = w * (1 - _padSide * 2);
+    final maxWidth = w * wordMaxWidth;
 
     TextPainter build(double fontSize) => TextPainter(
           text: TextSpan(

@@ -316,9 +316,20 @@ lib/
 
     The two rows are laid out by different rules because they have different
     jobs (`lib/game/board_layout.dart`). A held card only has to be
-    *identifiable*, so `HandFan` overlaps and lets the corner index carry it.
-    A played card has to be *read*, so `SentenceLine` never overlaps and
-    shrinks its cards instead.
+    *identifiable*, so `HandFan` overlaps; a played card has to be *read*, so
+    `SentenceLine` never overlaps and shrinks its cards instead.
+
+    **Both of them shrink before they let a word be cut.** The fan spends
+    overlap first and shrinks second, but it does shrink: `HandFan.minVisible`
+    is the least of a covered card that stays showing, and it is measured
+    rather than chosen — the widest label in the deck needs 82% of a card, so
+    the floor is 85% and the cards give up size until the spread reaches it.
+    `CardPainter.wordMaxWidth` is the other half of the same number: holding
+    the headword to 73% of the width costs the two longest words a little type
+    size and buys every card in a seven-card hand being readable while
+    covered, on every screen down to 360pt. The floor was a flat 18pt before
+    this — 21% of a card — and half the deck's words were losing their last
+    letters.
 
     **The row opens for a card while it is still in the air.** Whichever row
     the held card is over lays itself out with an empty place where the card

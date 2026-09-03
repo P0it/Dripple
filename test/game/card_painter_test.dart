@@ -22,25 +22,25 @@ void main() {
 
   _fitTests();
 
-  test('a seven-card hand stays on one line with a readable sliver', () {
-    // The hand no longer wraps — it overlaps — so the constraint moved. What
-    // has to hold is that every card still shows enough of itself to be
-    // picked out and picked up, and a thumb needs something to land on.
-    //
-    // Everything printed on the face is flush left — the part-of-speech tick
-    // at 9% in, the word under it — so the visible sliver of a covered card
-    // is the part that carries its identity. A quarter of the card leaves
-    // room for the tick and the first characters of the word, and is also
-    // comfortably above the 44pt Apple touch minimum at these widths.
+  test('every word in a seven-card hand can be read while it is covered', () {
+    // The fan overlaps, so what a covered card shows is one step's worth of
+    // its left edge — where the tick, the word and the gloss all live. The
+    // constraint is not that the row fits; it is that the row fits *and* the
+    // longest label in the deck is still whole.
     for (final width in [360.0, 390.0, 430.0]) {
       final step = HandFan.step(width, 7);
-      expect(step, greaterThan(BoardLayout.cardWidth * 0.25),
+      final card = HandFan.cardSize(width, 7);
+
+      expect(step, greaterThanOrEqualTo(card.width * HandFan.minVisible - 0.5),
           reason: 'seven cards on a ${width.toInt()}pt screen');
+      expect(card.width / BoardLayout.cardWidth,
+          greaterThanOrEqualTo(HandFan.minScale),
+          reason: 'the cards never shrink past the readable floor');
 
       final slots = HandFan.positions(width, 7, 400);
       expect(slots.first.dx, greaterThanOrEqualTo(0));
-      expect(slots.last.dx + BoardLayout.cardWidth,
-          lessThanOrEqualTo(width + 0.01));
+      expect(slots.last.dx + card.width, lessThanOrEqualTo(width + 0.01),
+          reason: 'and the row is still on the screen');
     }
   });
 
@@ -165,10 +165,9 @@ void main() {
 /// different metrics, so an unloaded run would prove nothing.
 void _fitTests() {
   test('every word in the deck fits inside a card', () {
-    // The same numbers the painter uses: the face's side margins are 9.1%
-    // each, and the headword is set at 22.7% of the width.
+    // The same numbers the painter uses.
     const cardWidth = CardPainter.defaultWidth;
-    const maxWidth = cardWidth * (1 - 0.091 * 2);
+    const maxWidth = cardWidth * CardPainter.wordMaxWidth;
     const maxFontSize = cardWidth * 0.227;
 
     final labels = {

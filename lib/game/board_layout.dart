@@ -44,13 +44,32 @@ abstract final class BoardLayout {
 ///
 /// Overlap used to be forbidden — "a child who cannot read the card cannot
 /// play it" — and that was right at the time, because a card carried its
-/// identity only in the word across its middle. A card now carries a
-/// dictionary abbreviation and a suit pip in its corner, which is precisely
-/// what a corner index is for: being read while the card is covered. The ban
-/// went with the thing that made it necessary.
+/// identity only in the word across its middle. Everything on the face hangs
+/// off the left margin now, inside the sliver a covered card still shows, so
+/// overlap is allowed. It is allowed *up to a point*, and [minVisible] is the
+/// point: the ban went with the thing that made it necessary, not with the
+/// reason behind the ban.
 abstract final class HandFan {
   /// Gap between cards when they all fit at full width.
   static const double gap = 8;
+
+  /// The least of a covered card that stays showing, as a fraction of its
+  /// width — enough for the whole of the longest word in the deck.
+  ///
+  /// Measured, not chosen. At the card's own type size the widest label needs
+  /// `CardPainter.wordMaxWidth` plus the face's left margin, and the fraction
+  /// is scale-invariant because the type scales with the card. Before this
+  /// existed the floor was a flat 18pt — 21% of a card — and at a seven-card
+  /// hand on a 390pt screen only half the deck's words survived it: `have`
+  /// read as "have" with its last letter gone, `house` as "hous", `JOKER` as
+  /// "JOK". A word game whose cards cannot be read is not a hard problem, it
+  /// is the wrong answer.
+  static const double minVisible = 0.85;
+
+  /// How small a card may get in service of [minVisible]. Below this the type
+  /// is too small for the audience, and a very large hand goes back to losing
+  /// the ends of its longest words instead.
+  static const double minScale = 0.62;
 
   /// How far the outer cards dip below the middle one, and how far they lean.
   /// Small on purpose: enough that the row reads as held rather than stacked,
@@ -61,25 +80,57 @@ abstract final class HandFan {
   /// How far a leaning card's corner swings outside its own box. The fan is
   /// inset by this much so the ends stay on the ledge instead of hanging over
   /// the edge of the screen.
-  static double get leanMargin => BoardLayout.cardHeight / 2 * arcLean + 1;
+  static double leanMargin([double scale = 1]) =>
+      BoardLayout.cardHeight * scale / 2 * arcLean + 1;
 
   /// Width the fan may spread across — the rail's width, less the room a
   /// leaning card needs at each end.
-  static double _usable(double screenWidth) => math.max(
-        BoardLayout.cardWidth,
-        BoardLayout.usableWidth(screenWidth) - leanMargin * 2,
+  static double _usable(double screenWidth, [double scale = 1]) => math.max(
+        BoardLayout.cardWidth * scale,
+        BoardLayout.usableWidth(screenWidth) - leanMargin(scale) * 2,
       );
 
-  /// Distance between the left edges of adjacent cards.
+  /// How much the cards shrink so that [count] of them fit on one line with
+  /// [minVisible] of each still showing.
   ///
-  /// Full width plus a gap while they fit; once they do not, whatever gets
-  /// them all onto one line. The line never wraps and the card never shrinks —
-  /// the overlap absorbs it.
+  /// This is the choice the row makes that [SentenceLine] makes too, and for
+  /// the same reason: a held card has to be *identifiable* and a played card
+  /// has to be *read*, but neither is either if the word is cut in half. The
+  /// fan spent overlap first and shrank never; it now spends overlap down to
+  /// the floor and then shrinks.
+  static double scaleFor(double screenWidth, int count) {
+    if (count <= 1) return 1;
+    // leanMargin depends on the scale it is solving for, so solve at 1 and
+    // then once more with the answer — it converges immediately at this size.
+    var s = 1.0;
+    for (var pass = 0; pass < 2; pass++) {
+      final needed =
+          BoardLayout.cardWidth * ((count - 1) * minVisible + 1);
+      s = math.min(1, _usable(screenWidth, s) / needed);
+    }
+    return math.max(minScale, s);
+  }
+
+  static Size cardSize(double screenWidth, int count) {
+    final s = scaleFor(screenWidth, count);
+    return Size(BoardLayout.cardWidth * s, BoardLayout.cardHeight * s);
+  }
+
+  /// Distance between the left edges of adjacent cards, which is also how much
+  /// of a covered card stays showing.
+  ///
+  /// Full width plus a gap while they fit, and otherwise whatever gets them all
+  /// onto one line. The [minVisible] floor is not applied here: [scaleFor]
+  /// has already shrunk the cards until the spread *is* the floor, so the two
+  /// agree by construction — and where the scale has bottomed out at
+  /// [minScale], the spread is the only honest answer, because a floor the row
+  /// cannot afford would just push the fan off the screen.
   static double step(double screenWidth, int count) {
     if (count <= 1) return BoardLayout.cardWidth + gap;
-    final spread =
-        (_usable(screenWidth) - BoardLayout.cardWidth) / (count - 1);
-    return math.min(BoardLayout.cardWidth + gap, math.max(18, spread));
+    final w = cardSize(screenWidth, count).width;
+    final spread = (_usable(screenWidth, w / BoardLayout.cardWidth) - w) /
+        (count - 1);
+    return math.min(w + gap, spread);
   }
 
   /// Top-left offsets, laid out around [centerY].
@@ -88,9 +139,10 @@ abstract final class HandFan {
     if (count <= 0) return const [];
 
     final s = step(screenWidth, count);
-    final rowWidth = (count - 1) * s + BoardLayout.cardWidth;
+    final card = cardSize(screenWidth, count);
+    final rowWidth = (count - 1) * s + card.width;
     final left = (screenWidth - rowWidth) / 2;
-    final top = centerY - BoardLayout.cardHeight / 2;
+    final top = centerY - card.height / 2;
 
     return [
       for (var i = 0; i < count; i++)
@@ -117,8 +169,10 @@ abstract final class HandFan {
   }
 
   /// Total vertical space the fan occupies, arc included.
-  static double blockHeight(int count) =>
-      count <= 0 ? 0 : BoardLayout.cardHeight + (count > 1 ? arcRise : 0);
+  static double blockHeight(int count, [double screenWidth = double.infinity]) =>
+      count <= 0
+          ? 0
+          : cardSize(screenWidth, count).height + (count > 1 ? arcRise : 0);
 
   /// Which card is showing at [x] — the one a thumb resting there is touching.
   ///

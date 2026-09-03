@@ -245,14 +245,16 @@ class DrippleGame extends FlameGame {
   ui.RRect? _handBand() {
     if (_hand.isEmpty) return null;
     final slots = HandFan.positions(size.x, _hand.length, _handY);
-    final margin = HandFan.leanMargin + _bandInset;
+    final card = HandFan.cardSize(size.x, _hand.length);
+    final scale = card.width / BoardLayout.cardWidth;
+    final margin = HandFan.leanMargin(scale) + _bandInset;
     return ui.RRect.fromRectAndRadius(
       ui.Rect.fromLTRB(
         math.max(BoardLayout.edgePadding, slots.first.dx - margin),
-        _handY - BoardLayout.cardHeight / 2 - _bandInset,
+        _handY - card.height / 2 - _bandInset,
         math.min(size.x - BoardLayout.edgePadding,
-            slots.last.dx + BoardLayout.cardWidth + margin),
-        _handY + BoardLayout.cardHeight / 2 + HandFan.arcRise + _bandInset,
+            slots.last.dx + card.width + margin),
+        _handY + card.height / 2 + HandFan.arcRise + _bandInset,
       ),
       const ui.Radius.circular(18),
     );
@@ -443,7 +445,7 @@ class DrippleGame extends FlameGame {
         : HandFan.positions(size.x, count, yPosition);
     final cardSize = isSentenceZone
         ? SentenceLine.cardSize(size.x, count)
-        : ui.Size(BoardLayout.cardWidth, BoardLayout.cardHeight);
+        : HandFan.cardSize(size.x, count);
 
     final updatedComponents = <CardComponent>[];
 
@@ -836,7 +838,7 @@ class DrippleGame extends FlameGame {
         : HandFan.positions(size.x, slotCount, y);
     final cardSize = isSentence
         ? SentenceLine.cardSize(size.x, slotCount)
-        : const ui.Size(BoardLayout.cardWidth, BoardLayout.cardHeight);
+        : HandFan.cardSize(size.x, slotCount);
 
     final others = [
       for (final c in row)

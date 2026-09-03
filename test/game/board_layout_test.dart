@@ -30,9 +30,14 @@ void main() {
       for (final width in [320.0, 360.0, 390.0, 430.0]) {
         for (var count = 1; count <= 9; count++) {
           final slots = HandFan.positions(width, count, 400);
-          expect(slots.first.dx, greaterThanOrEqualTo(-0.01));
-          expect(slots.last.dx + BoardLayout.cardWidth,
-              lessThanOrEqualTo(width + 0.01));
+          // Measured against the width the cards actually are: the fan shrinks
+          // them to keep a readable sliver showing, so the constant is not the
+          // right edge any more.
+          final card = HandFan.cardSize(width, count);
+          expect(slots.first.dx, greaterThanOrEqualTo(-0.01),
+              reason: '$count cards on a ${width.toInt()}pt screen');
+          expect(slots.last.dx + card.width, lessThanOrEqualTo(width + 0.01),
+              reason: '$count cards on a ${width.toInt()}pt screen');
         }
       }
     });
