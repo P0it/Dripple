@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dripple/core/brand/dripple_mark.dart';
-import 'package:dripple/core/design/felt_scaffold.dart';
+import 'package:dripple/core/design/table_scaffold.dart';
 import 'package:dripple/l10n/app_localizations.dart';
 import 'package:dripple/screens/home_screen.dart';
 
@@ -50,7 +50,7 @@ void main() {
     await tester.pumpWidget(_host(const HomeScreen()));
     await tester.pump();
 
-    expect(find.byType(FeltGround), findsOneWidget);
+    expect(find.byType(TableGround), findsOneWidget);
     // Transparent, so the one felt underneath shows through rather than a
     // second flat ground painting over it.
     final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));

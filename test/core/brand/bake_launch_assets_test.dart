@@ -29,7 +29,7 @@ void main() {
       final px = entry.value;
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder);
-      const DrippleMarkPainter(progress: 1, color: Color(0xFF1D74F5))
+      const DrippleMarkPainter(progress: 1)
           .paint(canvas, Size(px.toDouble(), px.toDouble()));
 
       final image = await recorder.endRecording().toImage(px, px);

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:dripple/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../core/design/felt_scaffold.dart';
+import '../core/design/table_scaffold.dart';
 import '../core/game_feedback.dart';
 import '../core/tutorial_prefs.dart';
 import 'package:dripple_rules/engine/ai/ai_player.dart';
@@ -122,6 +122,12 @@ class _GameScreenState extends ConsumerState<GameScreen>
             );
             _game.updateHand(humanPlayer.hand);
             _game.updateSentenceZone(humanPlayer.sentenceZone);
+            // The board only invites a sentence while one can actually be
+            // built. This is the same predicate `_onHandCardTapped` uses to
+            // decide whether to accept the gesture, and the two have to be
+            // the same or the felt asks for a move the board then refuses.
+            _game.canBuild = !next.currentPlayer.isAI &&
+                next.turnPhase == TurnPhase.action;
             // After the board has been told, not before: a step that ends on
             // a gesture moves the coach mark, and the mark is measured
             // against where the cards now are.
@@ -333,7 +339,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     final tutorial = _tutorial;
     if (tutorial != null) _remeasureIfNeeded(tutorial.step);
 
-    return FeltScaffold(
+    return TableScaffold(
       body: SafeArea(
         child: Stack(
           key: _overlayKey,

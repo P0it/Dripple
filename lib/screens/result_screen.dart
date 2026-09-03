@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../core/brand/dripple_mark.dart';
 import '../core/design/app_colors.dart';
-import '../core/design/felt_scaffold.dart';
+import '../core/design/table_scaffold.dart';
 import '../core/design/app_spacing.dart';
 import '../core/design/app_typography.dart';
 import '../core/game_icons.dart';
@@ -25,19 +25,19 @@ class ResultScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final ranking = ref.watch(gameProvider).ranking;
 
-    return FeltScaffold(
+    return TableScaffold(
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: AppSpacing.xl),
             const Center(
-                child: DrippleMark(size: 56, color: AppColors.pointOnFelt)),
+                child: DrippleMark(size: 56)),
             const SizedBox(height: AppSpacing.lg),
             Text(
               l10n.gameOver,
               textAlign: TextAlign.center,
-              style: AppTypography.onFelt(AppTypography.display),
+              style: AppTypography.onTable(AppTypography.display),
             ),
             if (ranking.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.xs),
@@ -45,7 +45,7 @@ class ResultScreen extends ConsumerWidget {
                 ranking.first.name,
                 textAlign: TextAlign.center,
                 style: AppTypography.body
-                    .copyWith(color: AppColors.onFeltSoft),
+                    .copyWith(color: AppColors.onTableSoft),
               ),
             ],
             const SizedBox(height: AppSpacing.xl),

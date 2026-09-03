@@ -30,19 +30,32 @@ class OnlineState {
   /// see. Only the finished sentence is sent.
   final List<String> staged;
 
+  /// The order this player has slid their held cards into, by id.
+  ///
+  /// Local for the same reason [staged] is: sorting a hand changes nothing
+  /// anybody else can see, and nothing in the rules reads the order. Keeping
+  /// it here rather than asking the server is also what lets a player arrange
+  /// a sentence in the fan while somebody else is taking their turn, which is
+  /// most of the time they spend doing it.
+  ///
+  /// Ids the server has dealt since are not in here; they fall in at the end.
+  final List<String> handOrder;
+
   const OnlineState({
     this.room,
     this.error,
     this.judgment,
     this.busy = false,
     this.staged = const [],
+    this.handOrder = const [],
   });
 
   /// The board as it should be drawn: the server's game, with the cards this
   /// player has pushed forward moved out of the hand and into the sentence.
   GameState? get game {
     final served = room?.game;
-    if (served == null || staged.isEmpty) return served;
+    if (served == null) return served;
+    if (staged.isEmpty && handOrder.isEmpty) return served;
 
     final me = served.me;
     final staging = <WordCard>[];
@@ -50,9 +63,19 @@ class OnlineState {
       final card = me.hand.where((c) => c.id == id).firstOrNull;
       if (card != null) staging.add(card);
     }
-    final held = [
+    final served0 = [
       for (final c in me.hand)
         if (!staged.contains(c.id)) c,
+    ];
+    // Sorted ids first, in the order the player put them, then anything dealt
+    // since in the order the server gave it. Built rather than sorted: with an
+    // empty [handOrder] every card ranks equal, and `List.sort` is not stable,
+    // so sorting would shuffle a hand nobody had touched.
+    final held = [
+      for (final id in handOrder)
+        ...served0.where((c) => c.id == id),
+      for (final c in served0)
+        if (!handOrder.contains(c.id)) c,
     ];
 
     final players = [...served.players];
@@ -60,6 +83,8 @@ class OnlineState {
         me.copyWith(hand: held, sentenceZone: staging);
     return served.copyWith(players: players);
   }
+
+
 
   bool get isMyTurn => room?.game?.isMyTurn ?? false;
 
@@ -69,6 +94,7 @@ class OnlineState {
     Judgment? judgment,
     bool? busy,
     List<String>? staged,
+    List<String>? handOrder,
     bool clearError = false,
     bool clearJudgment = false,
   }) =>
@@ -78,6 +104,7 @@ class OnlineState {
         judgment: clearJudgment ? null : (judgment ?? this.judgment),
         busy: busy ?? this.busy,
         staged: staged ?? this.staged,
+        handOrder: handOrder ?? this.handOrder,
       );
 }
 
@@ -166,6 +193,38 @@ class OnlineGameNotifier extends StateNotifier<OnlineState> {
   void removeFromSentence(int index) {
     if (index < 0 || index >= state.staged.length) return;
     state = state.copyWith(staged: [...state.staged]..removeAt(index));
+  }
+
+  /// The player's own order for their own cards, carried across a reply.
+  ///
+  /// A reply is the new truth about *what* is in the hand, and says nothing
+  /// about how the player has arranged it — so the arrangement survives, minus
+  /// any card that has since left. Without this, every poll rebuilt the state
+  /// from scratch and a sorted hand snapped back to the server's order within
+  /// the polling interval.
+  List<String> _handOrderStillValid(RoomView room) {
+    final hand = room.game?.me.hand;
+    if (hand == null) return const [];
+    final ids = hand.map((c) => c.id).toSet();
+    return [
+      for (final id in state.handOrder)
+        if (ids.contains(id)) id,
+    ];
+  }
+
+  /// Slide a held card along the rail. Answered here and never sent: it is
+  /// this player's own view of their own hand.
+  void reorderHand(int from, int to) {
+    final hand = state.game?.me.hand;
+    if (hand == null) return;
+    if (from < 0 || from >= hand.length) return;
+    if (to < 0 || to >= hand.length) return;
+    if (from == to) return;
+
+    final ids = hand.map((c) => c.id).toList();
+    final id = ids.removeAt(from);
+    ids.insert(to, id);
+    state = state.copyWith(handOrder: ids);
   }
 
   void reorderSentence(int from, int to) {
@@ -272,6 +331,7 @@ class OnlineGameNotifier extends StateNotifier<OnlineState> {
         room: room,
         judgment: room.judgment,
         staged: _stagingStillValid(room),
+        handOrder: _handOrderStillValid(room),
       );
     } on OnlineError catch (e) {
       if (!mounted) return;

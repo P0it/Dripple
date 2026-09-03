@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 8 and up masks the icon into whatever shape the launcher uses, so
+     the two cards are handed over as a layer of their own and the table is
+     handed over as a colour. A single flat PNG would be cropped into that
+     shape with the ground already burnt into it.
+
+     No <monochrome> layer: a themed icon tints the layer by its alpha, and
+     both cards are opaque, so the pair would collapse into one silhouette
+     with neither the overlap nor the colour lines left. A missing monochrome
+     layer falls back to the full-colour icon, which is the better of the
+     two outcomes. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>

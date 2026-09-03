@@ -27,6 +27,23 @@ GameNotifier _board() {
 
 void main() {
   group('reorderHand', () {
+    test('sorts my hand while somebody else is thinking', () {
+      // Arranging the hand is how a player works out a sentence, and most of
+      // the time they are doing it is time spent waiting for a turn. It moved
+      // `currentPlayer`'s cards before, so off-turn it reached into an
+      // opponent's hand and left the player's own fan untouched — the card
+      // slid and then snapped back.
+      final n = _board();
+      n.debugSetState(n.state.copyWith(currentPlayerIndex: 1));
+
+      n.reorderHand(0, 2);
+
+      expect(n.state.players[0].hand.map((c) => c.id).toList(),
+          ['b', 'c', 'a'], reason: 'my hand is the one that moved');
+      expect(n.state.players[1].hand, isEmpty,
+          reason: "nobody reaches into anybody else's hand");
+    });
+
     test('slides a card to a later place on the rail', () {
       final n = _board();
       n.reorderHand(0, 2);

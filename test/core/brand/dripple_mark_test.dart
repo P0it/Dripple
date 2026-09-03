@@ -18,10 +18,10 @@ void main() {
   });
 
   test('repaints only when progress or colour changes', () {
-    const a = DrippleMarkPainter(progress: 0.5, color: Color(0xFF1D74F5));
-    const b = DrippleMarkPainter(progress: 0.5, color: Color(0xFF1D74F5));
-    const c = DrippleMarkPainter(progress: 0.9, color: Color(0xFF1D74F5));
-    const d = DrippleMarkPainter(progress: 0.5, color: Color(0xFF000000));
+    const a = DrippleMarkPainter(progress: 0.5);
+    const b = DrippleMarkPainter(progress: 0.5);
+    const c = DrippleMarkPainter(progress: 0.9);
+    const d = DrippleMarkPainter(progress: 0.5, onLight: true);
     expect(a.shouldRepaint(b), isFalse);
     expect(a.shouldRepaint(c), isTrue);
     expect(a.shouldRepaint(d), isTrue);
@@ -35,7 +35,7 @@ void main() {
           child: CustomPaint(
             size: const Size(120, 120),
             painter:
-                DrippleMarkPainter(progress: p, color: const Color(0xFF1D74F5)),
+                DrippleMarkPainter(progress: p),
           ),
         ),
       ));

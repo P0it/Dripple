@@ -113,7 +113,7 @@ class CardPainter {
       canvas.drawRRect(
         rrect.inflate(1.75),
         Paint()
-          ..color = AppColors.pointOnFelt
+          ..color = AppColors.pointOnTable
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.5,
       );
@@ -166,6 +166,13 @@ class CardPainter {
   /// Drawn at full strength rather than the printed shade the frame used. A
   /// frame at raw saturation read as "a lighter card"; a tick is a colour chip
   /// and wants to be the colour it is naming.
+  ///
+  /// Public because the brand mark draws it too. The logo is two of *these*
+  /// cards, not two rectangles that resemble them, so it calls the same
+  /// painter — a card whose face changes cannot leave the mark behind.
+  static void tick(Canvas canvas, Size size, Color accent) =>
+      _tick(canvas, size, accent);
+
   static void _tick(Canvas canvas, Size size, Color accent) {
     final w = size.width;
     canvas.drawRRect(
@@ -365,8 +372,8 @@ class CardPainter {
       canvas,
       Rect.fromCenter(
         center: Offset(size.width / 2, size.height / 2),
-        width: size.width * 0.56,
-        height: size.width * 0.56,
+        width: size.width * 0.66,
+        height: size.width * 0.66,
       ),
       const Color(0xFFFFFFFF),
     );
@@ -395,11 +402,18 @@ class CardPainter {
   /// Drawn here rather than reaching for DrippleMarkPainter so the board does
   /// not depend on the widget layer — but it is the same geometry, and if one
   /// moves the other has to.
+  ///
+  /// The two cards are separated by a gap cut in the field colour rather than
+  /// by a shadow, because a card back is printed in one ink and has no light
+  /// on it. Without the gap the pair reads as a single white card: the back one
+  /// at half strength sits too close to the field it is printed on.
   static void _markOnBack(Canvas canvas, Rect bounds, Color color) {
-    const cardWidth = 0.435;
+    // The mark's own numbers, kept in step by hand because the board must not
+    // depend on the widget layer. If DrippleMarkPainter moves, these move.
+    const cardWidth = 0.415;
     const cardHeight = cardWidth * 88 / 63;
-    const radius = cardWidth * 0.155;
-    const lean = 0.297;
+    const radius = cardWidth * radiusRatio;
+    const lean = 0.16;
 
     final w = bounds.width;
 
@@ -410,21 +424,21 @@ class CardPainter {
       );
     }
 
-    final back = Rect.fromLTWH(bounds.left + 0.235 * w,
-        bounds.top + 0.200 * w, cardWidth * w, cardHeight * w);
-    final front = Rect.fromLTWH(bounds.left + 0.350 * w,
-        bounds.top + 0.225 * w, cardWidth * w, cardHeight * w);
+    final back = Rect.fromLTWH(bounds.left + 0.170 * w,
+        bounds.top + 0.235 * w, cardWidth * w, cardHeight * w);
+    final front = Rect.fromLTWH(bounds.left + 0.390 * w,
+        bounds.top + 0.235 * w, cardWidth * w, cardHeight * w);
 
-    canvas.save();
-    canvas.translate(back.center.dx, back.center.dy);
-    canvas.rotate(-lean);
-    canvas.translate(-back.center.dx, -back.center.dy);
     // The back card is held down to 45% so the two read as two even though
-    // both are printed in the one ink a card back has.
+    // both are printed in the one ink a card back has. It is also the square
+    // one — the mark leans its *front* card, and only that one.
     card(back, 0.45);
-    canvas.restore();
-
+    canvas.save();
+    canvas.translate(front.center.dx, front.center.dy);
+    canvas.rotate(lean);
+    canvas.translate(-front.center.dx, -front.center.dy);
     card(front, 1);
+    canvas.restore();
   }
 
   /// An empty slot where a pile would sit — a dashed outline on the felt, so

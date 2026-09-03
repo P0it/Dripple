@@ -45,6 +45,28 @@ void main() {
     return notifier;
   }
 
+  test('sorting the hand is answered here, whoever is up', () async {
+    // Trying orders out in the fan is how a player works a sentence out, and
+    // most of that happens while somebody else is taking their turn. Nothing
+    // in the rules reads the hand's order, so the server is never told.
+    final notifier = await watching('jun');
+    addTearDown(notifier.dispose);
+
+    final before =
+        notifier.state.game!.me.hand.map((c) => c.id).toList();
+    expect(before, hasLength(greaterThan(2)));
+
+    notifier.reorderHand(0, 2);
+
+    final after = notifier.state.game!.me.hand.map((c) => c.id).toList();
+    expect(after, [before[1], before[2], before[0], ...before.sublist(3)]);
+    expect(after.toSet(), before.toSet(), reason: 'no card appeared or left');
+
+    // And the next snapshot from the authority does not undo it.
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    expect(notifier.state.game!.me.hand.map((c) => c.id).toList(), after);
+  });
+
   test('starts by learning where the game already is', () async {
     final notifier = await watching('jun');
     addTearDown(notifier.dispose);

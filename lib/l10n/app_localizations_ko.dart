@@ -297,7 +297,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get sentenceZoneMake => '문장 만드는 곳';
 
   @override
-  String get sentenceZoneHint => '카드를 위로 밀어\n문장을 만들어요';
+  String get sentenceZoneHint => '카드를 위로 밀어 문장을 만들어요\n완성은 아래 버튼';
 
   @override
   String get cannotDiscardJustTaken => '방금 가져온 카드예요. 이번 턴에는 못 버려요';

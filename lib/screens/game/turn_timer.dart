@@ -17,7 +17,7 @@ class TurnTimerWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUrgent = secondsRemaining <= 5;
-    final arcColor = isUrgent ? AppColors.danger : AppColors.trim;
+    final arcColor = isUrgent ? AppColors.danger : AppColors.pointOnTable;
     final fraction = totalSeconds > 0
         ? (secondsRemaining / totalSeconds).clamp(0.0, 1.0)
         : 0.0;

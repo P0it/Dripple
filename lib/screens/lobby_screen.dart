@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../core/design/app_colors.dart';
 import '../core/design/app_spacing.dart';
 import '../core/design/app_typography.dart';
-import '../core/design/felt_scaffold.dart';
+import '../core/design/table_scaffold.dart';
 import '../providers/online_game_provider.dart';
 import '../providers/online_providers.dart';
 import '../services/online_client.dart';
@@ -85,7 +85,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
       });
     }
 
-    return FeltScaffold(
+    return TableScaffold(
       appBar: AppBar(
         title: Text(l10n.friendBattle),
         actions: [

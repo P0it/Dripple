@@ -91,7 +91,7 @@ class SettingsSection extends StatelessWidget {
                 AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm),
             child: Text(
               title,
-              style: AppTypography.onFelt(AppTypography.caption)
+              style: AppTypography.onTable(AppTypography.caption)
                   .copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.6),
             ),
           ),
@@ -102,7 +102,7 @@ class SettingsSection extends StatelessWidget {
               border: Border.all(color: AppColors.paperEdge),
               boxShadow: const [
                 BoxShadow(
-                  color: AppColors.feltEdge,
+                  color: AppColors.tableEdge,
                   blurRadius: 12,
                   offset: Offset(0, 4),
                 ),

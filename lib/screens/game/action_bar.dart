@@ -50,7 +50,7 @@ class ActionBar extends StatelessWidget {
           child: Text(
             l10n.opponentThinking,
             style:
-                AppTypography.label.copyWith(color: AppColors.onFeltSoft),
+                AppTypography.label.copyWith(color: AppColors.onTableSoft),
           ),
         ),
       );
@@ -63,7 +63,7 @@ class ActionBar extends StatelessWidget {
           child: Text(
             l10n.tapDeckToDraw,
             style:
-                AppTypography.label.copyWith(color: AppColors.onFeltSoft),
+                AppTypography.label.copyWith(color: AppColors.onTableSoft),
           ),
         ),
       );
@@ -121,7 +121,7 @@ class ActionBar extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 2,
               style: AppTypography.caption
-                  .copyWith(color: AppColors.onFeltSoft),
+                  .copyWith(color: AppColors.onTableSoft),
             ),
           ],
         ),

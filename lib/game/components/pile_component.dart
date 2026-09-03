@@ -182,7 +182,7 @@ class PileComponent extends PositionComponent with TapCallbacks {
           text: label,
           style: const material.TextStyle(
             fontFamily: 'Pretendard',
-            color: AppColors.onFeltSoft,
+            color: AppColors.onTableSoft,
             fontSize: 11,
             fontWeight: material.FontWeight.w700,
             letterSpacing: 1.1,

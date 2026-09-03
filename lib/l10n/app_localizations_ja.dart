@@ -297,7 +297,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sentenceZoneMake => 'ぶんを つくる ところ';
 
   @override
-  String get sentenceZoneHint => 'カードを うえに おして\nぶんを つくろう';
+  String get sentenceZoneHint => 'カードを うえに おして ぶんを つくろう\nできたら したの ボタン';
 
   @override
   String get cannotDiscardJustTaken => 'いまとったカードだから、このターンはすてられないよ';

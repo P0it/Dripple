@@ -83,33 +83,6 @@ class DrippleGame extends FlameGame {
   double get _pileY => size.y * 0.05;
 
   /// The card a thumb is currently resting on in the fan.
-  CardComponent? _peeked;
-
-  /// A finger running along the fan. The card under it comes up out of the
-  /// hand, which is how an overlapping hand is read.
-  void _onScrub(CardComponent origin, double boardX) {
-    final index =
-        HandFan.indexUnder(boardX, size.x, _handComponents.length, _handY);
-    final comp = index < 0 ? null : _handComponents[index];
-    if (identical(comp, _peeked)) return;
-    _peeked?.peeking = false;
-    _peeked = comp;
-    comp?.peeking = true;
-  }
-
-  void _endScrub() {
-    _peeked?.peeking = false;
-    _peeked = null;
-  }
-
-  /// The card the thumb settled on, which is the one the player means to
-  /// play — not whichever card the press happened to land on first.
-  CardComponent? _resolveLift(CardComponent origin) {
-    final chosen = _peeked;
-    _peeked = null;
-    return chosen;
-  }
-
   /// Where each card was standing when its component was last torn down.
   ///
   /// A card that moves between the hand and the sentence zone is a *removal*
@@ -240,7 +213,7 @@ class DrippleGame extends FlameGame {
   /// gesture never depends on hitting a box.
   double get _midlineY => (_sentenceZoneY + _handY) / 2;
 
-  /// Transparent: [FeltScaffold] paints the table under the whole screen, and
+  /// Transparent: [TableScaffold] paints the table under the whole screen, and
   /// two radials meeting at the widget's edge would show a seam. The board
   /// draws only what is *on* the table.
   @override
@@ -257,7 +230,7 @@ class DrippleGame extends FlameGame {
   @override
   void render(ui.Canvas canvas) {
     _renderHandRail(canvas);
-    if (_sentenceZone.isEmpty && _hand.isNotEmpty) _renderHint(canvas);
+    if (showsHint) _renderHint(canvas);
     super.render(canvas);
   }
 
@@ -299,9 +272,34 @@ class DrippleGame extends FlameGame {
     _drawRailLabel(canvas, _handLabel, band);
   }
 
+  /// Whether the invitation to build a sentence is on the table.
+  ///
+  /// It used to be on whenever the space was empty and the hand was not, which
+  /// meant the felt read "push cards up to build a sentence" while an opponent
+  /// was thinking and during the player's own draw step — both times the
+  /// gesture is refused. A board that asks for a move it will not accept is
+  /// worse than a silent one: it leaves the player unable to tell whether the
+  /// space is somewhere to try an order out in advance or somewhere to submit
+  /// an answer, because in the state they are looking at it is neither.
+  ///
+  /// So the line is on exactly when the gesture works, and the condition is
+  /// the same one that gates the gesture itself.
+  @material.visibleForTesting
+  bool get showsHint =>
+      _canBuild && _sentenceZone.isEmpty && _hand.isNotEmpty;
+
+  bool _canBuild = false;
+
+  /// True while the player may push cards forward — their turn, past the
+  /// draw. Set from the screen, which is where the turn state lives.
+  set canBuild(bool value) {
+    if (_canBuild == value) return;
+    _canBuild = value;
+  }
+
   /// One line of felt text where the sentence will be. No box, no dashes, no
-  /// arrow — it explains the gesture and then gets out of the way the moment
-  /// the first card is pushed forward.
+  /// arrow — it names the space and says what finishes it, then gets out of
+  /// the way the moment the first card is pushed forward.
   void _renderHint(ui.Canvas canvas) {
     _dropHint.paint(
       canvas,
@@ -364,14 +362,14 @@ class DrippleGame extends FlameGame {
 
   material.TextPainter get _handLabel => _handLabelPainter ??= _text(
         _labels.hand,
-        _labelStyle.copyWith(color: AppColors.onFeltSoft),
+        _labelStyle.copyWith(color: AppColors.onTableSoft),
       );
 
   material.TextPainter get _dropHint => _dropHintPainter ??= _text(
         _labels.hint,
         const material.TextStyle(
           fontFamily: 'Pretendard',
-          color: AppColors.onFeltSoft,
+          color: AppColors.onTableSoft,
           fontSize: 15,
           fontWeight: material.FontWeight.w600,
           height: 1.4,
@@ -419,8 +417,6 @@ class DrippleGame extends FlameGame {
     // Priorities are about to be reassigned from the row order, which would
     // strand a peeked card's saved priority. Nothing is being read while the
     // hand is changing under it anyway.
-    if (!isSentenceZone) _endScrub();
-
     final newIds = newCards.map((c) => c.id).toSet();
 
     // Remove components no longer in the list
@@ -475,9 +471,6 @@ class DrippleGame extends FlameGame {
           position: targetPos,
           // Only the fan hides cards behind one another, so only the fan reads
           // by scrubbing. A card already in the open is picked up on contact.
-          onScrub: isSentenceZone ? null : _onScrub,
-          onScrubEnd: isSentenceZone ? null : _endScrub,
-          resolveLift: isSentenceZone ? null : _resolveLift,
           onTapped: (component) {
             if (isSentenceZone) {
               final idx = _sentenceZone.indexWhere((c) => c.id == cardId);
@@ -488,6 +481,7 @@ class DrippleGame extends FlameGame {
             if (idx >= 0) onHandCardTapped?.call(idx);
           },
           onDragEnded: (component, dropPosition) {
+            _closeUp();
             if (isSentenceZone) {
               final from = _sentenceZone.indexWhere((c) => c.id == cardId);
               if (from < 0) return false;
@@ -562,6 +556,7 @@ class DrippleGame extends FlameGame {
         );
         comp.priority = i;
         comp.markedForDiscard = !isSentenceZone && _discardMode;
+        comp.onDragMoved = _onDragMoved;
         _dress(comp, i, count, isSentenceZone, cardSize);
         comp.locale = _locale;
         updatedComponents.add(comp);
@@ -701,6 +696,163 @@ class DrippleGame extends FlameGame {
   /// Where a card *looks* like it is. A held card is drawn raised off the
   /// table, so judging a drop against its nominal slot puts the decision line
   /// a card-third away from where the player sees it.
+
+  // ---------------------------------------------------------------------------
+  // Making room for the card in the air
+  // ---------------------------------------------------------------------------
+
+  /// The card being held, and where in the row it would land if it were let go
+  /// now. Null when nothing is in the air.
+  ///
+  /// A drop used to rearrange the row only once the finger let go, so a player
+  /// carrying a card had nothing to aim at: the row under it stood still, and
+  /// where the card would land was a guess that only resolved after the fact.
+  /// Cards on a table do not behave that way — you push the ones either side
+  /// apart with the card in your hand, and the space that opens *is* the aim.
+  CardComponent? _carried;
+  int? _carriedIndex;
+  bool _carriedToSentence = false;
+
+  /// Re-opens the row under the held card whenever the place it would land
+  /// changes. Only then: settling every card on every frame would start a new
+  /// animation sixty times a second and nothing would ever arrive.
+  void _onDragMoved(CardComponent card) {
+    final fromHand = _handComponents.contains(card);
+    final at = _centreOf(card);
+    final drop = ui.Offset(card.visualPosition.x, card.visualPosition.y);
+
+    late final bool toSentence;
+    late final int? index;
+
+    if (fromHand) {
+      // Past the midline the card is on its way into the sentence, so the
+      // sentence opens and the hand closes up behind it.
+      toSentence = at.y < _midlineY;
+      index = toSentence
+          ? SentenceLine.insertionIndexAt(
+              drop, size.x, _sentenceZone.length, _sentenceZoneY)
+          : HandFan.indexAt(drop, size.x, _hand.length, _handY);
+    } else {
+      // A card already in play, being slid along the line — or pulled back
+      // down to the rail, in which case the line simply closes.
+      toSentence = true;
+      index = at.y > _midlineY
+          ? null
+          : SentenceLine.indexAt(
+              drop, size.x, _sentenceZone.length, _sentenceZoneY);
+    }
+
+    if (identical(_carried, card) &&
+        _carriedIndex == index &&
+        _carriedToSentence == toSentence) {
+      return;
+    }
+    _carried = card;
+    _carriedIndex = index;
+    _carriedToSentence = toSentence;
+
+    if (fromHand) {
+      if (toSentence) {
+        _layoutRow(
+          row: _handComponents,
+          skip: card,
+          slotCount: _hand.length - 1,
+          gapAt: null,
+          isSentence: false,
+        );
+        _layoutRow(
+          row: _sentenceComponents,
+          skip: null,
+          slotCount: _sentenceZone.length + 1,
+          gapAt: index,
+          isSentence: true,
+        );
+      } else {
+        _layoutRow(
+          row: _handComponents,
+          skip: card,
+          slotCount: _hand.length,
+          gapAt: index,
+          isSentence: false,
+        );
+        _layoutRow(
+          row: _sentenceComponents,
+          skip: null,
+          slotCount: _sentenceZone.length,
+          gapAt: null,
+          isSentence: true,
+        );
+      }
+    } else {
+      _layoutRow(
+        row: _sentenceComponents,
+        skip: card,
+        slotCount: index == null
+            ? _sentenceZone.length - 1
+            : _sentenceZone.length,
+        gapAt: index,
+        isSentence: true,
+      );
+    }
+  }
+
+  /// Puts the row back the way the state says it is. Called when a card is put
+  /// down, whatever came of it: a drop the rules accepted arrives as a new
+  /// hand and re-lays everything anyway, and one they refused has to undo the
+  /// room that was made for it.
+  void _closeUp() {
+    if (_carried == null) return;
+    _carried = null;
+    _carriedIndex = null;
+    _layoutRow(
+      row: _handComponents,
+      skip: null,
+      slotCount: _hand.length,
+      gapAt: null,
+      isSentence: false,
+    );
+    _layoutRow(
+      row: _sentenceComponents,
+      skip: null,
+      slotCount: _sentenceZone.length,
+      gapAt: null,
+      isSentence: true,
+    );
+  }
+
+  /// Lays [row] out across [slotCount] places, leaving [gapAt] empty and the
+  /// [skip] card wherever the finger has it.
+  void _layoutRow({
+    required List<CardComponent> row,
+    required CardComponent? skip,
+    required int slotCount,
+    required int? gapAt,
+    required bool isSentence,
+  }) {
+    if (slotCount <= 0) return;
+    final y = isSentence ? _sentenceZoneY : _handY;
+    final slots = isSentence
+        ? SentenceLine.positions(size.x, slotCount, y)
+        : HandFan.positions(size.x, slotCount, y);
+    final cardSize = isSentence
+        ? SentenceLine.cardSize(size.x, slotCount)
+        : const ui.Size(BoardLayout.cardWidth, BoardLayout.cardHeight);
+
+    final others = [
+      for (final c in row)
+        if (!identical(c, skip)) c,
+    ];
+
+    var next = 0;
+    for (var slot = 0; slot < slots.length && next < others.length; slot++) {
+      if (slot == gapAt) continue;
+      final comp = others[next++];
+      if (comp.isDragging) continue;
+      _dress(comp, slot, slotCount, isSentence, cardSize);
+      comp.settleTo(Vector2(slots[slot].dx, slots[slot].dy));
+    }
+  }
+
   Vector2 _centreOf(CardComponent card) => card.visualCentre;
 
   @override

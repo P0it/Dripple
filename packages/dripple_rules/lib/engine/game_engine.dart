@@ -365,30 +365,42 @@ class GameNotifier extends StateNotifier<GameState> {
   /// order. It exists because a player sorting their hand is half of holding
   /// one, and because a fan whose cards can be pushed forward but not slid
   /// sideways reads as a fan that is stuck.
+  ///
+  /// **Not gated on the turn, and it acts on [GameState.me], not on whoever
+  /// is up.** Trying orders out in the fan is how a player works a sentence
+  /// out, and most of the time they spend doing it is time spent waiting for
+  /// their turn. This moved `currentPlayer`'s cards until 2026-09-04, which
+  /// meant that off-turn it reached into an opponent's hand and left the
+  /// player's own fan alone: the card slid under the finger and then snapped
+  /// straight back, with nothing to say why.
   void reorderHand(int from, int to) {
     if (state.phase != GamePhase.playing) return;
-    final me = state.currentPlayer;
-    final hand = List<WordCard>.from(me.hand);
+    final mine = state.me;
+    final hand = List<WordCard>.from(mine.hand);
     if (from < 0 || from >= hand.length) return;
     if (to < 0 || to >= hand.length) return;
     if (from == to) return;
 
     final card = hand.removeAt(from);
     hand.insert(to, card);
-    _updateCurrentPlayer(me.copyWith(hand: hand));
+    _updateMe(mine.copyWith(hand: hand));
   }
 
+  /// Reorder the cards already pushed forward. Also keyed to
+  /// [GameState.me] rather than to whoever is up, for the same reason
+  /// [reorderHand] is: the board draws *my* row, so a gesture on it must move
+  /// my cards whatever the turn says.
   void reorderSentence(int from, int to) {
     if (state.phase != GamePhase.playing) return;
-    final me = state.currentPlayer;
-    final zone = List<WordCard>.from(me.sentenceZone);
+    final mine = state.me;
+    final zone = List<WordCard>.from(mine.sentenceZone);
     if (from < 0 || from >= zone.length) return;
     if (to < 0 || to >= zone.length) return;
     if (from == to) return;
 
     final card = zone.removeAt(from);
     zone.insert(to, card);
-    _updateCurrentPlayer(me.copyWith(sentenceZone: zone));
+    _updateMe(mine.copyWith(sentenceZone: zone));
   }
 
   // -------------------------------------------------------------------------
@@ -732,6 +744,14 @@ class GameNotifier extends StateNotifier<GameState> {
   // -------------------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------------------
+
+  /// Writes back a change to the seat the player is sitting in, which is not
+  /// always the seat that is up.
+  void _updateMe(Player updated) {
+    final players = List<Player>.from(state.players);
+    players[state.mySeatIndex] = updated;
+    state = state.copyWith(players: players);
+  }
 
   void _updateCurrentPlayer(Player updated) {
     final players = List<Player>.from(state.players);

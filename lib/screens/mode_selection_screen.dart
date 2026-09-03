@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/design/app_colors.dart';
-import '../core/design/felt_scaffold.dart';
+import '../core/design/table_scaffold.dart';
 import '../core/design/app_spacing.dart';
 import '../core/design/app_typography.dart';
 import 'package:dripple_rules/engine/ai/ai_player.dart';
@@ -25,7 +25,7 @@ class ModeSelectionScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
 
-    return FeltScaffold(
+    return TableScaffold(
       appBar: AppBar(title: Text(l10n.selectMode)),
       body: SafeArea(
         child: ListView(
@@ -87,7 +87,7 @@ class ModeSelectionScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(
                   AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.sm),
               child: Text(l10n.aiDifficulty,
-                  style: AppTypography.onFelt(AppTypography.heading)),
+                  style: AppTypography.onTable(AppTypography.heading)),
             ),
             _DifficultyCell(
               label: l10n.difficultyEasy,

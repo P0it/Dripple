@@ -40,23 +40,10 @@ class CardComponent extends PositionComponent
   /// Fires on a plain tap. Used for card selection, e.g. choosing a discard.
   final void Function(CardComponent component)? onTapped;
 
-  /// Fires while a finger runs along the fan without having lifted anything
-  /// yet, with the finger's x in board coordinates.
-  ///
-  /// A fanned hand overlaps, so most of a card is behind the next one. This is
-  /// how you read it: you run a thumb along the hand and each card in turn
-  /// comes up out of it. Setting this is also what puts a card into
-  /// scrub-first mode — a card without it (one already laid out in the open,
-  /// where there is nothing to uncover) drags the moment you press it.
-  final void Function(CardComponent origin, double boardX)? onScrub;
-
-  /// Fires when a scrub ends without anything being lifted.
-  final void Function()? onScrubEnd;
-
-  /// Asks the board which card the finger actually settled on, so a drag that
-  /// starts on one card and slides along the fan lifts the one you stopped at
-  /// rather than the one you happened to touch first.
-  final CardComponent? Function(CardComponent origin)? resolveLift;
+  /// Fires on every move of a held card, so the board can open a place for it
+  /// in the row it is over. A drop that rearranged the row only when the
+  /// finger let go gave the player nothing to aim at.
+  void Function(CardComponent card)? onDragMoved;
 
   bool isDragging = false;
 
@@ -86,9 +73,6 @@ class CardComponent extends PositionComponent
     required this.card,
     this.onDragEnded,
     this.onTapped,
-    this.onScrub,
-    this.onScrubEnd,
-    this.resolveLift,
     super.position,
   })  : _jitter = _jitterFor(card.id),
         super(size: Vector2(cardWidth, cardHeight));
@@ -130,26 +114,13 @@ class CardComponent extends PositionComponent
   /// lands rather than arrives.
   double _pulse = 0;
 
-  /// Set while a thumb is resting on this card in the fan. The card comes up
-  /// out of the hand and over its neighbours — which is the whole trick, since
-  /// what hides it is the card in front, not anything geometric.
-  bool _peeking = false;
-  double _peek = 0;
-  int _peekRestore = 0;
+  /// How far a held card rises out of the fan, as a fraction of its height,
+  /// and how much bigger it gets. The rise is for feel; the priority change in
+  /// [_beginLift] is what actually brings it clear of its neighbours.
+  static const double _liftRise = 0.34;
+  static const double _liftGrow = 0.16;
 
-  /// How far a peeked card rises out of the fan, as a fraction of its height,
-  /// and how much bigger it gets. The rise is for feel; the priority change is
-  /// what actually uncovers it.
-  static const double _peekRise = 0.34;
-  static const double _peekGrow = 0.16;
-
-  bool get isPeeking => _peeking;
-
-  /// How far off the table the card is drawn, 0 to 1. Reading it and holding
-  /// it look the same, which is what makes one become the other without a hop.
-  double get _raised => math.max(_peek, _lift);
-
-  double get _raise => size.y * _peekRise * _raised;
+  double get _raise => size.y * _liftRise * _lift;
 
   /// Where the card *looks* like it is, which is what a drop has to be judged
   /// against — the finger is on the card the player can see, not on the slot
@@ -161,17 +132,6 @@ class CardComponent extends PositionComponent
 
   /// The card's top-left as drawn, for the same reason.
   Vector2 get visualPosition => Vector2(position.x, position.y - _raise);
-
-  set peeking(bool value) {
-    if (_peeking == value) return;
-    _peeking = value;
-    if (value) {
-      _peekRestore = priority;
-      priority = 900;
-    } else {
-      priority = _peekRestore;
-    }
-  }
 
   /// The size the card is easing toward. A sentence line shrinks its cards to
   /// stay on one line, so a card crossing into one changes size; snapping it
@@ -196,7 +156,6 @@ class CardComponent extends PositionComponent
         current + (target - current) * (1 - math.exp(-rate * dt));
 
     _lift = approach(_lift, isDragging ? 1 : 0, 14);
-    _peek = approach(_peek, _peeking ? 1 : 0, 16);
     _enter = approach(_enter, 1, 11);
     _angle = approach(_angle, _angleTarget, 10);
 
@@ -228,14 +187,14 @@ class CardComponent extends PositionComponent
 
     // A settle breath: nothing at the ends, a little in the middle.
     final breath = 1 + 0.035 * math.sin(math.pi * (1 - _pulse));
-    final scale = (0.78 + 0.22 * _enter) * (1 + _peekGrow * _raised) * breath;
+    final scale = (0.78 + 0.22 * _enter) * (1 + _liftGrow * _lift) * breath;
 
     canvas.save();
     canvas.translate(cx, cy - _raise);
     canvas.scale(scale);
-    // The lean straightens as the card is picked up or read — you square a
-    // card in your hand without thinking about it.
-    canvas.rotate(_angle * (1 - _lift) * (1 - _peek));
+    // The lean straightens as the card is picked up — you square a card in
+    // your hand without thinking about it.
+    canvas.rotate(_angle * (1 - _lift));
 
     if (_tilt.abs() > 0.0005) {
       final m = material.Matrix4.identity()
@@ -254,7 +213,7 @@ class CardComponent extends PositionComponent
       ui.Size(size.x, size.y),
       highlighted: isDragging,
       warned: markedForDiscard,
-      lift: _raised,
+      lift: _lift,
       locale: locale,
     );
 
@@ -267,88 +226,47 @@ class CardComponent extends PositionComponent
     onTapped?.call(this);
   }
 
-  /// How far up a finger has to travel before the gesture stops being a read
-  /// and becomes a play. Short enough that pulling a card out feels immediate,
-  /// long enough that running a thumb sideways never plays anything.
-  static const double _liftThreshold = 16;
-
-  /// Where the finger is, in board coordinates.
-  Vector2 _finger = Vector2.zero();
-
-  /// How far the finger has travelled since the press, while still reading.
-  final Vector2 _scrubTotal = Vector2.zero();
-
-  /// The card the gesture actually picked up. Usually this one; the card the
-  /// thumb settled on if the finger slid along the fan first.
-  CardComponent? _lifted;
-
+  /// The press picks the card up, and it goes wherever the finger goes.
+  ///
+  /// This used to be modal. A press on a fanned card put the hand into a
+  /// "read" state: sliding along the rail raised whichever card the finger
+  /// passed over, and only an upward pull of 16px turned the gesture into a
+  /// pick-up, handing the grab to whichever card had been raised last. So
+  /// sideways movement was never a drag — it was a page-turn — and sliding a
+  /// card along the rail to reorder the hand could not be done without first
+  /// pulling the card up out of the fan. Nothing on screen said the exit was
+  /// upward, so in practice a player pressed a card, watched a different one
+  /// come up, and had no way to work out why.
+  ///
+  /// Arranging the hand is not a convenience here, it is the game: a player
+  /// tries an order in the fan and then pushes the finished sentence forward.
+  /// So the fan takes the direct gesture, the same one the sentence line has
+  /// always had.
+  ///
+  /// What paid for the read gesture in the first place was a card you could
+  /// not identify while it was covered. The card face now hangs its tick, its
+  /// word and its gloss off the left margin — inside the sliver a covered card
+  /// still shows — so there is nothing left to uncover.
   @override
   void onDragStart(DragStartEvent event) {
     super.onDragStart(event);
-    _originalPosition = position.clone();
-    _scrubTotal.setZero();
-    _lifted = null;
-
-    if (onScrub == null) {
-      // Nothing is covering this card, so there is nothing to read — the
-      // press is already a pick-up.
-      _lifted = this;
-      _beginLift();
-      return;
-    }
-
-    _finger = event.canvasPosition.clone();
+    _beginLift();
   }
 
   @override
   void onDragUpdate(DragUpdateEvent event) {
-    _finger += event.canvasDelta;
-
-    final lifted = _lifted;
-    if (lifted != null) {
-      lifted._moveBy(event.canvasDelta);
-      return;
-    }
-
-    _scrubTotal.add(event.canvasDelta);
-    if (-_scrubTotal.y >= _liftThreshold) {
-      final chosen = resolveLift?.call(this) ?? this;
-      _lifted = chosen;
-      chosen._beginLift();
-      return;
-    }
-
-    onScrub?.call(this, _finger.x);
+    _moveBy(event.canvasDelta);
+    onDragMoved?.call(this);
   }
 
   @override
   void onDragEnd(DragEndEvent event) {
     super.onDragEnd(event);
-
-    var lifted = _lifted;
-    _lifted = null;
-
-    if (lifted == null) {
-      // A card sitting somewhere other than its slot was dragged by something
-      // that did not go through the threshold — a synthetic drag in a test, or
-      // a flick that outran it. Wherever it ended up is still a drop.
-      if ((position - _originalPosition).length > 1) {
-        lifted = this;
-      } else {
-        onScrubEnd?.call();
-        return;
-      }
-    }
-
-    lifted._endLift();
+    _endLift();
   }
 
   void _beginLift() {
-    // No hop between reading and picking up: a lifted card is raised and
-    // enlarged by exactly as much as a peeked one, so the handoff is invisible
-    // and the card simply keeps following the finger.
     _originalPosition = position.clone();
-    peeking = false;
     isDragging = true;
     _restingPriority = priority;
     priority = 1000; // above the fan while dragging

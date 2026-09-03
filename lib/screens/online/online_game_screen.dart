@@ -7,10 +7,11 @@ import 'package:go_router/go_router.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/design/app_spacing.dart';
 import '../../core/design/app_typography.dart';
-import '../../core/design/felt_scaffold.dart';
+import '../../core/design/table_scaffold.dart';
 import '../../game/dripple_game.dart';
 import '../../providers/online_game_provider.dart';
 import '../../services/online_client.dart';
+import 'package:dripple_rules/models/game_state.dart';
 import '../../providers/online_providers.dart';
 import '../game/action_bar.dart';
 import '../game/game_end_overlay.dart';
@@ -65,7 +66,7 @@ class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen>
         _notifier?.placeCard(handIndex, insertAt: insertAt);
     _game.onSentenceReorder = (from, to) => _notifier?.reorderSentence(from, to);
     _game.onSentenceRemove = (index) => _notifier?.removeFromSentence(index);
-    _game.onHandReorder = (_, __) {};
+    _game.onHandReorder = (from, to) => _notifier?.reorderHand(from, to);
     _game.onDrawFromDeck = () => _notifier?.drawFromDeck();
     _game.onDrawFromDiscard = () => _notifier?.drawFromDiscard();
     _game.onDiscardCard = _onDiscard;
@@ -103,6 +104,9 @@ class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen>
       );
       _game.updateHand(game.me.hand);
       _game.updateSentenceZone(game.me.sentenceZone);
+      // Same rule as the offline board: the felt asks for a sentence only
+      // while one can be pushed forward.
+      _game.canBuild = game.isMyTurn && game.turnPhase == TurnPhase.action;
     });
 
     if (next.room?.isFinished ?? false) _fadeController.forward();
@@ -166,12 +170,12 @@ class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen>
     final game = _state.game;
 
     if (game == null || !_labelled) {
-      return const FeltScaffold(
+      return const TableScaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    return FeltScaffold(
+    return TableScaffold(
       body: SafeArea(
         child: Stack(
           children: [
@@ -230,11 +234,11 @@ class _TurnBanner extends StatelessWidget {
       colour = AppColors.danger;
     } else if (game != null && game.isMyTurn) {
       text = l10n.yourTurnBanner;
-      colour = AppColors.pointOnFelt;
+      colour = AppColors.pointOnTable;
     } else {
       final name = game == null ? '' : game.currentPlayer.name;
       text = l10n.seatTurnBanner(name);
-      colour = AppColors.onFeltSoft;
+      colour = AppColors.onTableSoft;
     }
 
     return Padding(

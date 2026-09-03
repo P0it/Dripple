@@ -88,7 +88,7 @@
   "stealGiveWhat": "どのカードをわたす？",
   "sentenceZoneHand": "てふだ",
   "sentenceZoneMake": "ぶんを つくる ところ",
-  "sentenceZoneHint": "カードを うえに おして\nぶんを つくろう",
+  "sentenceZoneHint": "カードを うえに おして ぶんを つくろう\nできたら したの ボタン",
   "cannotDiscardJustTaken": "いまとったカードだから、このターンはすてられないよ",
   "tapDeckToDraw": "やまをタップしてカードをとってね",
   "dragToDiscard": "すてるカードは すてやまに ひっぱってね",

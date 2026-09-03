@@ -6,7 +6,7 @@ import 'app_colors.dart';
 
 /// The two materials the app is made of, as paint.
 ///
-/// Colour lives in [AppColors]; this file is about surface — grain, felt,
+/// Colour lives in [AppColors]; this file is about surface — grain, ground,
 /// bevel, and the shadows a card casts. It is the one place a gradient or a
 /// blur is authored, which is what keeps materiality from leaking into a
 /// screen as decoration.
@@ -70,49 +70,47 @@ abstract final class Materials {
   }
 
   // ---------------------------------------------------------------------------
-  // Felt
+  // The table
   // ---------------------------------------------------------------------------
 
-  /// Paints the table: a lit radial, grain, and a vignette on the rim.
+  /// Paints the table: a flat dark ground, a breath of light at the top, grain.
   ///
-  /// The light sits above centre because that is where a lamp over a table
-  /// puts it, and because it leaves the hand rail — at the bottom of the
-  /// screen — in the darker part of the cloth, where a raised strip reads.
-  static void felt(Canvas canvas, Rect bounds) {
-    final light = Offset(
-      bounds.center.dx,
-      bounds.top + bounds.height * 0.32,
+  /// What is *not* here is the point. This used to be a lit radial with a
+  /// vignette on the rim — a lamp hanging over a card table, and a lamp over a
+  /// green table is a casino. The room was doing more talking than the game.
+  ///
+  /// What is left is the least a ground can do and still be a surface. The
+  /// light is one soft wash near the top at 4%, so the screen has a direction
+  /// without having a spotlight, and the fall-off to [AppColors.tableEdge] is a
+  /// few values rather than a stop. The grain stays: the alternative is flat
+  /// #15181C, and flat is a colour swatch rather than a thing.
+  static void table(Canvas canvas, Rect bounds) {
+    canvas.drawRect(
+      bounds,
+      Paint()
+        ..shader = Gradient.linear(
+          bounds.topCenter,
+          bounds.bottomCenter,
+          const [AppColors.table, AppColors.tableEdge],
+          const [0.0, 1.0],
+        ),
     );
-    final reach = math.max(bounds.width, bounds.height) * 0.92;
 
     canvas.drawRect(
       bounds,
       Paint()
         ..shader = Gradient.radial(
-          light,
-          reach,
-          const [AppColors.feltCore, AppColors.feltEdge],
+          Offset(bounds.center.dx, bounds.top + bounds.height * 0.06),
+          math.max(bounds.width, bounds.height) * 0.78,
+          const [Color(0x0BFFFFFF), Color(0x00FFFFFF)],
           const [0.0, 1.0],
         ),
     );
 
     canvas.save();
     canvas.clipRect(bounds);
-    grainOver(canvas, bounds, 0.06);
+    grainOver(canvas, bounds, 0.045);
     canvas.restore();
-
-    // Vignette. Transparent well past the middle so it darkens the corners
-    // without greying the table.
-    canvas.drawRect(
-      bounds,
-      Paint()
-        ..shader = Gradient.radial(
-          bounds.center,
-          reach,
-          const [Color(0x00000000), Color(0x00000000), Color(0x59000000)],
-          const [0.0, 0.55, 1.0],
-        ),
-    );
   }
 
   // ---------------------------------------------------------------------------

@@ -151,8 +151,8 @@ lib/
 ├── core/
 │   ├── design/                   # Design system — the only place a colour lives
 │   │   ├── app_colors.dart       #   palette by material: paper vs furniture
-│   │   ├── materials.dart        #   grain, felt, recess, rail, card shadows
-│   │   ├── felt_scaffold.dart    #   the table every screen stands on
+│   │   ├── materials.dart        #   grain, ground, recess, rail, card shadows
+│   │   ├── table_scaffold.dart   #   the table every screen stands on
 │   │   ├── app_typography.dart   #   Pretendard, three weights, ink by default
 │   │   ├── app_spacing.dart      #   4pt grid, three radii, 56px touch floor
 │   │   └── app_theme.dart        #   ThemeData assembled from the tokens
@@ -245,11 +245,11 @@ lib/
    Flutter widgets. Known cost: screen readers cannot see the Flame canvas.
 8. **Paper takes the brand, furniture takes cream.** Every surface is one of
    two materials. *Paper* — the card face, sheets, dialogs — carries warm
-   off-white stock, ink type, the point blue, and the part-of-speech palette;
-   information lives there. *Furniture* — the table, the hand rail, the
-   sentence well, screen grounds — carries deep felt, cream hairlines, and
-   cream type; nothing is read there, only held. Decoration serving neither
-   does not ship: a gradient describing a lit felt surface is furniture, a
+   off-white stock, ink type, and the part-of-speech palette; information
+   lives there. *Furniture* — the table, the hand rail, the sentence well,
+   screen grounds — carries a neutral dark ground, cream hairlines and type,
+   and the brand blue for whatever is live; nothing is read there, only held. Decoration serving neither
+   does not ship: a gradient describing a lit surface is furniture, a
    gradient on a button because it looked flat is not.
 
    This replaced "restraint over decoration" on 2026-08-25. That rule banned
@@ -257,14 +257,28 @@ lib/
    and card-game materiality is *made of* those things, so it could not survive
    the goal. Ergonomics are unchanged: a 56px touch floor, 60px buttons, and
    card type sized to be read across a table.
-   The furniture accent was brass (`#C6A664`) until 2026-08-26. Brass is what
-   made the board read as old, not the green — a casino table is green *and*
-   gold, and it was the gold laying a yellow cast over every rule and pill
-   that dated it. What replaced it is not another accent but the absence of
-   one: `AppColors.trim` is the same cream the furniture already sets type in,
-   so the only things on the board holding a colour are the felt and the
-   part-of-speech ticks on the cards. That is the right ordering, because the
-   cards are what you are meant to read.
+   The furniture was green felt with brass trim until this was taken apart in
+   two steps, and the order matters because the first step was wrong on its
+   own.
+
+   **Brass went first (2026-08-26).** A casino table is green *and* gold, and
+   the gold was laying a yellow cast over every rule and pill. What replaced
+   it is not another accent but the absence of one: `AppColors.trim` is the
+   same cream the furniture already sets type in.
+
+   **Then the felt went (2026-09-01),** because taking the gold off a green
+   table lit by a radial with a vignette still leaves a card room. The ground
+   is `#15181C` now, hueless, with one soft wash of light near the top and no
+   vignette at all — a vignette is a spotlight and a spotlight is the casino
+   again.
+
+   What that cost: green is the complement of warm card stock, so it flattered
+   the cards more than any other ground could. What it bought is the same idea
+   by subtraction — a ground with no hue means the only colours on the screen
+   are printed on the cards. And it freed the brand blue, which on green was
+   unusable as an accent (blue and green sit at the same luminance in opposed
+   hues, which is why brass had the job); on a neutral ground it rings the
+   player who is up and draws the clock.
 
    `test/core/design/no_legacy_theme_test.dart` now guards the new rule — hex
    literals stay out of screens, gradients and shadows stay inside the design
@@ -297,7 +311,7 @@ lib/
     the anatomy of a form field — it read as *the place you submit to* rather
     than as the cards you are playing. There is no container now. The hand is
     one overlapping fan on a rail; cards you are playing are pushed forward
-    onto bare felt, and the gap is the only thing saying they are in play,
+    onto the bare table, and the gap is the only thing saying they are in play,
     which is exactly what the gap says at a real table.
 
     The two rows are laid out by different rules because they have different
@@ -305,6 +319,54 @@ lib/
     *identifiable*, so `HandFan` overlaps and lets the corner index carry it.
     A played card has to be *read*, so `SentenceLine` never overlaps and
     shrinks its cards instead.
+
+    **The row opens for a card while it is still in the air.** Whichever row
+    the held card is over lays itself out with an empty place where the card
+    would land if it were let go now, and closes again when it is put down.
+    Rearranging on release gave a player carrying a card nothing to aim at:
+    the row stood still and the landing place was a guess that only resolved
+    after the fact. On a table you push the cards either side apart with the
+    one in your hand, and the space that opens *is* the aim. Pushed past the
+    midline the sentence opens and the fan closes up behind, which is the same
+    statement in two rows.
+
+    **Sorting the hand is not a turn action.** Nothing in the rules reads the
+    order of a hand, so sliding cards along the rail is allowed at any moment,
+    including while somebody else is taking their turn — which is most of the
+    time a player spends working a sentence out. `reorderHand` therefore acts
+    on `GameState.me` rather than on `currentPlayer` and carries no turn
+    guard; online it is answered on the device and never sent, alongside the
+    staged sentence, and survives each reply from the authority because a
+    reply is the truth about *what* is in the hand and says nothing about how
+    the player has arranged it.
+
+    **The felt only asks for a sentence when it will accept one.** The line
+    of text on the empty space used to be drawn whenever the space was empty
+    and the hand was not — so it sat there while an opponent was thinking and
+    through the player's own draw step, both states in which pushing a card
+    forward is refused. A board that asks for a move it will not accept is
+    worse than a silent one: it leaves the space unreadable, because a player
+    cannot tell whether it is somewhere to try an order out ahead of their
+    turn or somewhere to submit an answer when in the state they are looking
+    at it is neither. `DrippleGame.canBuild` is set from the same predicate
+    that gates the gesture, and the line names the space and says what
+    finishes it rather than only naming the gesture.
+
+    **The fan takes one gesture, and it is the direct one.** Press a card and
+    it comes up under your finger; drag it sideways and the hand reorders,
+    push it forward past the midline and it is played. Arranging the hand is
+    not a convenience — a player tries an order in the fan and *then* pushes
+    the finished sentence forward, which means the row above reads as the
+    answer whether or not it has a container round it.
+
+    A modal version of this shipped on 2026-08-26 and was removed on
+    2026-09-03: a press put the hand into a "read" state where sliding along
+    the rail raised each card in turn, and only an upward pull of 16px became
+    a pick-up. Sideways was therefore never a drag, so the hand could not be
+    reordered without first pulling a card out of the fan, and nothing on
+    screen said the exit was upward. What paid for that gesture was a card you
+    could not identify while covered, and rule 9's left-aligned face removed
+    the debt.
 
     This repealed the older "cards never overlap — a child who cannot read the
     card cannot play it" rule, which was right while a card carried its

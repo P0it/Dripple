@@ -7,42 +7,52 @@ import 'package:dripple_rules/models/word_card.dart';
 /// The palette is organised by **material**, not by role, because that is the
 /// rule the whole design now runs on:
 ///
-/// > Paper takes the brand. Furniture takes brass.
+/// > Paper takes the brand. Furniture takes cream.
 ///
 /// **Paper** is the card face, sheets, dialogs — anything that reads as printed
 /// stock. Warm off-white, ink type, the point blue, and the part-of-speech
 /// palette. Information lives here.
 ///
 /// **Furniture** is the table, the hand rail, the sentence well, screen
-/// grounds. Deep felt, brass hairlines, cream type. Nothing is read here, only
-/// held.
+/// grounds. Neutral dark, cream hairlines, cream type, and the brand blue for
+/// whatever is live. Nothing is read here, only held.
 ///
 /// Decoration that serves neither material does not ship. A gradient that
-/// describes a lit felt surface is furniture; a gradient on a button because it
+/// describes a lit surface is furniture; a gradient on a button because it
 /// looked flat is not.
 abstract final class AppColors {
   // ---------------------------------------------------------------------------
   // Furniture
   // ---------------------------------------------------------------------------
 
-  /// The lit centre of the table.
-  static const feltCore = Color(0xFF215442);
+  /// The table.
+  ///
+  /// This was green felt, `#215442`, until 2026-09-01. Green felt plus a lit
+  /// radial plus a vignette is the description of a casino table, and that is
+  /// what it read as — a room the game is not set in, and one no six-year-old
+  /// has been in. What it costs to leave: green is the complement of warm
+  /// stock, so it flattered the cards more than anything else could.
+  ///
+  /// What replaces it does the same job by subtraction. A neutral dark holds
+  /// no hue at all, so the only colours left on the screen are the ones
+  /// printed on the cards — which is a better version of the same idea, and
+  /// the version that also stops looking like a card room.
+  static const table = Color(0xFF15181C);
 
-  /// The rim, where the table's radial lands.
-  static const feltEdge = Color(0xFF0A1F19);
+  /// The rim. Barely below [table]: a dark ground wants a fall-off, not a
+  /// vignette. A vignette is a spotlight, and a spotlight is the casino again.
+  static const tableEdge = Color(0xFF101317);
 
-  /// The hand rail — one step above the felt, so cards read as resting on
+  /// The hand rail — one step above the table, so cards read as resting on
   /// something raised.
   ///
-  /// Lighter than [feltCore], not darker. The rail sits at the bottom of the
-  /// screen where the table's radial and vignette are both at their darkest,
-  /// so a rail keyed off the felt's *nominal* colour lands below its
-  /// surroundings and reads as a second recess.
-  static const rail = Color(0xFF2A6350);
+  /// Lighter than [table], not darker. A rail keyed to the same value as its
+  /// surroundings reads as a second recess rather than as a raised strip.
+  static const rail = Color(0xFF1D2126);
 
-  /// The sentence recess floor. Darker than the felt because it is a hole cut
-  /// into the table, and that is the whole read.
-  static const well = Color(0xFF0B211B);
+  /// The sentence recess floor. Darker than the table because it is a hole cut
+  /// into it, and that is the whole read.
+  static const well = Color(0xFF0B0E11);
 
   /// Hairlines, labels, active rings, the one button on the table.
   ///
@@ -56,16 +66,17 @@ abstract final class AppColors {
   /// the only things on this screen holding a colour are the felt itself and
   /// the part-of-speech ticks on the cards — which is exactly the ordering
   /// the game wants, because the cards are what you are meant to read.
-  static const trim = Color(0xFFF2EDE1);
+  static const trim = Color(0xFFEDEBE6);
 
   /// Trim at rest: an inactive track, an empty slot's outline. Keyed off the
-  /// felt rather than off the cream, so a dim rule reads as unlit table
+  /// table rather than off the cream, so a dim rule reads as unlit surface
   /// instead of as dirty paper.
-  static const trimDim = Color(0xFF6E8378);
+  static const trimDim = Color(0xFF464C54);
 
-  /// Type on furniture.
-  static const onFelt = Color(0xFFF2EDE1);
-  static const onFeltSoft = Color(0xFF9FAFA5);
+  /// Type on furniture. Neutral now that the ground is — the old cream had a
+  /// green cast keyed to the felt, and on a hueless table that read as stained.
+  static const onTable = Color(0xFFEDEBE6);
+  static const onTableSoft = Color(0xFF8A9198);
 
   // ---------------------------------------------------------------------------
   // Paper
@@ -94,7 +105,7 @@ abstract final class AppColors {
   // the eight screens keep compiling and the redesign lands as a palette swap
   // rather than a rename sweep.
 
-  static const background = feltCore;
+  static const background = table;
   static const surface = paper;
   static const divider = paperEdge;
   static const border = Color(0xFFC9BFA9);
@@ -113,13 +124,17 @@ abstract final class AppColors {
   static const point = Color(0xFF1D74F5);
   static const pointPressed = Color(0xFF1662D6);
 
-  /// The brand blue lifted until it reads on green.
+  /// The brand blue lifted for the table.
   ///
-  /// #1D74F5 is tuned for a near-white page; against deep felt it goes muddy —
-  /// the two are close in luminance and opposed in hue, which is the one
-  /// combination that reads as neither. The mark keeps its identity on the
-  /// table by getting brighter, not by changing hue.
-  static const pointOnFelt = Color(0xFF5AA9FF);
+  /// #1D74F5 is tuned for a near-white page and goes dull on a dark ground.
+  /// The mark keeps its identity by getting brighter, not by changing hue.
+  ///
+  /// It carries more than the mark now. On green this blue was a compromise —
+  /// blue and green sit at the same luminance in opposed hues, so it could
+  /// never be the accent, and brass had the job instead. On a neutral ground
+  /// it is finally free to be one: it rings the active player and draws the
+  /// clock.
+  static const pointOnTable = Color(0xFF5AA9FF);
   static const pointTint = Color(0xFFE7EFFC);
 
   /// The card back's field: the point blue taken down until white printing

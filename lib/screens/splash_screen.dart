@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/brand/dripple_mark.dart';
-import '../core/design/app_colors.dart';
-import '../core/design/felt_scaffold.dart';
+import '../core/design/table_scaffold.dart';
 import '../core/design/app_spacing.dart';
 import '../core/design/app_typography.dart';
 
@@ -73,16 +72,12 @@ class _SplashScreenState extends State<SplashScreen>
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _finish,
-      child: FeltScaffold(
+      child: TableScaffold(
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              DrippleMark(
-                size: 132,
-                animation: _mark,
-                color: AppColors.pointOnFelt,
-              ),
+              DrippleMark(size: 132, animation: _mark),
               const SizedBox(height: AppSpacing.lg),
               AnimatedBuilder(
                 animation: _wordFade,
@@ -95,7 +90,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 child: Text(
                   'Dripple',
-                  style: AppTypography.onFelt(AppTypography.display)
+                  style: AppTypography.onTable(AppTypography.display)
                       .copyWith(letterSpacing: -0.5),
                 ),
               ),

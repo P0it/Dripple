@@ -91,30 +91,35 @@ class _Opponent extends StatelessWidget {
             shape: BoxShape.circle,
             color: AppColors.rail,
             border: Border.all(
+              // Blue for the player who is up, cream at a whisper for the
+              // ones who are not. On green this ring had to be cream: blue
+              // and green sit at the same luminance in opposed hues and the
+              // ring read as neither. A neutral ground lets the accent be the
+              // accent.
               color: isTheirTurn
-                  ? AppColors.trim
-                  : AppColors.trim.withValues(alpha: 0.3),
+                  ? AppColors.pointOnTable
+                  : AppColors.trim.withValues(alpha: 0.22),
               width: isTheirTurn ? 2 : 1,
             ),
           ),
           child: Icon(
             Icons.smart_toy_outlined,
             size: 20,
-            color: isTheirTurn ? AppColors.trim : AppColors.onFeltSoft,
+            color: isTheirTurn ? AppColors.pointOnTable : AppColors.onTableSoft,
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
           opponent.name,
           style: AppTypography.caption.copyWith(
-            color: isTheirTurn ? AppColors.onFelt : AppColors.onFeltSoft,
+            color: isTheirTurn ? AppColors.onTable : AppColors.onTableSoft,
             fontWeight: isTheirTurn ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
         Text(
           l10n.nCards(opponent.hand.length),
           style: AppTypography.caption
-              .copyWith(fontSize: 11, color: AppColors.onFeltSoft),
+              .copyWith(fontSize: 11, color: AppColors.onTableSoft),
         ),
       ],
     );

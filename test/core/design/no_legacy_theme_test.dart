@@ -12,12 +12,12 @@ import 'package:dripple/game/card_painter.dart';
 ///
 /// The earlier version of this file banned gradients and shadows outright, on
 /// behalf of a "restraint over decoration" rule the 2026-08-25 redesign
-/// repealed. A card game is made of stock, felt, bevel, and contact shadow, so
+/// repealed. A card game is made of stock, ground, bevel, and contact shadow, so
 /// a blanket ban could not survive the goal. What replaced it is narrower:
 ///
 /// > Paper takes the brand. Furniture takes brass.
 ///
-/// A gradient that describes a lit felt surface is furniture and belongs in a
+/// A gradient that describes a lit surface is furniture and belongs in a
 /// painter. A gradient on a button because it looked flat is decoration and
 /// belongs nowhere. The tests below cannot tell those apart by taste, so they
 /// guard the thing they can: material is authored in the design package and in

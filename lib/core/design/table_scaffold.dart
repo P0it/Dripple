@@ -4,12 +4,13 @@ import 'materials.dart';
 
 /// A [Scaffold] standing on the table.
 ///
-/// The felt is a lit radial with grain and a vignette, and `ThemeData` has no
-/// way to express that — a theme can name a colour, not a surface. So the
-/// ground is a widget, and every screen stands on it, which is also what keeps
-/// the felt in one place instead of being re-derived per screen.
-class FeltScaffold extends StatelessWidget {
-  const FeltScaffold({
+/// The table is a wash of light over a dark ground with grain on it, and
+/// `ThemeData` has no way to express that — a theme can name a colour, not a
+/// surface. So the ground is a widget, and every screen stands on it, which is
+/// also what keeps the table in one place instead of being re-derived per
+/// screen.
+class TableScaffold extends StatelessWidget {
+  const TableScaffold({
     super.key,
     required this.body,
     this.appBar,
@@ -26,7 +27,7 @@ class FeltScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        const Positioned.fill(child: FeltGround()),
+        const Positioned.fill(child: TableGround()),
         Scaffold(
           backgroundColor: Colors.transparent,
           appBar: appBar,
@@ -40,21 +41,21 @@ class FeltScaffold extends StatelessWidget {
 }
 
 /// The table itself, paintable on its own where a full scaffold is not wanted.
-class FeltGround extends StatelessWidget {
-  const FeltGround({super.key});
+class TableGround extends StatelessWidget {
+  const TableGround({super.key});
 
   @override
   Widget build(BuildContext context) =>
-      const CustomPaint(painter: _FeltPainter(), child: SizedBox.expand());
+      const CustomPaint(painter: _TablePainter(), child: SizedBox.expand());
 }
 
-class _FeltPainter extends CustomPainter {
-  const _FeltPainter();
+class _TablePainter extends CustomPainter {
+  const _TablePainter();
 
   @override
   void paint(Canvas canvas, Size size) =>
-      Materials.felt(canvas, Offset.zero & size);
+      Materials.table(canvas, Offset.zero & size);
 
   @override
-  bool shouldRepaint(_FeltPainter oldDelegate) => false;
+  bool shouldRepaint(_TablePainter oldDelegate) => false;
 }

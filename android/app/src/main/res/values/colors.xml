@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The table. Same value as AppColors.table, which is the ground every
+         screen in the game stands on. -->
+    <color name="ic_launcher_background">#15181C</color>
+</resources>

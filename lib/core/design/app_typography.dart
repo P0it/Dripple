@@ -9,8 +9,8 @@ import 'app_colors.dart';
 /// of what makes a layout read as tidy.
 ///
 /// Every style here is set in **ink**, because most type in the app sits on
-/// paper — panels, sheets, tiles, cards. Type placed directly on the felt asks
-/// for [onFelt], and having to ask is the point: it keeps the two materials
+/// paper — panels, sheets, tiles, cards. Type placed directly on the table asks
+/// for [onTable], and having to ask is the point: it keeps the two materials
 /// from blurring into one another by accident.
 abstract final class AppTypography {
   static const String family = 'Pretendard';
@@ -63,10 +63,10 @@ abstract final class AppTypography {
     color: AppColors.textSecondary,
   );
 
-  /// Recolours a style for the felt. Secondary styles stay secondary.
-  static TextStyle onFelt(TextStyle style) => style.copyWith(
+  /// Recolours a style for the table. Secondary styles stay secondary.
+  static TextStyle onTable(TextStyle style) => style.copyWith(
         color: style.color == AppColors.textSecondary
-            ? AppColors.onFeltSoft
-            : AppColors.onFelt,
+            ? AppColors.onTableSoft
+            : AppColors.onTable,
       );
 }
