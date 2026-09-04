@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/design/app_spacing.dart';
 import '../../core/design/app_typography.dart';
+import '../../core/game_icons.dart';
 import 'package:dripple_rules/models/game_state.dart';
 import 'package:dripple_rules/models/player.dart';
 import 'mute_button.dart';
@@ -102,9 +103,16 @@ class _Opponent extends StatelessWidget {
               width: isTheirTurn ? 2 : 1,
             ),
           ),
-          child: Icon(
-            Icons.smart_toy_outlined,
-            size: 20,
+          // A face, not a robot. `Icons.smart_toy_outlined` was the one
+          // Material glyph left on the board, and it was the worst of them:
+          // three identical stamped robots along the top edge said "these are
+          // programs" at a game whose whole pitch is that you are sitting at a
+          // table with three other players. The game already draws its own
+          // faces for the character and the emotes — the opponents were the
+          // one place that borrowed somebody else's picture instead.
+          child: GameIconView(
+            GameIcon.faceIdle,
+            size: 22,
             color: isTheirTurn ? AppColors.pointOnTable : AppColors.onTableSoft,
           ),
         ),

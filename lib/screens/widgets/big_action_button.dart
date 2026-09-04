@@ -14,6 +14,17 @@ import '../../core/game_icons.dart';
 /// what makes it hittable; the bevel was decoration, and it was the last
 /// plastic-looking thing on the board. Pressing now darkens and settles the
 /// fill instead.
+///
+/// **This button only ever stands on the table**, so its unfilled and disabled
+/// states are furniture rather than paper. They were both sheets of stock
+/// before, and that was the flaw in the action bar: the secondary action was a
+/// white slab exactly as bright as the primary, and the *disabled* primary was
+/// a solid beige plank — the deadest control on the board drawn as heavily as
+/// the liveliest. With the row of cards directly above also being white, three
+/// stacked bands of stock left nothing saying which of them was the game.
+///
+/// Now one thing on the bar is paper: whichever action is filled. Everything
+/// else is the rail, outlined in dim trim.
 class BigActionButton extends StatefulWidget {
   const BigActionButton({
     super.key,
@@ -51,9 +62,14 @@ class _BigActionButtonState extends State<BigActionButton> {
 
     late final Color fill;
     late final Color foreground;
+    var outlined = false;
     if (!enabled) {
-      fill = AppColors.divider;
-      foreground = AppColors.textDisabled;
+      // A button that cannot be pressed recedes into the table. It keeps its
+      // outline so the row does not change shape the moment it comes alive —
+      // the eye should see a control light up, not a control appear.
+      fill = AppColors.rail;
+      foreground = AppColors.onTableSoft;
+      outlined = true;
     } else if (widget.filled) {
       fill =
           _down ? Color.lerp(widget.color, Colors.black, 0.14)! : widget.color;
@@ -62,8 +78,9 @@ class _BigActionButtonState extends State<BigActionButton> {
       // button no one can read.
       foreground = fill.computeLuminance() > 0.5 ? AppColors.ink : Colors.white;
     } else {
-      fill = _down ? AppColors.paperShade : AppColors.paper;
+      fill = _down ? AppColors.table : AppColors.rail;
       foreground = widget.color;
+      outlined = true;
     }
 
     return Semantics(
@@ -87,9 +104,9 @@ class _BigActionButtonState extends State<BigActionButton> {
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             border:
                 widget.selected
-                    ? Border.all(color: AppColors.textPrimary, width: 2)
-                    : (enabled && !widget.filled)
-                    ? Border.all(color: AppColors.border)
+                    ? Border.all(color: AppColors.trim, width: 2)
+                    : outlined
+                    ? Border.all(color: AppColors.trimDim)
                     : null,
           ),
           child: Row(

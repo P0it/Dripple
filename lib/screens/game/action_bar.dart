@@ -85,10 +85,18 @@ class ActionBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
+            // One filled button, one outlined, and the filled one is wider.
+            //
+            // They used to be two equal white slabs, which put the *do
+            // nothing* move on level terms with the move the game is about —
+            // and because a disabled fill was heavier than an enabled
+            // outline, the bar was at its most lopsided in exactly the state
+            // a beginner sees first: submit greyed out, pass shouting.
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Flexible(
+                Expanded(
+                  flex: 3,
                   child: BigActionButton(
                     key: submitKey,
                     label: l10n.completeSentence,
@@ -99,12 +107,16 @@ class ActionBar extends StatelessWidget {
                 ),
                 if (onPass case final pass?) ...[
                   const SizedBox(width: AppSpacing.sm),
-                  Flexible(
+                  Expanded(
+                    flex: 2,
+                    // No icon. It carried the JUMP glyph, which is a card in
+                    // this game with a rule of its own — skip the *next*
+                    // player — and lending that mark to "hand my own turn on"
+                    // teaches a child an equivalence the rules do not have.
                     child: BigActionButton(
                       label: l10n.passTurn,
                       sublabel: l10n.passTurnSub,
-                      icon: GameIcon.jump,
-                      color: AppColors.ink,
+                      color: AppColors.onTable,
                       filled: false,
                       onPressed: pass,
                     ),
