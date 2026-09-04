@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:dripple/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'core/design/app_theme.dart';
+import 'core/design/table_column.dart';
 import 'package:dripple_rules/engine/ai/ai_player.dart';
 import 'screens/home_screen.dart';
 import 'screens/mode_selection_screen.dart';
@@ -105,6 +106,11 @@ class DrippleApp extends StatelessWidget {
       theme: AppTheme.light,
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
+      // A browser window is not a phone, and every measurement on the board is
+      // taken against the width it is handed. Bound it once, above every
+      // route, rather than in each place that takes a measurement.
+      builder: (context, child) =>
+          TableColumn(child: child ?? const SizedBox.shrink()),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,

@@ -88,13 +88,22 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
-  /// The mark's width. The wordmark and the gap under the mark are both set
-  /// against it rather than chosen, so the lockup holds its proportions if
-  /// this one number changes.
-  static const double _markSize = 148;
+  /// The mark's width, and with it the wordmark and the gap beneath — both are
+  /// set against it rather than chosen, so the lockup holds its proportions at
+  /// every size.
+  ///
+  /// Scaled and clamped, the way the home screen already sizes the same mark.
+  /// It was a flat 148 until the web build was opened on a desktop: 148 is 38%
+  /// of a phone and 8% of a browser window, so the opening of the game was a
+  /// speck in the middle of a dark screen. `TableColumn` holds the app to a
+  /// phone's width above this, which is what keeps the two numbers agreeing.
+  static double _markWidthFor(double screenWidth) =>
+      (screenWidth * 0.38).clamp(120.0, 200.0);
 
   @override
   Widget build(BuildContext context) {
+    final markSize = _markWidthFor(MediaQuery.sizeOf(context).width);
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _finish,
@@ -115,7 +124,7 @@ class _SplashScreenState extends State<SplashScreen>
                 // Tight, because the square box's empty band would add itself
                 // to the gap below and push the name away from the mark.
                 child: DrippleMark(
-                  size: _markSize,
+                  size: markSize,
                   animation: _deal,
                   tight: true,
                 ),
@@ -133,7 +142,7 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Text(
                   'Dripple',
                   style: AppTypography.onTable(AppTypography.wordmark)
-                      .copyWith(fontSize: _markSize * 0.176),
+                      .copyWith(fontSize: markSize * 0.176),
                 ),
               ),
             ],
