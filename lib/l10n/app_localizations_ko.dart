@@ -363,6 +363,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String get tutorialNext => '다음';
 
   @override
+  String get display => '화면';
+
+  @override
+  String get theme => '밝기';
+
+  @override
+  String get themeSystem => '시스템 설정';
+
+  @override
+  String get themeDay => '밝게';
+
+  @override
+  String get themeNight => '어둡게';
+
+  @override
   String get tutorialTapToContinue => '아무 곳이나 탭하면 다음';
 
   @override

@@ -91,7 +91,7 @@ abstract final class Materials {
         ..shader = Gradient.linear(
           bounds.topCenter,
           bounds.bottomCenter,
-          const [AppColors.table, AppColors.tableEdge],
+          [AppColors.table, AppColors.tableEdge],
           const [0.0, 1.0],
         ),
     );
@@ -102,7 +102,12 @@ abstract final class Materials {
         ..shader = Gradient.radial(
           Offset(bounds.center.dx, bounds.top + bounds.height * 0.06),
           math.max(bounds.width, bounds.height) * 0.78,
-          const [Color(0x0BFFFFFF), Color(0x00FFFFFF)],
+          // A light source, not a vignette. By day the ground has no room
+          // left above it, so the same gesture is made by taking a little
+          // away at the edges instead of adding at the middle.
+          AppColors.isDay
+              ? const [Color(0x00000000), Color(0x0D000000)]
+              : const [Color(0x0BFFFFFF), Color(0x00FFFFFF)],
           const [0.0, 1.0],
         ),
     );
@@ -117,36 +122,52 @@ abstract final class Materials {
   // Shadows
   // ---------------------------------------------------------------------------
 
+  /// The shadow type casts when it is set straight on the ground with nothing
+  /// under it.
+  ///
+  /// The tutorial's words sit on the board itself — no panel, no fill — and a
+  /// step that rings its target dims nothing, so the letters can land on a
+  /// card. Two shadows rather than one: a wide soft pool that separates the
+  /// letterform from whatever is behind it, and a tight one that keeps the
+  /// stroke edges from going furry.
+  ///
+  /// It inverts with the ground. By night the type is cream and the halo is
+  /// black; by day the type is ink and the halo is white. A shadow is the
+  /// ground showing through, so it is the ground that decides its colour —
+  /// which is why this is lighting rather than decoration, and why it lives
+  /// here instead of in the screen that draws the words.
+  static List<Shadow> get legibilityOnInk => AppColors.isDay
+      ? const [
+          Shadow(color: Color(0xF2FFFFFF), blurRadius: 12),
+          Shadow(color: Color(0xD9FFFFFF), blurRadius: 3),
+        ]
+      : const [
+          Shadow(color: Color(0xCC000000), blurRadius: 14),
+          Shadow(color: Color(0x99000000), blurRadius: 4),
+        ];
+
   /// The shadow a card casts, in two layers.
   ///
   /// A single shadow floats on a page. Two — a tight dark contact and a wide
   /// soft ambient — sit on a surface. [lift] runs 0 (resting) to 1 (held), and
   /// spreads and softens both layers as the card rises; a card whose shadow
   /// does not change while it lifts reads as a sticker.
-  /// The shadow type casts when it is set straight on the ink with nothing
-  /// under it.
   ///
-  /// The tutorial's words sit on the board itself — no panel, no fill — and a
-  /// step that rings its target dims nothing, so cream letters can land on a
-  /// pale card. Two shadows rather than one: a wide soft pool that separates
-  /// the letterform from whatever is behind it, and a tight one that keeps
-  /// the stroke edges from going furry.
-  ///
-  /// This is lighting, not decoration, which is why it lives here — a screen
-  /// inventing the colour of its own shadow is the thing the guard is for.
-  static const List<Shadow> legibilityOnInk = [
-    Shadow(color: Color(0xCC000000), blurRadius: 14),
-    Shadow(color: Color(0x99000000), blurRadius: 4),
-  ];
-
+  /// By day it is the whole separation. The ground is the same stock as the
+  /// card, so nothing but this says the card is lying on something — which is
+  /// why it is softened rather than weakened: a black contact shadow on a
+  /// white page reads as dirt, a wider paler one reads as height.
   static void cardShadow(Canvas canvas, RRect rrect, {double lift = 0}) {
     final t = lift.clamp(0.0, 1.0);
+    // How hard the light is. A dark room takes a dark contact shadow; a lit
+    // page takes about half of one, spread wider.
+    final weight = AppColors.isDay ? 0.62 : 1.0;
 
     canvas.drawRRect(
       rrect.shift(Offset(0, 1 + 3 * t)),
       Paint()
         ..color = const Color(0xFF000000)
-            .withValues(alpha: 0.25 - 0.10 * t)
+            .withValues(alpha: (0.25 - 0.10 * t) * weight)
         ..maskFilter = MaskFilter.blur(BlurStyle.normal, 2.5 + 4 * t),
     );
 
@@ -154,8 +175,11 @@ abstract final class Materials {
       rrect.shift(Offset(0, 5 + 12 * t)),
       Paint()
         ..color = const Color(0xFF000000)
-            .withValues(alpha: 0.20 + 0.06 * t)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 12 + 16 * t),
+            .withValues(alpha: (0.20 + 0.06 * t) * weight)
+        ..maskFilter = MaskFilter.blur(
+          BlurStyle.normal,
+          (12 + 16 * t) * (AppColors.isDay ? 1.25 : 1.0),
+        ),
     );
   }
 
@@ -235,13 +259,17 @@ abstract final class Materials {
   static void hairline(
     Canvas canvas,
     RRect rrect, {
-    Color color = AppColors.trim,
+    // Defaulted in the body rather than in the signature: the trim moves with
+    // the ground now, and a default argument has to be a compile-time
+    // constant.
+    Color? color,
     double width = 1,
     bool dashed = false,
     double opacity = 1,
   }) {
+    final stroke = color ?? AppColors.trim;
     final paint = Paint()
-      ..color = color.withValues(alpha: color.a * opacity)
+      ..color = stroke.withValues(alpha: stroke.a * opacity)
       ..style = PaintingStyle.stroke
       ..strokeWidth = width
       ..strokeCap = StrokeCap.round;

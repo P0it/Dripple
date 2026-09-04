@@ -760,6 +760,36 @@ abstract class AppLocalizations {
   /// **'Next'**
   String get tutorialNext;
 
+  /// No description provided for @display.
+  ///
+  /// In en, this message translates to:
+  /// **'Display'**
+  String get display;
+
+  /// No description provided for @theme.
+  ///
+  /// In en, this message translates to:
+  /// **'Brightness'**
+  String get theme;
+
+  /// No description provided for @themeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get themeSystem;
+
+  /// No description provided for @themeDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeDay;
+
+  /// No description provided for @themeNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeNight;
+
   /// No description provided for @tutorialTapToContinue.
   ///
   /// In en, this message translates to:

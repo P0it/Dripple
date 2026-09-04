@@ -226,10 +226,10 @@ class _ModePanel extends StatelessWidget {
     final rows = <Widget>[];
     for (var i = 0; i < children.length; i++) {
       if (i > 0) {
-        rows.add(const Padding(
+        rows.add(Padding(
           // Inset past the seat mark, so the rule starts where the type does
           // and the marks read as one column down the panel.
-          padding: EdgeInsets.only(left: _ModeCell.textInset),
+          padding: const EdgeInsets.only(left: _ModeCell.textInset),
           child: Divider(
             height: 1,
             thickness: 1,

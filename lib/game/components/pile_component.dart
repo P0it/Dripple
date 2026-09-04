@@ -180,7 +180,7 @@ class PileComponent extends PositionComponent with TapCallbacks {
       _labelPainter = material.TextPainter(
         text: material.TextSpan(
           text: label,
-          style: const material.TextStyle(
+          style: material.TextStyle(
             fontFamily: 'Pretendard',
             color: AppColors.onTableSoft,
             fontSize: 11,

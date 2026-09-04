@@ -44,7 +44,7 @@ class SettingsTile extends StatelessWidget {
             horizontal: AppSpacing.md, vertical: AppSpacing.sm),
         decoration: BoxDecoration(
           border: showDivider
-              ? const Border(bottom: BorderSide(color: AppColors.trimDim))
+              ? Border(bottom: BorderSide(color: AppColors.trimDim))
               : null,
         ),
         child: Column(
@@ -113,7 +113,7 @@ class SettingsSection extends StatelessWidget {
           ),
           // A rule above the first row, so a group reads as a block even
           // before its rows have anything under them.
-          const Divider(
+          Divider(
             height: 1,
             thickness: 1,
             color: AppColors.trimDim,

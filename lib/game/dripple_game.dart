@@ -369,7 +369,7 @@ class DrippleGame extends FlameGame {
 
   material.TextPainter get _dropHint => _dropHintPainter ??= _text(
         _labels.hint,
-        const material.TextStyle(
+        material.TextStyle(
           fontFamily: 'Pretendard',
           color: AppColors.onTableSoft,
           fontSize: 15,

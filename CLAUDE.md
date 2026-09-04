@@ -273,6 +273,27 @@ lib/
    and card-game materiality is *made of* those things, so it could not survive
    the goal. Ergonomics are unchanged: a 56px touch floor, 60px buttons, and
    card type sized to be read across a table.
+   **Night and day (2026-09-04).** One of the two materials moves and the
+   other does not. The ink is a ground, and a ground is whatever the light in
+   the room makes it, so `AppMode` swaps it — table, rail, well, trim, type on
+   the ground, the scrim, the blue — and swaps nothing on the paper side. A
+   card is printed; turning a light on does not reprint it.
+
+   By day the ground is `#FDFCFA`: **the card stock itself**. A grey table was
+   tried first and rejected for being half a light — someone who asks for
+   light mode is asking for the screen to be bright, not for a lit version of
+   the dark one. What that appears to cost, a card no longer reading as an
+   object lying on something, is not actually spent: a card is not flat. It
+   carries two shadows, and the shadow is what has been doing that job the
+   whole time. `test/core/design/theme_mode_test.dart` pins the equality so a
+   later hand cannot quietly put the contrast step back.
+
+   The tokens are getters over a palette object rather than constants, because
+   Flame components and `CustomPainter`s paint outside the widget tree and
+   cannot reach `Theme.of(context)`. The cost is that a painter is asked
+   `shouldRepaint` and has no field that mentions a colour, so the three that
+   read the palette directly carry `AppColors.generation` and compare it.
+
    The furniture was green felt with brass trim until this was taken apart in
    two steps, and the order matters because the first step was wrong on its
    own.

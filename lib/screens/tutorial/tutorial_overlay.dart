@@ -77,7 +77,11 @@ class TutorialOverlay extends StatelessWidget {
     final target = hole?.inflate(_halo);
 
     final marks = CustomPaint(
-      painter: _CoachMarkPainter(hole: target, dim: step.dim),
+      painter: _CoachMarkPainter(
+        hole: target,
+        dim: step.dim,
+        ground: AppColors.generation,
+      ),
       size: Size.infinite,
     );
 
@@ -163,10 +167,18 @@ class TutorialOverlay extends StatelessWidget {
 
 /// The cover and the ring.
 class _CoachMarkPainter extends CustomPainter {
-  const _CoachMarkPainter({required this.hole, required this.dim});
+  const _CoachMarkPainter({
+    required this.hole,
+    required this.dim,
+    required this.ground,
+  });
 
   final Rect? hole;
   final bool dim;
+
+  /// [AppColors.generation]. The cover and the ring take their colours from
+  /// the palette, and a mode swap changes both without changing the hole.
+  final int ground;
 
   static const Radius _radius = Radius.circular(AppSpacing.radiusMd);
 
@@ -213,7 +225,7 @@ class _CoachMarkPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_CoachMarkPainter old) =>
-      old.hole != hole || old.dim != dim;
+      old.hole != hole || old.dim != dim || old.ground != ground;
 }
 
 /// What the lesson says — type on the ink, and nothing else.

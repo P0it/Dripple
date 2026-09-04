@@ -5,25 +5,43 @@ import 'package:dripple_rules/models/word_card.dart';
 /// Every colour in the app. Nothing outside this file defines one.
 ///
 /// The palette is organised by **material**, not by role, because that is the
-/// rule the whole design now runs on:
+/// rule the whole design runs on:
 ///
-/// > Paper takes the brand. Furniture takes cream.
+/// > Two materials: ink and paper.
 ///
-/// **Paper** is the card face, sheets, dialogs — anything that reads as printed
-/// stock. Warm off-white, ink type, the point blue, and the part-of-speech
-/// palette. Information lives here.
+/// **Paper** is the card face and the sheets a player reads. Near-white stock,
+/// ink type, the point blue, and the part-of-speech palette. Things are
+/// *printed* here.
 ///
-/// **Furniture** is the table, the hand rail, the sentence well, screen
-/// grounds. Neutral dark, cream hairlines, cream type, and the brand blue for
-/// whatever is live. Nothing is read here, only held.
+/// **Ink** is the table, the hand rail, the sentence well, screen grounds. The
+/// ground, with hairlines and type set against it. Nothing is printed here,
+/// only held.
 ///
-/// Decoration that serves neither material does not ship. A gradient that
-/// describes a lit surface is furniture; a gradient on a button because it
-/// looked flat is not.
+/// Decoration serving neither does not ship. A gradient describing a lit
+/// surface is material; a gradient on a button because it looked flat is not.
+///
+/// ## Night and day
+///
+/// One of those two materials moves and the other does not. The ink is a
+/// ground, and a ground is whatever the light in the room makes it — so
+/// [AppMode] swaps every token above the Paper heading and nothing below it.
+/// A card is printed. Turning a light on does not reprint it.
+///
 abstract final class AppColors {
   // ---------------------------------------------------------------------------
-  // Furniture
+  // Ink — the only tokens a mode swap touches
   // ---------------------------------------------------------------------------
+
+  /// The ink, and everything cut out of it.
+  ///
+  /// These are the only tokens a mode swap touches. Everything printed on a
+  /// card — [paper], [ink], the part-of-speech palette — is a `const` below
+  /// and stays one, because turning a light on does not reprint a card.
+  ///
+  /// They are getters over [_ink] rather than constants, because the surfaces
+  /// they colour are painted outside the widget tree: Flame components and
+  /// `CustomPainter`s cannot reach `Theme.of(context)`. A getter keeps all 177
+  /// call sites written exactly as they were.
 
   /// The table.
   ///
@@ -37,22 +55,31 @@ abstract final class AppColors {
   /// no hue at all, so the only colours left on the screen are the ones
   /// printed on the cards — which is a better version of the same idea, and
   /// the version that also stops looking like a card room.
-  static const table = Color(0xFF15181C);
+  ///
+  /// By day it is the stock itself. A light mode that kept a grey table only
+  /// turned the lights half on: the ground has to be as bright as the thing
+  /// the player asked for. Cards do not vanish into it, because a card is not
+  /// flat — it casts a shadow, and that shadow is what has been separating it
+  /// from the ground all along.
+  static Color get table => _ink.table;
 
-  /// The rim. Barely below [table]: a dark ground wants a fall-off, not a
-  /// vignette. A vignette is a spotlight, and a spotlight is the casino again.
-  static const tableEdge = Color(0xFF101317);
+  /// The rim. Barely off [table]: a ground wants a fall-off, not a vignette.
+  /// A vignette is a spotlight, and a spotlight is the casino again.
+  static Color get tableEdge => _ink.tableEdge;
 
   /// The hand rail — one step above the table, so cards read as resting on
   /// something raised.
   ///
   /// Lighter than [table], not darker. A rail keyed to the same value as its
-  /// surroundings reads as a second recess rather than as a raised strip.
-  static const rail = Color(0xFF1D2126);
+  /// surroundings reads as a second recess rather than as a raised strip —
+  /// and it is lighter in *both* modes, because a raised face catches more
+  /// light whatever the light is. By day that leaves only white to be lighter
+  /// with, which is why the rail is exactly white and nothing else is.
+  static Color get rail => _ink.rail;
 
   /// The sentence recess floor. Darker than the table because it is a hole cut
-  /// into it, and that is the whole read.
-  static const well = Color(0xFF0B0E11);
+  /// into it, and that is the whole read — in both modes.
+  static Color get well => _ink.well;
 
   /// Hairlines, labels, active rings, the one button on the table.
   ///
@@ -62,21 +89,22 @@ abstract final class AppColors {
   /// that dated it.
   ///
   /// What replaced it is not another accent colour but the absence of one.
-  /// The trim is the same cream the furniture already sets its type in, so
-  /// the only things on this screen holding a colour are the felt itself and
-  /// the part-of-speech ticks on the cards — which is exactly the ordering
-  /// the game wants, because the cards are what you are meant to read.
-  static const trim = Color(0xFFEDEBE6);
+  /// The trim is the same value the ink already sets its type in, so the only
+  /// things on this screen holding a colour are the ground itself and the
+  /// part-of-speech ticks on the cards — which is exactly the ordering the
+  /// game wants, because the cards are what you are meant to read.
+  static Color get trim => _ink.trim;
 
   /// Trim at rest: an inactive track, an empty slot's outline. Keyed off the
-  /// table rather than off the cream, so a dim rule reads as unlit surface
+  /// ground rather than off the type, so a dim rule reads as unlit surface
   /// instead of as dirty paper.
-  static const trimDim = Color(0xFF464C54);
+  static Color get trimDim => _ink.trimDim;
 
-  /// Type on furniture. Neutral now that the ground is — the old cream had a
-  /// green cast keyed to the felt, and on a hueless table that read as stained.
-  static const onTable = Color(0xFFEDEBE6);
-  static const onTableSoft = Color(0xFF8A9198);
+  /// Type on the ink. Neutral, because the ground is — the old cream had a
+  /// green cast keyed to the felt, and on a hueless ground that read as
+  /// stained.
+  static Color get onTable => _ink.onTable;
+  static Color get onTableSoft => _ink.onTableSoft;
 
   // ---------------------------------------------------------------------------
   // Paper
@@ -116,7 +144,7 @@ abstract final class AppColors {
   // the eight screens keep compiling and the redesign lands as a palette swap
   // rather than a rename sweep.
 
-  static const background = table;
+  static Color get background => table;
   static const surface = paper;
   static const divider = paperEdge;
   static const border = Color(0xFFC9BFA9);
@@ -145,7 +173,7 @@ abstract final class AppColors {
   /// never be the accent, and brass had the job instead. On a neutral ground
   /// it is finally free to be one: it rings the active player and draws the
   /// clock.
-  static const pointOnTable = Color(0xFF5AA9FF);
+  static Color get pointOnTable => _ink.point;
   static const pointTint = Color(0xFFE7EFFC);
 
   /// The card back's field: the point blue taken down until white printing
@@ -158,7 +186,7 @@ abstract final class AppColors {
   /// has to read as "not needed right now"; blacked out, it reads as gone,
   /// and a child who cannot see the rest of the table cannot tell what the
   /// bright part is part of.
-  static const scrim = Color(0x8C08201A);
+  static Color get scrim => _ink.scrim;
 
   static const success = Color(0xFF12B76A);
   static const danger = Color(0xFFE5484D);
@@ -200,4 +228,111 @@ abstract final class AppColors {
     }
     return out;
   }
+
+  // ---------------------------------------------------------------------------
+  // The two grounds
+  // ---------------------------------------------------------------------------
+
+  static _Ink _ink = _Ink.night;
+
+  /// Bumped whenever the ground changes.
+  ///
+  /// A `CustomPainter` is asked `shouldRepaint(old)` and compares its own
+  /// fields; none of them mention a colour, so a mode swap would leave every
+  /// canvas holding the previous night. Painters carry this number so the
+  /// question has an answer.
+  static int generation = 0;
+
+  static AppMode get mode => _ink.mode;
+
+  /// Whether the ground is the light one. For the few places that need to
+  /// invert a shadow rather than swap a colour.
+  static bool get isDay => _ink.mode == AppMode.day;
+
+  static void use(AppMode mode) {
+    final next = switch (mode) {
+      AppMode.night => _Ink.night,
+      AppMode.day => _Ink.day,
+    };
+    if (identical(next, _ink)) return;
+    _ink = next;
+    generation++;
+  }
+}
+
+/// Which ground the app is standing on.
+enum AppMode { night, day }
+
+/// One ground, and the values cut out of it.
+class _Ink {
+  const _Ink({
+    required this.mode,
+    required this.table,
+    required this.tableEdge,
+    required this.rail,
+    required this.well,
+    required this.trim,
+    required this.trimDim,
+    required this.onTable,
+    required this.onTableSoft,
+    required this.point,
+    required this.scrim,
+  });
+
+  final AppMode mode;
+  final Color table;
+  final Color tableEdge;
+  final Color rail;
+  final Color well;
+  final Color trim;
+  final Color trimDim;
+  final Color onTable;
+  final Color onTableSoft;
+  final Color point;
+  final Color scrim;
+
+  static const night = _Ink(
+    mode: AppMode.night,
+    table: Color(0xFF15181C),
+    tableEdge: Color(0xFF101317),
+    rail: Color(0xFF1D2126),
+    well: Color(0xFF0B0E11),
+    trim: Color(0xFFEDEBE6),
+    trimDim: Color(0xFF464C54),
+    onTable: Color(0xFFEDEBE6),
+    onTableSoft: Color(0xFF8A9198),
+    // #1D74F5 is tuned for a near-white page and goes dull on a dark ground.
+    // The blue keeps its identity by getting brighter, not by changing hue.
+    point: Color(0xFF5AA9FF),
+    scrim: Color(0x8C08201A),
+  );
+
+  /// The ground is the stock itself.
+  ///
+  /// A light mode with a grey table was tried and rejected for being half a
+  /// light: the ground has to be as bright as the thing the player asked for.
+  /// What was supposed to be lost by making it the same white as a card — the
+  /// card no longer reading as an object lying on something — is not lost,
+  /// because a card is not flat. It carries two shadows, and the shadow is
+  /// what has been separating it from the ground the whole time.
+  ///
+  /// The scrim inverts with everything else. Dimming means *toward the
+  /// ground*, so by day the coach mark's cover is a white veil: the board
+  /// fades into the page while the ring and the ink type stay dark on it.
+  static const day = _Ink(
+    mode: AppMode.day,
+    table: Color(0xFFFDFCFA),
+    tableEdge: Color(0xFFF1EEE9),
+    // The one place white itself is used, and only because a raised face has
+    // to be lighter than its ground and the ground has already spent
+    // everything else.
+    rail: Color(0xFFFFFFFF),
+    well: Color(0xFFEDEAE4),
+    trim: Color(0xFF24272C),
+    trimDim: Color(0xFFD3CEC4),
+    onTable: Color(0xFF1B1D21),
+    onTableSoft: Color(0xFF6E727A),
+    point: Color(0xFF1D74F5),
+    scrim: Color(0xC7FDFCFA),
+  );
 }

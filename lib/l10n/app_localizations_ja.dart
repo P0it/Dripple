@@ -363,6 +363,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tutorialNext => 'つぎへ';
 
   @override
+  String get display => '画面';
+
+  @override
+  String get theme => '明るさ';
+
+  @override
+  String get themeSystem => 'システム設定';
+
+  @override
+  String get themeDay => 'ライト';
+
+  @override
+  String get themeNight => 'ダーク';
+
+  @override
   String get tutorialTapToContinue => 'どこかをタップして次へ';
 
   @override

@@ -152,14 +152,18 @@ class SeatPip extends StatelessWidget {
   @override
   Widget build(BuildContext context) => CustomPaint(
         size: Size.square(size),
-        painter: _SeatPipPainter(seat),
+        painter: _SeatPipPainter(seat, AppColors.generation),
       );
 }
 
 class _SeatPipPainter extends CustomPainter {
-  const _SeatPipPainter(this.seat);
+  const _SeatPipPainter(this.seat, this.ground);
 
   final Seat seat;
+
+  /// [AppColors.generation] — the pip's colours are read from the palette
+  /// rather than handed in, so the seat alone cannot answer for them.
+  final int ground;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -185,5 +189,6 @@ class _SeatPipPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_SeatPipPainter old) => old.seat != seat;
+  bool shouldRepaint(_SeatPipPainter old) =>
+      old.seat != seat || old.ground != ground;
 }

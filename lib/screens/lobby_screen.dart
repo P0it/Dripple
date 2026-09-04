@@ -255,11 +255,11 @@ class _SeatList extends StatelessWidget {
                   ),
                 ),
               ),
-              const Divider(height: 1, thickness: 1, color: AppColors.trimDim),
+              Divider(height: 1, thickness: 1, color: AppColors.trimDim),
               for (var i = 0; i < room.seats.length; i++) ...[
                 if (i > 0)
-                  const Padding(
-                    padding: EdgeInsets.only(left: _seatRowInset),
+                  Padding(
+                    padding: const EdgeInsets.only(left: _seatRowInset),
                     child: Divider(
                         height: 1, thickness: 1, color: AppColors.trimDim),
                   ),

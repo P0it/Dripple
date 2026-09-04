@@ -17,7 +17,7 @@ abstract final class AppTheme {
         useMaterial3: true,
         fontFamily: AppTypography.family,
         scaffoldBackgroundColor: AppColors.table,
-        colorScheme: const ColorScheme.light(
+        colorScheme: ColorScheme.light(
           primary: AppColors.point,
           onPrimary: Colors.white,
           secondary: AppColors.trim,
@@ -96,7 +96,7 @@ abstract final class AppTheme {
             borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
           ),
         ),
-        bottomSheetTheme: const BottomSheetThemeData(
+        bottomSheetTheme: BottomSheetThemeData(
           backgroundColor: AppColors.paper,
           elevation: 12,
           shadowColor: AppColors.tableEdge,
@@ -112,7 +112,7 @@ abstract final class AppTheme {
         // table rather than off paper, or an off switch reads as a smudge of
         // card stock lying on the felt.
         switchTheme: SwitchThemeData(
-          thumbColor: const WidgetStatePropertyAll(AppColors.trim),
+          thumbColor: WidgetStatePropertyAll(AppColors.trim),
           trackColor: WidgetStateProperty.resolveWith(
             (s) => s.contains(WidgetState.selected)
                 ? AppColors.pointOnTable
@@ -120,7 +120,7 @@ abstract final class AppTheme {
           ),
           trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
         ),
-        sliderTheme: const SliderThemeData(
+        sliderTheme: SliderThemeData(
           activeTrackColor: AppColors.pointOnTable,
           inactiveTrackColor: AppColors.trimDim,
           thumbColor: AppColors.pointOnTable,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
 import 'materials.dart';
 
 /// A [Scaffold] standing on the table.
@@ -46,16 +47,24 @@ class TableGround extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      const CustomPaint(painter: _TablePainter(), child: SizedBox.expand());
+      CustomPaint(
+        painter: _TablePainter(ground: AppColors.generation),
+        child: const SizedBox.expand(),
+      );
 }
 
 class _TablePainter extends CustomPainter {
-  const _TablePainter();
+  const _TablePainter({required this.ground});
+
+  /// [AppColors.generation]. The ground is the one thing this painter draws
+  /// and the only thing that can change about it, and none of it is passed in
+  /// — so without this the table would keep the night it was first painted in.
+  final int ground;
 
   @override
   void paint(Canvas canvas, Size size) =>
       Materials.table(canvas, Offset.zero & size);
 
   @override
-  bool shouldRepaint(_TablePainter oldDelegate) => false;
+  bool shouldRepaint(_TablePainter old) => old.ground != ground;
 }

@@ -372,6 +372,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialNext => 'Next';
 
   @override
+  String get display => 'Display';
+
+  @override
+  String get theme => 'Brightness';
+
+  @override
+  String get themeSystem => 'System';
+
+  @override
+  String get themeDay => 'Light';
+
+  @override
+  String get themeNight => 'Dark';
+
+  @override
   String get tutorialTapToContinue => 'Tap anywhere to continue';
 
   @override

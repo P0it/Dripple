@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:dripple/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'core/design/app_theme.dart';
+import 'core/design/app_colors.dart';
 import 'core/design/table_column.dart';
+import 'providers/theme_provider.dart';
 import 'package:dripple_rules/engine/ai/ai_player.dart';
 import 'screens/home_screen.dart';
 import 'screens/mode_selection_screen.dart';
@@ -96,11 +99,21 @@ final _router = GoRouter(
   ],
 );
 
-class DrippleApp extends StatelessWidget {
+class DrippleApp extends ConsumerWidget {
   const DrippleApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // The ground is pushed into AppColors before the theme is read, because
+    // AppTheme is assembled *from* AppColors — and because the canvases below
+    // read the same statics without ever seeing this context.
+    AppColors.use(
+      ThemeNotifier.resolve(
+        ref.watch(themeChoiceProvider),
+        MediaQuery.platformBrightnessOf(context),
+      ),
+    );
+
     return MaterialApp.router(
       title: 'Dripple',
       theme: AppTheme.light,
