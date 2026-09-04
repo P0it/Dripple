@@ -363,6 +363,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get tutorialNext => '다음';
 
   @override
+  String get tutorialTapToContinue => '아무 곳이나 탭하면 다음';
+
+  @override
   String get tutorialSkip => '건너뛰기';
 
   @override

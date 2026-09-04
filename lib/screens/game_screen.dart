@@ -381,6 +381,8 @@ class _GameScreenState extends ConsumerState<GameScreen>
                 child: TutorialOverlay(
                   step: tutorial.step,
                   hole: _spotRect(tutorial.step.spot),
+                  stepNumber: tutorial.index + 1,
+                  stepCount: tutorial.count,
                   isLastStep: tutorial.isLastStep,
                   isRetrying: tutorial.isRetrying,
                   onNext: tutorial.next,

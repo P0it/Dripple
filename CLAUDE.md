@@ -243,14 +243,30 @@ lib/
 6. **Flame is kept deliberately** — the card-game feel is the point, so the
    sentence-zone reorder was hand-built inside Flame rather than swapping to
    Flutter widgets. Known cost: screen readers cannot see the Flame canvas.
-8. **Paper takes the brand, furniture takes cream.** Every surface is one of
-   two materials. *Paper* — the card face, sheets, dialogs — carries warm
-   off-white stock, ink type, and the part-of-speech palette; information
-   lives there. *Furniture* — the table, the hand rail, the sentence well,
-   screen grounds — carries a neutral dark ground, cream hairlines and type,
-   and the brand blue for whatever is live; nothing is read there, only held. Decoration serving neither
-   does not ship: a gradient describing a lit surface is furniture, a
+8. **Two materials: ink and paper.** Every surface is one of them. *Paper* —
+   the card face, and the sheets a player reads — carries near-white stock,
+   ink type, and the part-of-speech palette; things are *printed* there.
+   *Ink* — the table, the hand rail, the sentence well, screen grounds — is
+   the neutral dark, with cream hairlines and type and the brand blue for
+   whatever is live; nothing is printed there, only held. Decoration serving
+   neither does not ship: a gradient describing a lit surface is material, a
    gradient on a button because it looked flat is not.
+
+   The third word went on 2026-09-04. "Furniture" named the dark ground for a
+   room the game is not set in, and the ground had already stopped being a
+   table: it is hueless, and its own colour is the colour of ink. Naming it
+   that makes the rule state itself — a card game is ink and paper, and the
+   question for any surface is which of the two it is.
+
+   Two things follow, and both were mistakes the old word was hiding. A list
+   of switches is **not** paper: it is the table's own controls, and putting
+   settings on a sheet of stock made them read as a document *about* the
+   settings. And the paper is not cream. `#FBF8F1` was defended as "paper is
+   never pure white", which is true of paper in a lit room and wrong against
+   a hueless ground — a cream card there reads as a *yellow* card, which is
+   the brass problem arriving on the other material. `AppColors.paper` is
+   `#FDFCFA`: enough warmth that the stock is stock, little enough that the
+   part-of-speech ticks are the only hue on the card.
 
    This replaced "restraint over decoration" on 2026-08-25. That rule banned
    gradients, shadows outside the card, and anything but a near-white ground —

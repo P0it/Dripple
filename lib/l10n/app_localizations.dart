@@ -760,6 +760,12 @@ abstract class AppLocalizations {
   /// **'Next'**
   String get tutorialNext;
 
+  /// No description provided for @tutorialTapToContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap anywhere to continue'**
+  String get tutorialTapToContinue;
+
   /// No description provided for @tutorialSkip.
   ///
   /// In en, this message translates to:

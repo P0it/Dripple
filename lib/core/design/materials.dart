@@ -123,6 +123,22 @@ abstract final class Materials {
   /// soft ambient — sit on a surface. [lift] runs 0 (resting) to 1 (held), and
   /// spreads and softens both layers as the card rises; a card whose shadow
   /// does not change while it lifts reads as a sticker.
+  /// The shadow type casts when it is set straight on the ink with nothing
+  /// under it.
+  ///
+  /// The tutorial's words sit on the board itself — no panel, no fill — and a
+  /// step that rings its target dims nothing, so cream letters can land on a
+  /// pale card. Two shadows rather than one: a wide soft pool that separates
+  /// the letterform from whatever is behind it, and a tight one that keeps
+  /// the stroke edges from going furry.
+  ///
+  /// This is lighting, not decoration, which is why it lives here — a screen
+  /// inventing the colour of its own shadow is the thing the guard is for.
+  static const List<Shadow> legibilityOnInk = [
+    Shadow(color: Color(0xCC000000), blurRadius: 14),
+    Shadow(color: Color(0x99000000), blurRadius: 4),
+  ];
+
   static void cardShadow(Canvas canvas, RRect rrect, {double lift = 0}) {
     final t = lift.clamp(0.0, 1.0);
 

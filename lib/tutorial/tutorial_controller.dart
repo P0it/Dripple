@@ -35,6 +35,10 @@ class TutorialController extends ChangeNotifier {
   bool _retrying = false;
 
   int get index => _index;
+
+  /// How many steps there are, so the lesson can say how far along it is.
+  /// A lesson with no end in sight is a lesson nobody starts.
+  int get count => _script.length;
   TutorialStep get step => _script[_index];
   bool get isLastStep => _index == _script.length - 1;
   bool get isFinished => _finished;

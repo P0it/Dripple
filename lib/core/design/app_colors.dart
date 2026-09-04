@@ -82,15 +82,26 @@ abstract final class AppColors {
   // Paper
   // ---------------------------------------------------------------------------
 
-  /// Card stock. Warm, not pure white — paper never is, and the eye knows.
-  static const paper = Color(0xFFFBF8F1);
+  /// Card stock.
+  ///
+  /// This was `#FBF8F1` — a warm cream, on the argument that paper never is
+  /// pure white. True of paper in a lit room, and wrong here: the ground went
+  /// hueless on 2026-09-01 precisely so the only colours on screen would be
+  /// the ones printed on the cards, and a cream card against a hueless ground
+  /// reads as a *yellow* card. It was the brass problem again, arriving on the
+  /// other material.
+  ///
+  /// Not pure white either. `#FDFCFA` keeps the barest warmth — enough that
+  /// the stock is stock rather than a lit rectangle — while leaving the
+  /// part-of-speech ticks the only hue on the card.
+  static const paper = Color(0xFFFDFCFA);
 
   /// The cut edge of the stock. Visible as a sub-pixel rim around every card,
   /// which is what gives the card thickness.
-  static const paperEdge = Color(0xFFDED6C6);
+  static const paperEdge = Color(0xFFE3DFD7);
 
   /// Pressed or recessed paper.
-  static const paperShade = Color(0xFFF1EBDE);
+  static const paperShade = Color(0xFFF2F0EB);
 
   /// The word.
   static const ink = Color(0xFF1B1D21);

@@ -372,6 +372,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialNext => 'Next';
 
   @override
+  String get tutorialTapToContinue => 'Tap anywhere to continue';
+
+  @override
   String get tutorialSkip => 'Skip';
 
   @override

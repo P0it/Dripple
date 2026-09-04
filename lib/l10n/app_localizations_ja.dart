@@ -363,6 +363,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tutorialNext => 'つぎへ';
 
   @override
+  String get tutorialTapToContinue => 'どこかをタップして次へ';
+
+  @override
   String get tutorialSkip => 'スキップ';
 
   @override

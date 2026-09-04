@@ -8,6 +8,11 @@ import '../../core/design/app_typography.dart';
 ///
 /// Both screens were building their own row shape with slightly different
 /// padding and dividers. This is the one shape they share.
+///
+/// The row is set **on the ink**, not on paper. Paper is where the game prints
+/// things — cards, and sheets a player reads. A list of switches is neither:
+/// it is the table's own controls, and putting them on a sheet of stock made
+/// them read as a document about the settings rather than as the settings.
 class SettingsTile extends StatelessWidget {
   const SettingsTile({
     super.key,
@@ -39,7 +44,7 @@ class SettingsTile extends StatelessWidget {
             horizontal: AppSpacing.md, vertical: AppSpacing.sm),
         decoration: BoxDecoration(
           border: showDivider
-              ? const Border(bottom: BorderSide(color: AppColors.divider))
+              ? const Border(bottom: BorderSide(color: AppColors.trimDim))
               : null,
         ),
         child: Column(
@@ -52,10 +57,16 @@ class SettingsTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(title, style: AppTypography.body),
+                      Text(
+                        title,
+                        style: AppTypography.onTable(AppTypography.body),
+                      ),
                       if (subtitle case final text?) ...[
                         const SizedBox(height: 2),
-                        Text(text, style: AppTypography.caption),
+                        Text(
+                          text,
+                          style: AppTypography.onTable(AppTypography.caption),
+                        ),
                       ],
                     ],
                   ),
@@ -71,8 +82,13 @@ class SettingsTile extends StatelessWidget {
   }
 }
 
-/// A titled group of [SettingsTile]s on one sheet of paper, with its title
-/// set on the felt above it.
+/// A titled group of [SettingsTile]s.
+///
+/// There is no container. This was a sheet of stock with a radius, a border
+/// and a drop shadow — a card floating on the table — and two of those groups
+/// stacked read as a web page imitating a settings app. What names a group is
+/// its title and the space above it, which is what names a group on any
+/// printed page too.
 class SettingsSection extends StatelessWidget {
   const SettingsSection({super.key, required this.title, required this.tiles});
 
@@ -95,22 +111,14 @@ class SettingsSection extends StatelessWidget {
                   .copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.6),
             ),
           ),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.paper,
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-              border: Border.all(color: AppColors.paperEdge),
-              boxShadow: const [
-                BoxShadow(
-                  color: AppColors.tableEdge,
-                  blurRadius: 12,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Column(children: tiles),
+          // A rule above the first row, so a group reads as a block even
+          // before its rows have anything under them.
+          const Divider(
+            height: 1,
+            thickness: 1,
+            color: AppColors.trimDim,
           ),
+          Column(children: tiles),
         ],
       ),
     );

@@ -107,14 +107,23 @@ abstract final class AppTheme {
             ),
           ),
         ),
+        // Switches and sliders live on the ink — the settings and lobby lists
+        // are the table's own controls, not something printed. Keyed off the
+        // table rather than off paper, or an off switch reads as a smudge of
+        // card stock lying on the felt.
         switchTheme: SwitchThemeData(
-          thumbColor: const WidgetStatePropertyAll(Colors.white),
+          thumbColor: const WidgetStatePropertyAll(AppColors.trim),
           trackColor: WidgetStateProperty.resolveWith(
             (s) => s.contains(WidgetState.selected)
-                ? AppColors.point
-                : AppColors.border,
+                ? AppColors.pointOnTable
+                : AppColors.trimDim,
           ),
           trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+        ),
+        sliderTheme: const SliderThemeData(
+          activeTrackColor: AppColors.pointOnTable,
+          inactiveTrackColor: AppColors.trimDim,
+          thumbColor: AppColors.pointOnTable,
         ),
       );
 }

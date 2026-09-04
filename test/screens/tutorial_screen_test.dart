@@ -33,6 +33,17 @@ Future<void> _settle(WidgetTester tester) async {
   }
 }
 
+/// Move the lesson on the way a player does: by touching the screen.
+///
+/// There is no Next button any more — the coach mark is type on the ink and
+/// the whole overlay takes the tap. Tapping the top-left corner keeps the
+/// gesture clear of Leave in the opposite corner.
+Future<void> _advance(WidgetTester tester) async {
+  final overlay = find.byType(TutorialOverlay);
+  await tester.tapAt(tester.getTopLeft(overlay) + const Offset(24, 120));
+  await _settle(tester);
+}
+
 void main() {
   final ko = AppLocalizationsKo();
 
@@ -66,8 +77,7 @@ void main() {
     await tester.pumpWidget(_host(container));
     await _settle(tester);
 
-    await tester.tap(find.text(ko.tutorialNext));
-    await _settle(tester);
+    await _advance(tester);
     expect(find.text(ko.tutorialDeck), findsOneWidget);
 
     final boardFinder = find.byWidgetPredicate((w) => w is GameWidget);
@@ -102,12 +112,12 @@ void main() {
     await _settle(tester);
 
     for (var i = 0; i < 3; i++) {
-      await tester.tap(find.text(ko.tutorialNext));
-      await _settle(tester);
+      await _advance(tester);
     }
     expect(find.text(ko.tutorialDraw), findsOneWidget);
-    // A step that asks for a gesture offers no way past it.
-    expect(find.text(ko.tutorialNext), findsNothing);
+    // A step that asks for a gesture does not claim a tap will end it — the
+    // board does, and the tap has to reach the board.
+    expect(find.text(ko.tutorialTapToContinue), findsNothing);
 
     final boardFinder = find.byWidgetPredicate((w) => w is GameWidget);
     final game =
