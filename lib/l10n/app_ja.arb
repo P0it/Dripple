@@ -7,6 +7,8 @@
   "ranking": "ランキング",
   "settings": "設定",
   "selectMode": "モード選択",
+  "modeGroupSolo": "ひとりで",
+  "modeGroupFriends": "友だちと",
   "aiBattle": "AI対戦",
   "aiBattleDesc": "AIと対戦",
   "onlineBattle": "オンライン対戦",

@@ -142,6 +142,18 @@ abstract class AppLocalizations {
   /// **'Select Mode'**
   String get selectMode;
 
+  /// No description provided for @modeGroupSolo.
+  ///
+  /// In en, this message translates to:
+  /// **'Alone'**
+  String get modeGroupSolo;
+
+  /// No description provided for @modeGroupFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'With friends'**
+  String get modeGroupFriends;
+
   /// No description provided for @aiBattle.
   ///
   /// In en, this message translates to:

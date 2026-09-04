@@ -30,6 +30,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectMode => 'Select Mode';
 
   @override
+  String get modeGroupSolo => 'Alone';
+
+  @override
+  String get modeGroupFriends => 'With friends';
+
+  @override
   String get aiBattle => 'AI Battle';
 
   @override

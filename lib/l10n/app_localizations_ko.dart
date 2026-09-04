@@ -30,6 +30,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get selectMode => '모드 선택';
 
   @override
+  String get modeGroupSolo => '혼자';
+
+  @override
+  String get modeGroupFriends => '친구와';
+
+  @override
   String get aiBattle => 'AI 대전';
 
   @override

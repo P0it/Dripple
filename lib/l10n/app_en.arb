@@ -7,6 +7,8 @@
   "ranking": "Ranking",
   "settings": "Settings",
   "selectMode": "Select Mode",
+  "modeGroupSolo": "Alone",
+  "modeGroupFriends": "With friends",
   "aiBattle": "AI Battle",
   "aiBattleDesc": "Play against AI opponents",
   "onlineBattle": "Online Battle",

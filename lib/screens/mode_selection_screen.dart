@@ -7,6 +7,7 @@ import '../core/design/app_colors.dart';
 import '../core/design/table_scaffold.dart';
 import '../core/design/app_spacing.dart';
 import '../core/design/app_typography.dart';
+import '../core/design/seat_mark.dart';
 import 'package:dripple_rules/engine/ai/ai_player.dart';
 import '../providers/online_providers.dart';
 import '../services/online_client.dart';
@@ -16,8 +17,24 @@ import 'online/online_messages.dart';
 
 /// Pick an opponent, then pick how hard it plays.
 ///
-/// Selection is marked with a border and a tint rather than a filled block:
-/// a solid colour reads as "pressed" and leaves nowhere for the text to sit.
+/// The list is **furniture, not paper**. It used to be five identical slabs of
+/// card stock floating on the table, each with a Material icon in brand blue
+/// and a chevron — which broke the one rule the palette is organised around:
+/// paper is where something is *read*, furniture is where something is *held*.
+/// A menu holds; nothing on it is printed. Five sheets of stock on a table
+/// also spend the material that is supposed to mean "this is a card", so by
+/// the time a real card appears it is the sixth white rectangle of the
+/// session.
+///
+/// So the rows sit in two rail-coloured panels, cream type on dark, hairlines
+/// between them — the same rail the hand rests on during a game.
+///
+/// The two panels are the split that actually matters to a player: **on your
+/// own**, and **with other people**. Flat, the five rows made picking between
+/// "AI 대전" and "방 만들기" a question about the app; grouped, it is a
+/// question about who is around.
+///
+/// Every icon is gone. See [SeatMark] for what replaced them and why.
 class ModeSelectionScreen extends ConsumerWidget {
   const ModeSelectionScreen({super.key});
 
@@ -30,44 +47,51 @@ class ModeSelectionScreen extends ConsumerWidget {
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xl),
+              AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.xl),
           children: [
-            // First, and not behind anything. Someone who has never played
-            // opens this screen not knowing what the game is, and the row
-            // that explains it should not be below the row that starts it.
-            _ModeCell(
-              icon: Icons.school_outlined,
-              title: l10n.tutorial,
-              subtitle: l10n.tutorialDesc,
-              onTap: () => context.push('/tutorial'),
-            ),
-            _ModeCell(
-              icon: Icons.smart_toy_outlined,
-              title: l10n.aiBattle,
-              subtitle: l10n.aiBattleDesc,
-              onTap: () => _pickDifficulty(context, l10n),
-            ),
-            _ModeCell(
-              icon: Icons.add_circle_outline,
-              title: l10n.createRoom,
-              subtitle: l10n.createRoomDesc,
-              onTap: () => _createRoom(context, ref),
-            ),
-            _ModeCell(
-              icon: Icons.group_outlined,
-              title: l10n.joinRoom,
-              subtitle: l10n.joinRoomDesc,
-              onTap: () => _joinRoom(context, ref),
-            ),
-            // Matchmaking against strangers is a separate problem — who you
-            // are matched with, and what they may say to you — and this game
-            // is played by children. It comes after friends.
-            _ModeCell(
-              icon: Icons.public,
-              title: l10n.onlineBattle,
-              subtitle: l10n.onlineBattleDesc,
-              badge: l10n.comingSoon,
-            ),
+            _GroupLabel(l10n.modeGroupSolo),
+            _ModePanel(children: [
+              // First, and not behind anything. Someone who has never played
+              // opens this screen not knowing what the game is, and the row
+              // that explains it should not be below the row that starts it.
+              _ModeCell(
+                seats: const [Seat.you],
+                title: l10n.tutorial,
+                subtitle: l10n.tutorialDesc,
+                onTap: () => context.push('/tutorial'),
+              ),
+              _ModeCell(
+                seats: const [Seat.you, Seat.taken, Seat.taken, Seat.taken],
+                title: l10n.aiBattle,
+                subtitle: l10n.aiBattleDesc,
+                onTap: () => _pickDifficulty(context, l10n),
+              ),
+            ]),
+            const SizedBox(height: AppSpacing.lg),
+            _GroupLabel(l10n.modeGroupFriends),
+            _ModePanel(children: [
+              _ModeCell(
+                seats: const [Seat.you, Seat.open, Seat.open, Seat.open],
+                title: l10n.createRoom,
+                subtitle: l10n.createRoomDesc,
+                onTap: () => _createRoom(context, ref),
+              ),
+              _ModeCell(
+                seats: const [Seat.open, Seat.taken, Seat.taken, Seat.taken],
+                title: l10n.joinRoom,
+                subtitle: l10n.joinRoomDesc,
+                onTap: () => _joinRoom(context, ref),
+              ),
+              // Matchmaking against strangers is a separate problem — who you
+              // are matched with, and what they may say to you — and this game
+              // is played by children. It comes after friends.
+              _ModeCell(
+                seats: const [Seat.open, Seat.open, Seat.open, Seat.open],
+                title: l10n.onlineBattle,
+                subtitle: l10n.onlineBattleDesc,
+                badge: l10n.comingSoon,
+              ),
+            ]),
           ],
         ),
       ),
@@ -118,8 +142,6 @@ class ModeSelectionScreen extends ConsumerWidget {
   }
 }
 
-/// One opponent option.
-
 /// Everything online needs a name first, and nobody is asked for one until
 /// this moment.
 Future<String?> _ensureName(BuildContext context, WidgetRef ref) async {
@@ -167,78 +189,144 @@ Future<void> _enterRoom(
   }
 }
 
+/// The label over a group of rows. Set on the bare table, not on the panel —
+/// it names the panel, so it cannot also be inside it.
+class _GroupLabel extends StatelessWidget {
+  const _GroupLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xs, AppSpacing.sm, 0, AppSpacing.sm),
+        child: Text(
+          text,
+          style: AppTypography.caption.copyWith(
+            color: AppColors.onTableSoft,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.8,
+          ),
+        ),
+      );
+}
+
+/// One rail carrying a group of rows.
+///
+/// A single piece of furniture with hairlines cut across it, rather than a
+/// stack of separate tiles with gaps. The gaps were what made five rows read
+/// as five unrelated things.
+class _ModePanel extends StatelessWidget {
+  const _ModePanel({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <Widget>[];
+    for (var i = 0; i < children.length; i++) {
+      if (i > 0) {
+        rows.add(const Padding(
+          // Inset past the seat mark, so the rule starts where the type does
+          // and the marks read as one column down the panel.
+          padding: EdgeInsets.only(left: _ModeCell.textInset),
+          child: Divider(
+            height: 1,
+            thickness: 1,
+            color: AppColors.trimDim,
+          ),
+        ));
+      }
+      rows.add(children[i]);
+    }
+
+    return Material(
+      color: AppColors.rail,
+      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: rows),
+    );
+  }
+}
+
+/// One mode.
 class _ModeCell extends StatelessWidget {
   const _ModeCell({
-    required this.icon,
+    required this.seats,
     required this.title,
     required this.subtitle,
     this.badge,
     this.onTap,
   });
 
-  final IconData icon;
+  /// Who is at that table. See [SeatMark].
+  final List<Seat> seats;
   final String title;
   final String subtitle;
   final String? badge;
   final VoidCallback? onTap;
 
+  static const double markSize = 32;
+  static const double textInset = AppSpacing.md + markSize + AppSpacing.md;
+
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
-    final foreground =
-        enabled ? AppColors.textPrimary : AppColors.textDisabled;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Material(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          child: Container(
-            constraints: const BoxConstraints(minHeight: AppSpacing.minTouch + 20),
-            padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-              border: Border.all(color: AppColors.divider),
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: AppSpacing.minTouch + 16),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md, vertical: AppSpacing.md),
+        child: Row(
+          children: [
+            SeatMark(
+              seats: seats,
+              ground: AppColors.rail,
+              size: markSize,
+              muted: !enabled,
             ),
-            child: Row(
-              children: [
-                Icon(icon,
-                    size: 28,
-                    color: enabled ? AppColors.point : AppColors.textDisabled),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(title,
-                          style: AppTypography.label
-                              .copyWith(fontSize: 17, color: foreground)),
-                      const SizedBox(height: 2),
-                      Text(subtitle, style: AppTypography.caption),
-                    ],
-                  ),
-                ),
-                if (badge case final text?)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
-                    decoration: BoxDecoration(
-                      color: AppColors.paperShade,
-                      borderRadius:
-                          BorderRadius.circular(AppSpacing.radiusSm),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: AppTypography.label.copyWith(
+                      fontSize: 16,
+                      color: enabled
+                          ? AppColors.onTable
+                          : AppColors.onTableSoft,
                     ),
-                    child: Text(text, style: AppTypography.caption),
-                  )
-                else if (enabled)
-                  const Icon(Icons.chevron_right,
-                      color: AppColors.textDisabled),
-              ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: AppTypography.caption
+                        .copyWith(color: AppColors.onTableSoft),
+                  ),
+                ],
+              ),
             ),
-          ),
+            // No chevron. Every row in a list of choices leads somewhere, so
+            // an arrow on each of them says nothing and repeats itself five
+            // times; the one row that does *not* lead anywhere says so in
+            // words instead — and in the same cream as the rest of the
+            // furniture, because a tinted pill would make the unavailable
+            // mode the loudest thing on the screen.
+            if (badge case final text?)
+              Text(
+                text,
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.onTableSoft,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.4,
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -278,7 +366,6 @@ class _DifficultyCell extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textDisabled),
           ],
         ),
       ),
