@@ -45,6 +45,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
+    // The mark is measured off the screen, not typed. A fixed 96pt was set
+    // against a phone in a simulator and then shipped to every size there is:
+    // on a modern handset it left the front door almost empty, a small pair of
+    // cards adrift in the middle of a large dark table, with the name under it
+    // at the size of a section heading. A wordmark is the largest thing on the
+    // screen it introduces or it is not a wordmark.
+    //
+    // Both numbers are clamped as well as scaled — unbounded, the pair takes
+    // over a tablet, and a mark that fills the width is a splash screen rather
+    // than a front door.
+    final width = MediaQuery.sizeOf(context).width;
+    final markSize = (width * 0.46).clamp(120.0, 208.0);
+    final wordSize = (width * 0.17).clamp(48.0, 76.0);
+
     return TableScaffold(
       body: SafeArea(
         child: Padding(
@@ -52,16 +66,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Spacer(flex: 3),
-              const Center(
-                child: DrippleMark(size: 96),
+              const Spacer(flex: 5),
+              Center(
+                // Tight, so the mark's own icon margin does not silently add
+                // itself to the gap between the cards and the name.
+                child: DrippleMark(size: markSize, tight: true),
               ),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.lg),
               Text(
                 'Dripple',
                 textAlign: TextAlign.center,
-                style: AppTypography.onTable(AppTypography.display)
-                    .copyWith(letterSpacing: -0.5),
+                // Fraunces, not Pretendard. The face exists for exactly this
+                // one string and was going unused: set in the UI face the name
+                // reads as a heading that happens to say "Dripple", and set in
+                // Fraunces it reads as a name printed on a box.
+                style: AppTypography.onTable(AppTypography.wordmark)
+                    .copyWith(fontSize: wordSize),
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
