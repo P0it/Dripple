@@ -126,6 +126,7 @@
   "join": "入る",
   "startGame": "はじめる",
   "leaveRoom": "出る",
+  "roomSeats": "席",
   "emptySeat": "空席",
   "seatLeft": "出ていきました",
   "hostLabel": "ホスト",

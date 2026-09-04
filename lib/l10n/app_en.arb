@@ -219,6 +219,7 @@
   "join": "Join",
   "startGame": "Start",
   "leaveRoom": "Leave",
+  "roomSeats": "Seats",
   "emptySeat": "Empty seat",
   "seatLeft": "Left the game",
   "hostLabel": "Host",

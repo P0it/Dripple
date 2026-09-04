@@ -411,6 +411,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get leaveRoom => '나가기';
 
   @override
+  String get roomSeats => '자리';
+
+  @override
   String get emptySeat => '빈자리';
 
   @override

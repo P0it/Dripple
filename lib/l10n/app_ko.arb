@@ -126,6 +126,7 @@
   "join": "들어가기",
   "startGame": "시작",
   "leaveRoom": "나가기",
+  "roomSeats": "자리",
   "emptySeat": "빈자리",
   "seatLeft": "나갔어요",
   "hostLabel": "방장",

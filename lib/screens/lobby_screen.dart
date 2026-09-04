@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../core/design/app_colors.dart';
 import '../core/design/app_spacing.dart';
 import '../core/design/app_typography.dart';
+import '../core/design/seat_mark.dart';
 import '../core/design/table_scaffold.dart';
 import '../providers/online_game_provider.dart';
 import '../providers/online_providers.dart';
@@ -102,7 +103,11 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
                   children: [
                     _CodeCard(code: room.code, l10n: l10n),
                     const SizedBox(height: AppSpacing.lg),
-                    Expanded(child: _SeatList(room: room, l10n: l10n)),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: _SeatList(room: room, l10n: l10n),
+                      ),
+                    ),
                     if (_state.error != null)
                       Padding(
                         padding:
@@ -160,38 +165,184 @@ class _CodeCard extends StatelessWidget {
       );
 }
 
+/// Who is in the room, as one picture and then as a list.
+///
+/// This was a bare `ListTile` column standing directly on the table with its
+/// type set in **ink** — `AppColors.textPrimary` is #1B1D21 and the table is
+/// #15181C, so every player's name was being drawn in near-black on
+/// near-black. Paper type on a furniture ground is the failure mode the
+/// two-material palette exists to prevent, and the lobby had it outright.
+///
+/// So the list is a rail panel now, exactly like the mode list, and the row
+/// marks come from the same seat vocabulary: a chair somebody is in is
+/// filled, an empty one is a ring, and yours takes the brand blue.
+///
+/// Above the rows the whole room is drawn once, live. It is the same picture
+/// the player pressed to get here — 방 만들기 shows you and three empty
+/// chairs — and watching those chairs fill is the entire content of a lobby.
 class _SeatList extends StatelessWidget {
   const _SeatList({required this.room, required this.l10n});
 
   final RoomView room;
   final AppLocalizations l10n;
 
+  /// The room as [SeatMark] wants it: clockwise from *your* chair, because on
+  /// a board you are always at the near edge. Before the server has seated
+  /// you the list is shown in its own order — there is no near edge yet.
+  List<Seat> get _seats {
+    Seat kindOf(int i) => room.seats[i].isEmpty
+        ? Seat.open
+        : (i == room.yourSeat ? Seat.you : Seat.taken);
+
+    final n = room.seats.length;
+    final from = (room.yourSeat >= 0 && room.yourSeat < n) ? room.yourSeat : 0;
+    return [for (var k = 0; k < n; k++) kindOf((from + k) % n)];
+  }
+
   @override
-  Widget build(BuildContext context) => ListView.separated(
-        itemCount: room.seats.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
-        itemBuilder: (context, i) {
-          final seat = room.seats[i];
-          final isMe = i == room.yourSeat && !seat.isEmpty;
-          return ListTile(
-            leading: Icon(
-              seat.isEmpty ? Icons.chair_outlined : Icons.person,
-              color: seat.isEmpty ? AppColors.textSecondary : AppColors.point,
-            ),
-            title: Text(
+  Widget build(BuildContext context) {
+    final taken = room.seats.where((s) => !s.isEmpty).length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xs, 0, AppSpacing.xs, AppSpacing.sm),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.roomSeats,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.onTableSoft,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+              Text(
+                '$taken/${room.seats.length}',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.onTableSoft,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ),
+        ),
+        // A plain column, not a ListView. A room holds four chairs, and a
+        // scrolling viewport given less height than that quietly drops the
+        // last one — which is the single worst thing a lobby can do, because
+        // an empty chair that is not drawn is indistinguishable from a room
+        // that has no room left. A short screen scrolls the whole panel
+        // instead; see the SingleChildScrollView this sits in.
+        Material(
+          color: AppColors.rail,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                child: Center(
+                  child: SeatMark(
+                    seats: _seats,
+                    ground: AppColors.rail,
+                    size: 72,
+                  ),
+                ),
+              ),
+              const Divider(height: 1, thickness: 1, color: AppColors.trimDim),
+              for (var i = 0; i < room.seats.length; i++) ...[
+                if (i > 0)
+                  const Padding(
+                    padding: EdgeInsets.only(left: _seatRowInset),
+                    child: Divider(
+                        height: 1, thickness: 1, color: AppColors.trimDim),
+                  ),
+                _SeatRow(
+                  seat: room.seats[i],
+                  isMe: i == room.yourSeat && !room.seats[i].isEmpty,
+                  isHost: room.seats[i].uid == room.hostUid &&
+                      !room.seats[i].isEmpty,
+                  l10n: l10n,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+const double _seatRowInset = AppSpacing.md + 16 + AppSpacing.md;
+
+/// One chair in the list.
+class _SeatRow extends StatelessWidget {
+  const _SeatRow({
+    required this.seat,
+    required this.isMe,
+    required this.isHost,
+    required this.l10n,
+  });
+
+  final SeatView seat;
+  final bool isMe;
+  final bool isHost;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final kind = seat.isEmpty ? Seat.open : (isMe ? Seat.you : Seat.taken);
+
+    return Container(
+      constraints: const BoxConstraints(minHeight: AppSpacing.minTouch),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      child: Row(
+        children: [
+          SeatPip(seat: kind),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
               seat.isEmpty ? l10n.emptySeat : seat.name,
               style: AppTypography.body.copyWith(
                 color: seat.isEmpty
-                    ? AppColors.textSecondary
-                    : AppColors.textPrimary,
+                    ? AppColors.onTableSoft
+                    : AppColors.onTable,
+                fontWeight: isMe ? FontWeight.w600 : FontWeight.w400,
               ),
             ),
-            subtitle: isMe ? Text(l10n.you, style: AppTypography.caption) : null,
-            trailing: seat.uid == room.hostUid && !seat.isEmpty
-                ? Text(l10n.hostLabel, style: AppTypography.caption)
-                : null,
-          );
-        },
+          ),
+          // Two facts about one chair, so they read as one trailing group
+          // rather than as a column the empty rows leave holes in.
+          if (isMe) _SeatTag(l10n.you, accent: true),
+          if (isMe && isHost) const SizedBox(width: AppSpacing.xs),
+          if (isHost) _SeatTag(l10n.hostLabel),
+        ],
+      ),
+    );
+  }
+}
+
+class _SeatTag extends StatelessWidget {
+  const _SeatTag(this.text, {this.accent = false});
+
+  final String text;
+  final bool accent;
+
+  @override
+  Widget build(BuildContext context) => Text(
+        text,
+        style: AppTypography.caption.copyWith(
+          color: accent ? AppColors.pointOnTable : AppColors.onTableSoft,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.4,
+        ),
       );
 }
 
@@ -214,8 +365,11 @@ class _StartRow extends StatelessWidget {
     if (!room.amHost) {
       return Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
+        // Furniture, like everything else standing on the table. This was
+        // ink too, and invisible for the same reason the seat names were.
         child: Text(l10n.waitingForHost,
-            textAlign: TextAlign.center, style: AppTypography.label),
+            textAlign: TextAlign.center,
+            style: AppTypography.onTable(AppTypography.label)),
       );
     }
 
@@ -226,7 +380,8 @@ class _StartRow extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: Text(l10n.needTwoPlayers,
-                textAlign: TextAlign.center, style: AppTypography.caption),
+                textAlign: TextAlign.center,
+                style: AppTypography.onTable(AppTypography.caption)),
           ),
         FilledButton(
           onPressed: enough && !busy ? onStart : null,

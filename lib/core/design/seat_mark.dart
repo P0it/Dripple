@@ -95,8 +95,11 @@ class _SeatMarkPainter extends CustomPainter {
 
     // Clockwise from the near edge. A single seat is yours and sits nearest.
     for (var i = 0; i < seats.length; i++) {
-      final angle = math.pi / 2 - i * 2 * math.pi / seats.length;
-      final at = centre + Offset(math.cos(angle) * ring, -math.sin(angle) * ring);
+      // Screen y grows downward, so the near edge is `+sin`, not `-sin`.
+      // Negated, the first chair — yours — was drawn at the far side of the
+      // table, which is the one seat it can never be.
+      final angle = math.pi / 2 + i * 2 * math.pi / seats.length;
+      final at = centre + Offset(math.cos(angle) * ring, math.sin(angle) * ring);
 
       // Cut the table's line out from under the chair before drawing it.
       canvas.drawCircle(at, seat + line * 0.9, Paint()..color = ground);
@@ -128,4 +131,59 @@ class _SeatMarkPainter extends CustomPainter {
       old.muted != muted ||
       old.ground != ground ||
       !listEquals(old.seats, seats);
+}
+
+/// One chair on its own, with no table under it.
+///
+/// [SeatMark] answers "who is at this table"; this answers "who is in this
+/// chair", which is the question a list of seats asks one row at a time.
+/// Drawing the whole table beside every row would repeat the same picture
+/// down the column and say nothing new on any line of it.
+///
+/// The colours are [SeatMark]'s, so the live table at the head of a lobby and
+/// the rows beneath it are the same drawing at two scales rather than two
+/// pictures that happen to sit together.
+class SeatPip extends StatelessWidget {
+  const SeatPip({super.key, required this.seat, this.size = 16});
+
+  final Seat seat;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(
+        size: Size.square(size),
+        painter: _SeatPipPainter(seat),
+      );
+}
+
+class _SeatPipPainter extends CustomPainter {
+  const _SeatPipPainter(this.seat);
+
+  final Seat seat;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = math.min(size.width, size.height);
+    final centre = Offset(size.width / 2, size.height / 2);
+    final line = math.max(1.0, s * 0.11);
+    final colour = switch (seat) {
+      Seat.you => AppColors.pointOnTable,
+      Seat.taken => AppColors.onTable,
+      Seat.open => AppColors.onTableSoft,
+    };
+
+    canvas.drawCircle(
+      centre,
+      seat == Seat.open ? s * 0.34 : s * 0.40,
+      seat == Seat.open
+          ? (Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = line
+            ..color = colour)
+          : (Paint()..color = colour),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_SeatPipPainter old) => old.seat != seat;
 }

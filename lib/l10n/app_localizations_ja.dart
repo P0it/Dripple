@@ -411,6 +411,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get leaveRoom => '出る';
 
   @override
+  String get roomSeats => '席';
+
+  @override
   String get emptySeat => '空席';
 
   @override

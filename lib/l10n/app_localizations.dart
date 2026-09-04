@@ -856,6 +856,12 @@ abstract class AppLocalizations {
   /// **'Leave'**
   String get leaveRoom;
 
+  /// No description provided for @roomSeats.
+  ///
+  /// In en, this message translates to:
+  /// **'Seats'**
+  String get roomSeats;
+
   /// No description provided for @emptySeat.
   ///
   /// In en, this message translates to:

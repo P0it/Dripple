@@ -421,6 +421,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get leaveRoom => 'Leave';
 
   @override
+  String get roomSeats => 'Seats';
+
+  @override
   String get emptySeat => 'Empty seat';
 
   @override
