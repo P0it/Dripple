@@ -1,4 +1,5 @@
 import 'package:flame/game.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -74,7 +75,7 @@ void main() {
     expect(to, greaterThan(0), reason: 'it landed further along the rail');
   });
 
-  testWidgets('a press picks the card up at once, with no upward ritual',
+  testWidgets('sideways alone picks the card up, with no upward ritual',
       (tester) async {
     final game = await _board(tester, 7);
 
@@ -83,7 +84,16 @@ void main() {
     final gesture = await tester.startGesture(
       Offset(slots[2].dx + 8, game.debugHandY),
     );
-    await gesture.moveBy(const Offset(3, 0));
+
+    // Straight sideways, and only just far enough to be a drag at all.
+    // Flame's drag sits on Flutter's MultiDragGestureRecognizer, which does
+    // not accept the gesture — so onDragStart cannot fire — until the pointer
+    // has travelled further than kTouchSlop. That floor is the framework's and
+    // applies in every direction alike, which is exactly why it does not
+    // reintroduce the modal gesture this test guards against: what was removed
+    // was an *upward* pull of 16px on top of it, a direction the player was
+    // never told about.
+    await gesture.moveBy(const Offset(kTouchSlop + 1, 0));
     await tester.pump(const Duration(milliseconds: 16));
 
     expect(pressed.isDragging, isTrue);

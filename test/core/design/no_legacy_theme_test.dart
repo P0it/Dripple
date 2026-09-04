@@ -29,6 +29,13 @@ void main() {
       .where((f) => f.path.endsWith('.dart'))
       .toList();
 
+  /// `Directory.listSync` hands back the platform's own separator, and every
+  /// path written below uses `/`. Without this the design package fails its
+  /// own guard on Windows and passes on Linux, which is the worst way for a
+  /// guard to be wrong: it is green wherever CI runs and red wherever the
+  /// change is being made.
+  String pathOf(File f) => f.path.replaceAll('\\', '/');
+
   /// Where surface may be authored.
   bool isMaterialAuthor(String path) =>
       path.startsWith('lib/core/design/') ||
@@ -44,7 +51,7 @@ void main() {
   test('nothing imports the legacy theme', () {
     final offenders = dartFiles()
         .where((f) => f.readAsStringSync().contains('core/theme/app_theme'))
-        .map((f) => f.path)
+        .map(pathOf)
         .toList();
     expect(offenders, isEmpty);
   });
@@ -54,9 +61,9 @@ void main() {
     // the widget layer. Screens have no such excuse.
     final hex = RegExp(r'Color\(0x[0-9A-Fa-f]{8}\)');
     final offenders = dartFiles()
-        .where((f) => !isMaterialAuthor(f.path))
+        .where((f) => !isMaterialAuthor(pathOf(f)))
         .where((f) => hex.hasMatch(f.readAsStringSync()))
-        .map((f) => f.path)
+        .map(pathOf)
         .toList();
     expect(offenders, isEmpty, reason: 'move these into AppColors');
   });
@@ -65,9 +72,9 @@ void main() {
     final gradient = RegExp(r'Gradient\.(radial|linear|sweep)|LinearGradient|'
         r'RadialGradient|SweepGradient');
     final offenders = dartFiles()
-        .where((f) => !isMaterialAuthor(f.path))
+        .where((f) => !isMaterialAuthor(pathOf(f)))
         .where((f) => gradient.hasMatch(f.readAsStringSync()))
-        .map((f) => f.path)
+        .map(pathOf)
         .toList();
     expect(offenders, isEmpty,
         reason: 'a gradient describes a surface — put it in Materials');
@@ -81,11 +88,11 @@ void main() {
     // the lookahead pass on every well-behaved shadow in the codebase.
     final shadowColour = RegExp(r'BoxShadow\([^)]*?color:\s*([\w.]+)');
     final offenders = dartFiles()
-        .where((f) => !isMaterialAuthor(f.path))
+        .where((f) => !isMaterialAuthor(pathOf(f)))
         .where((f) => shadowColour
             .allMatches(f.readAsStringSync())
             .any((m) => !m.group(1)!.startsWith('AppColors.')))
-        .map((f) => f.path)
+        .map(pathOf)
         .toList();
     expect(offenders, isEmpty,
         reason: 'shadow colours come from AppColors, like every other colour');
