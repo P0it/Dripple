@@ -97,10 +97,41 @@ class DrippleMarkPainter extends CustomPainter {
   const DrippleMarkPainter({
     required this.progress,
     this.onLight = false,
+    this.compact = false,
   });
 
   final double progress;
   final bool onLight;
+
+  /// The optical size for a tab favicon and the smallest launcher icons.
+  ///
+  /// Three things fail below about 32px, and none of them is a rendering bug —
+  /// they are all the drawing being wrong for the size. The pair uses about
+  /// two thirds of its box, so a 16px icon spends a third of itself on margin.
+  /// The tick is 6.8% of a card's width, which at that size is under half a
+  /// pixel, so both accents grey out and the mark stops saying "two words, of
+  /// different kinds" — which is the only thing it says. And the two shadows,
+  /// which sit a card on a table at 148px, are mud under a 6px card.
+  ///
+  /// So compact fills the box, floors the tick at a whole pixel, and drops the
+  /// shadows. It is asked for, never inferred from the size handed in: a mark
+  /// that silently becomes a different mark below a threshold is a mark nobody
+  /// can predict, and every use inside the app is far above any threshold
+  /// worth setting.
+  final bool compact;
+
+  /// How much of the box the pair fills when [compact]. Not 1: a corner that
+  /// touches the edge reads as cropped, and the lean needs somewhere to go.
+  static const double _compactFill = 0.92;
+
+  /// The tick's floor when [compact], in whole device pixels.
+  ///
+  /// One was tried and is not enough. A one-pixel bar is never one pixel of
+  /// its own colour — it lands across a pixel boundary and antialiasing mixes
+  /// most of it back into the paper, leaving a grey dash that says nothing.
+  /// Two pixels is the first height at which a run of the colour survives
+  /// intact, and at 16px it is still only an eighth of the card.
+  static const double _compactTickFloor = 2;
 
   /// Card width as a fraction of the mark's box. The height and the corner
   /// follow from the deck's own proportions — they are not free numbers here
@@ -174,14 +205,31 @@ class DrippleMarkPainter extends CustomPainter {
     final shift = Offset(size.width, size.height) / 2 - bounds.center;
 
     canvas.save();
-    canvas.translate(shift.dx, shift.dy);
-    _card(canvas, backRect, backLean, w, _backAccent);
-    _card(canvas, frontRect, frontLean, w, _frontAccent);
+    if (compact) {
+      // Scale the pair about its own centre until it fills the box. Everything
+      // below is then drawn in units that are `scale` physical pixels each,
+      // which is why the tick's floor is divided by it.
+      final scale = math.min(
+        size.width * _compactFill / bounds.width,
+        size.height * _compactFill / bounds.height,
+      );
+      canvas.translate(size.width / 2, size.height / 2);
+      canvas.scale(scale);
+      canvas.translate(-bounds.center.dx, -bounds.center.dy);
+      final tickFloor = _compactTickFloor / scale;
+      _card(canvas, backRect, backLean, w, _backAccent, tickFloor);
+      _card(canvas, frontRect, frontLean, w, _frontAccent, tickFloor);
+    } else {
+      canvas.translate(shift.dx, shift.dy);
+      _card(canvas, backRect, backLean, w, _backAccent, 0);
+      _card(canvas, frontRect, frontLean, w, _frontAccent, 0);
+    }
     canvas.restore();
   }
 
   /// One card: stock, face, and the part-of-speech tick the deck prints.
-  void _card(Canvas canvas, Rect rect, double lean, double w, Color accent) {
+  void _card(Canvas canvas, Rect rect, double lean, double w, Color accent,
+      double tickFloor) {
     canvas.save();
     canvas.translate(rect.center.dx, rect.center.dy);
     canvas.rotate(lean);
@@ -192,7 +240,10 @@ class DrippleMarkPainter extends CustomPainter {
       Radius.circular(rect.width * CardPainter.radiusRatio),
     );
 
-    _shadow(canvas, rrect, w);
+    // No shadow when compact. Two soft shadows under a 6px card are not a
+    // card on a table, they are less contrast between the stock and the ground
+    // at exactly the size where that contrast is all there is.
+    if (!compact) _shadow(canvas, rrect, w);
 
     // The cut edge of the stock, then the face inside it — the same two
     // rectangles a card on the board is made of.
@@ -204,7 +255,7 @@ class DrippleMarkPainter extends CustomPainter {
 
     canvas.save();
     canvas.translate(rect.left, rect.top);
-    CardPainter.tick(canvas, rect.size, accent);
+    CardPainter.tick(canvas, rect.size, accent, minThickness: tickFloor);
     canvas.restore();
 
     canvas.restore();
@@ -258,5 +309,7 @@ class DrippleMarkPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(DrippleMarkPainter old) =>
-      old.progress != progress || old.onLight != onLight;
+      old.progress != progress ||
+      old.onLight != onLight ||
+      old.compact != compact;
 }

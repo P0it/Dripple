@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
@@ -180,16 +181,22 @@ class CardPainter {
   /// Public because the brand mark draws it too. The logo is two of *these*
   /// cards, not two rectangles that resemble them, so it calls the same
   /// painter — a card whose face changes cannot leave the mark behind.
-  static void tick(Canvas canvas, Size size, Color accent) =>
-      _tick(canvas, size, accent);
+  static void tick(Canvas canvas, Size size, Color accent,
+          {double minThickness = 0}) =>
+      _tick(canvas, size, accent, minThickness);
 
-  static void _tick(Canvas canvas, Size size, Color accent) {
+  static void _tick(Canvas canvas, Size size, Color accent,
+      [double minThickness = 0]) {
     final w = size.width;
+    // The tick is a fraction of the card, which is right everywhere the card
+    // is a card. On a 16px icon the same fraction is under half a pixel, and
+    // half a pixel of red is a grey smudge — so a floor may be handed in, in
+    // the units the canvas is currently drawing in.
+    final h = math.max(w * _tickHeight, minThickness);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(
-            w * _padSide, w * _padTop, w * _tickWidth, w * _tickHeight),
-        Radius.circular(w * _tickHeight / 2),
+        Rect.fromLTWH(w * _padSide, w * _padTop, w * _tickWidth, h),
+        Radius.circular(h / 2),
       ),
       Paint()..color = accent,
     );

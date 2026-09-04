@@ -28,7 +28,12 @@
   <meta name="apple-mobile-web-app-title" content="Dripple">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
-  <!-- Favicon -->
+  <!-- Favicon. Three exact sizes rather than one the browser has to shrink:
+       below about 32px the mark is drawn in its compact optical size, and a
+       downscale of the large drawing throws that away. -->
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png"/>
+  <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png"/>
   <link rel="icon" type="image/png" href="favicon.png"/>
 
   <title>Dripple</title>

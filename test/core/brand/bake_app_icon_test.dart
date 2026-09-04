@@ -38,6 +38,7 @@ void main() {
     int px, {
     required double fill,
     bool ground = true,
+    bool compact = false,
   }) async {
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
@@ -50,7 +51,8 @@ void main() {
     final inner = size * fill;
     canvas.save();
     canvas.translate((size - inner) / 2, (size - inner) / 2);
-    const DrippleMarkPainter(progress: 1).paint(canvas, Size.square(inner));
+    DrippleMarkPainter(progress: 1, compact: compact)
+        .paint(canvas, Size.square(inner));
     canvas.restore();
 
     final image = await recorder.endRecording().toImage(px, px);
@@ -120,7 +122,20 @@ void main() {
     await bake('build/icons/web/Icon-512.png', 512, fill: fullBleed);
     await bake('build/icons/web/Icon-maskable-192.png', 192, fill: maskable);
     await bake('build/icons/web/Icon-maskable-512.png', 512, fill: maskable);
-    await bake('build/icons/web/favicon.png', 64, fill: fullBleed);
+    // The tab favicon, at the sizes a browser actually asks for rather than
+    // one file it has to shrink. A 64px icon resampled to 16 is the mark's
+    // three small-size failures plus a resampling blur on top, and the browser
+    // will always pick an exact match over a downscale when it is offered one.
+    //
+    // These are the only icons drawn compact: everything above is 48px or
+    // larger, where the full-size drawing is what the mark should be.
+    for (final px in [16, 32, 48]) {
+      await bake('build/icons/web/favicon-$px.png', px,
+          fill: fullBleed, compact: true);
+    }
+    // Kept for anything that asks for the old path by name.
+    await bake('build/icons/web/favicon.png', 32,
+        fill: fullBleed, compact: true);
 
     expect(File('build/icons/ios/Icon-App-1024x1024@1x.png').existsSync(),
         isTrue);
