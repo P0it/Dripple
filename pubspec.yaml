@@ -56,3 +56,9 @@ flutter:
           weight: 600
         - asset: assets/fonts/Pretendard-Bold.ttf
           weight: 700
+    # The wordmark only. A variable cut, because the mark uses two of its axes
+    # — weight, and the SOFT axis that rounds the terminals into something the
+    # card stock agrees with. Licence beside it: assets/fonts/Fraunces-OFL.txt
+    - family: Fraunces
+      fonts:
+        - asset: assets/fonts/Fraunces-Variable.ttf

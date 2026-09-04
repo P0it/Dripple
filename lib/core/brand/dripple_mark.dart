@@ -6,7 +6,7 @@ import 'package:dripple_rules/models/word_card.dart';
 import '../../game/card_painter.dart';
 import '../design/app_colors.dart';
 
-/// The Sentence Poker mark: two cards, dealt.
+/// The Dripple mark: two cards, dealt.
 ///
 /// The cards are not shapes that resemble the game's cards — they are the
 /// game's cards. Proportion, corner radius and the part-of-speech tick all
@@ -41,6 +41,7 @@ class DrippleMark extends StatelessWidget {
     this.size = 72,
     this.animation,
     this.onLight = false,
+    this.tight = false,
   });
 
   final double size;
@@ -52,13 +53,27 @@ class DrippleMark extends StatelessWidget {
   /// disappear into — a white page, a light document, print.
   final bool onLight;
 
+  /// Trim the box down to what the cards actually occupy.
+  ///
+  /// A square box leaves roughly a fifth of its height empty above and below
+  /// the pair, which is right for an icon — an icon needs its own margin —
+  /// and wrong wherever something is set directly beneath the mark, because
+  /// that empty band silently adds itself to the gap. The painter scales off
+  /// the width and centres in whatever box it is handed, so a shorter box
+  /// crops the padding without moving or resizing anything.
+  final bool tight;
+
+  Size get _box => tight
+      ? Size(size, size * DrippleMarkPainter.contentHeight)
+      : Size.square(size);
+
   @override
   Widget build(BuildContext context) {
     final anim = animation;
 
     if (anim == null) {
       return CustomPaint(
-        size: Size.square(size),
+        size: _box,
         painter: DrippleMarkPainter(progress: 1, onLight: onLight),
       );
     }
@@ -66,7 +81,7 @@ class DrippleMark extends StatelessWidget {
     return AnimatedBuilder(
       animation: anim,
       builder: (_, __) => CustomPaint(
-        size: Size.square(size),
+        size: _box,
         painter: DrippleMarkPainter(progress: anim.value, onLight: onLight),
       ),
     );
@@ -114,6 +129,18 @@ class DrippleMarkPainter extends CustomPainter {
   /// has split rather than as two.
   static const double _frontLean = 0.16; // ~9°
   static const double _backLean = 0;
+
+  /// How tall the dealt pair actually is, as a fraction of the mark's width.
+  ///
+  /// The leaning front card is the taller of the two, so the pair measures
+  /// `w·sin θ + h·cos θ`; the shadow under it wants a hair more. This is what
+  /// [DrippleMark.tight] hands to the painter, and it is derived rather than
+  /// typed so a change to the lean or the proportion cannot leave the mark
+  /// clipped at its corner.
+  static double get contentHeight =>
+      _cardWidth * math.sin(_frontLean) +
+      _cardHeight * math.cos(_frontLean) +
+      0.026;
 
   /// The two ticks. A sentence is made of different kinds of word, so the
   /// mark shows two — pulled from the grammar palette rather than picked, so

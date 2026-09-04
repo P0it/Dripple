@@ -5,8 +5,14 @@ import '../core/design/table_scaffold.dart';
 import '../core/design/app_spacing.dart';
 import '../core/design/app_typography.dart';
 
-/// The first screen: three dots bounce along the line, then the wordmark
-/// arrives.
+/// The first screen: one card is laid down, a second is dealt out from under
+/// it, and the name arrives once they have settled.
+///
+/// The mark is two cards at rest and exactly one card at `progress` 0, because
+/// the pair starts squared up — so the whole opening is a matter of *timing*,
+/// not of geometry. What makes it read as one card becoming two is the 180ms
+/// in the middle where nothing happens: without that beat the card appears and
+/// splits in the same motion, and a viewer never sees the single card at all.
 ///
 /// [onFinished] is injected rather than navigating directly, so the timeline
 /// can be tested without standing up a router.
@@ -21,10 +27,12 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  static const _total = Duration(milliseconds: 1400);
+  static const _total = Duration(milliseconds: 1600);
 
   late final AnimationController _controller;
-  late final Animation<double> _mark;
+  late final Animation<double> _cardIn;
+  late final Animation<double> _cardRise;
+  late final Animation<double> _deal;
   late final Animation<double> _wordFade;
   late final Animation<double> _wordRise;
 
@@ -39,16 +47,29 @@ class _SplashScreenState extends State<SplashScreen>
       })
       ..forward();
 
-    // 0.14–0.64 of 1400ms is 200ms–900ms: the three staggered bounces.
-    _mark = CurvedAnimation(
+    // 0–260ms: one card rises into place. The pair is still squared up here,
+    // so what arrives is a single card.
+    _cardIn = CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.14, 0.64),
+      curve: const Interval(0, 0.1625, curve: Curves.easeOut),
+    );
+    _cardRise = Tween<double>(begin: 6, end: 0).animate(_cardIn);
+
+    // 260–440ms is the hold, and it is the whole point: it is simply the gap
+    // between the two intervals either side of it.
+
+    // 440–1100ms: the deal. Linear here because the painter applies
+    // easeOutCubic itself — curving both ends would double the ease and leave
+    // the card crawling into place.
+    _deal = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.275, 0.6875),
     );
 
-    // 0.64–0.86 is 900ms–1200ms: the wordmark arrives.
+    // 1100–1400ms: the name, after the cards have stopped moving.
     _wordFade = CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.64, 0.86, curve: Curves.easeOut),
+      curve: const Interval(0.6875, 0.875, curve: Curves.easeOut),
     );
     _wordRise = Tween<double>(begin: 8, end: 0).animate(_wordFade);
   }
@@ -67,6 +88,11 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
+  /// The mark's width. The wordmark and the gap under the mark are both set
+  /// against it rather than chosen, so the lockup holds its proportions if
+  /// this one number changes.
+  static const double _markSize = 148;
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -77,8 +103,24 @@ class _SplashScreenState extends State<SplashScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              DrippleMark(size: 132, animation: _mark),
-              const SizedBox(height: AppSpacing.lg),
+              AnimatedBuilder(
+                animation: _cardIn,
+                builder: (_, child) => Opacity(
+                  opacity: _cardIn.value,
+                  child: Transform.translate(
+                    offset: Offset(0, _cardRise.value),
+                    child: child,
+                  ),
+                ),
+                // Tight, because the square box's empty band would add itself
+                // to the gap below and push the name away from the mark.
+                child: DrippleMark(
+                  size: _markSize,
+                  animation: _deal,
+                  tight: true,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md + AppSpacing.xs),
               AnimatedBuilder(
                 animation: _wordFade,
                 builder: (_, child) => Opacity(
@@ -90,8 +132,8 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 child: Text(
                   'Dripple',
-                  style: AppTypography.onTable(AppTypography.display)
-                      .copyWith(letterSpacing: -0.5),
+                  style: AppTypography.onTable(AppTypography.wordmark)
+                      .copyWith(fontSize: _markSize * 0.176),
                 ),
               ),
             ],
